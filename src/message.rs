@@ -6,6 +6,7 @@ use crate::register::Register;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Message<V> {
+    pub sender: i32,
     pub message_type: MessageType,
     pub register: Register<V>
 }

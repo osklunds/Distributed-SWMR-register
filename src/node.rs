@@ -15,26 +15,34 @@ use serde::de::DeserializeOwned;
 
 use std::fmt::Debug;
 
-use crate::register;
-use crate::message::Message;
+use crate::register::Register;
+use crate::message::*;
 
 
 pub struct Node<V> {
     id: Arc<i32>,
     ts: Arc<Mutex<i32>>,
-    reg: Arc<Mutex<register::Register<V>>>,
-    socket: Arc<UdpSocket>
+    reg: Arc<Mutex<Register<V>>>,
+    socket: Arc<UdpSocket>,
+    socket_addrs: Arc<HashMap<i32, SocketAddr>>
 }
 
 impl<V: Default + Serialize + DeserializeOwned + Debug> Node<V> {
-    pub fn new(node_id: i32, node_ids: HashSet<i32>) -> Node<V> {
-        let socket = UdpSocket::bind("127.0.0.1:34254").unwrap();
+    pub fn new(node_id: i32, socket_addrs: HashMap<i32, SocketAddr>) -> Node<V> {
+        let my_socket_addr = socket_addrs.get(&node_id).unwrap();
+        let socket = UdpSocket::bind(my_socket_addr).unwrap();
+
+        let mut node_ids = HashSet::new();
+        for key in socket_addrs.keys() {
+            node_ids.insert(*key);
+        }
 
         Node {
             id: Arc::new(node_id),
             ts: Arc::new(Mutex::new(-1)),
-            reg: Arc::new(Mutex::new(register::Register::new(node_ids))),
-            socket: Arc::new(socket)
+            reg: Arc::new(Mutex::new(Register::new(node_ids))),
+            socket: Arc::new(socket),
+            socket_addrs: Arc::new(socket_addrs)
         }
     }
 
@@ -44,11 +52,50 @@ impl<V: Default + Serialize + DeserializeOwned + Debug> Node<V> {
 
             let (amt, socket_addr) = self.socket.recv_from(&mut buf).unwrap();
             let json_string = str::from_utf8(&buf[0..amt]).unwrap();
-            let message: Message<V> = serde_json::from_str(&json_string).unwrap(); 
-            
-            println!("Fick {:?} från {:?}", message, socket_addr);
+            let message: Message<V> = serde_json::from_str(&json_string).unwrap();
 
-            
+            self.handle_message(message);
+        }
+    }
+
+    fn handle_message(&self, message: Message<V>) {
+        println!("Fick {:?}", message);
+
+        /*
+        match message.message_type {
+            WriteMessage => self.handle_write_message(message),
+            WriteAckMessage => self.handle_write_ack_message(message),
+            ReadMessage => self.handle_read_message(message),
+            ReadAckMessage => self.handle_read_ack_message(message)
+        }
+        */
+    }
+
+    fn send_message_to(&self, message: &Message<V>, receiver_id: i32) {
+        let json_string = serde_json::to_string(message).unwrap();
+        let bytes = json_string.as_bytes();
+        let dst_socket_addr = self.socket_addrs.get(&receiver_id).unwrap();
+        println!("Skickar till {:?}", dst_socket_addr);
+        self.socket.send_to(bytes, dst_socket_addr).unwrap();
+    }
+
+    pub fn client_op_loop(&self) {
+        loop {
+            let next_id = match *self.id {
+                1 => 2,
+                2 => 1,
+                _ => panic!("Bad id")
+            };
+
+            let mess: Message<V> = Message {
+                sender: *self.id,
+                message_type: MessageType::WriteMessage,
+                register: Register::new(HashSet::new())
+            };
+
+            self.send_message_to(&mess, next_id);
+
+            thread::sleep(time::Duration::from_millis(500));
         }
     }
 

@@ -17,8 +17,44 @@ use std::collections::{HashMap, HashSet};
 
 use std::default::Default;
 
+use std::env;
+
+use node::Node;
+
 
 fn main() {
+    let mut socket_addrs = HashMap::new();
+    socket_addrs.insert(1, "127.0.0.1:12345".parse().unwrap());
+    socket_addrs.insert(2, "127.0.0.1:12346".parse().unwrap());
+
+    let args: Vec<String> = env::args().collect();
+
+    let id = &args[1];
+    let id = id.parse::<i32>().unwrap();
+
+    let node: Node<String> = Node::new(id, socket_addrs);
+    let node = Arc::new(node);
+
+    let recv_thread_node = Arc::clone(&node);
+    let recv_thread_handle = thread::spawn(move || {
+        if id == 1 {
+            recv_thread_node.recv_loop();
+        }
+    });
+
+    let client_op_thread_node = Arc::clone(&node);
+    let client_op_thread_handle = thread::spawn(move || {
+        if id == 2 {
+            client_op_thread_node.client_op_loop();
+        }
+    });
+
+    recv_thread_handle.join().unwrap();
+    client_op_thread_handle.join().unwrap();
+
+
+
+
 
 }
     /*
