@@ -9,9 +9,9 @@ use std::{thread, time};
 
 use std::collections::{HashMap, HashSet};
 
-mod register;
+use crate::register;
 
-struct Node<V> {
+pub struct Node<V> {
     id: Arc<i32>,
     ts: Arc<Mutex<i32>>,
     reg: Arc<Mutex<register::Register<V>>>,
@@ -29,4 +29,6 @@ impl<V: Default> Node<V> {
             socket: Arc::new(socket)
         }
     }
+
+
 }

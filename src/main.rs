@@ -15,6 +15,8 @@ use std::collections::{HashMap, HashSet};
 use std::default::Default;
 
 mod register;
+mod node;
+mod config_manager;
 
 fn main() {
 
