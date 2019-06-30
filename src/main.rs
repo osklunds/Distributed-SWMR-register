@@ -37,16 +37,12 @@ fn main() {
 
     let recv_thread_node = Arc::clone(&node);
     let recv_thread_handle = thread::spawn(move || {
-        if id == 1 {
-            recv_thread_node.recv_loop();
-        }
+        recv_thread_node.recv_loop();
     });
 
     let client_op_thread_node = Arc::clone(&node);
     let client_op_thread_handle = thread::spawn(move || {
-        if id == 2 {
-            client_op_thread_node.client_op_loop();
-        }
+        client_op_thread_node.client_op_loop();
     });
 
     recv_thread_handle.join().unwrap();

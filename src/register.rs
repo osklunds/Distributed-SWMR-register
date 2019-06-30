@@ -5,17 +5,18 @@ use std::fmt;
 use std::fmt::Formatter;
 use std::fmt::Display;
 
+use std::cmp;
 use std::cmp::Ordering;
 
 use serde::{Serialize, Deserialize};
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Register<V> {
     map: HashMap<i32, Entry<V>>
 }
 
-impl<V: Default> Register<V> {
+impl<V: Default + Clone + Ord> Register<V> {
     pub fn new(node_ids: HashSet<i32>) -> Register<V> {
         let mut map = HashMap::new();
         for node_id in node_ids {
@@ -27,12 +28,27 @@ impl<V: Default> Register<V> {
         }
     }
 
-    pub fn get(self: &Self, node_id: i32) -> Option<&Entry<V>> {
+    pub fn get(&mut self, node_id: i32) -> Option<&Entry<V>> {
         self.map.get(&node_id)
     }
 
-    pub fn set(self: &mut Self, node_id: i32, entry: Entry<V>) {
+    pub fn set(&mut self, node_id: i32, entry: Entry<V>) {
         self.map.insert(node_id, entry);
+    }
+
+    pub fn merge_to_max_from_register(&mut self, other: &Register<V>) {
+        // This is an ineffective hack for now
+
+        let mut new_map = HashMap::new();
+
+        for node_id in self.map.keys() {
+            let my_val = self.map.get(node_id).unwrap();
+            let other_val = other.map.get(node_id).unwrap();
+            
+            new_map.insert(*node_id, cmp::max(my_val.clone(), other_val.clone()));
+        }
+
+        self.map = new_map;
     }
 }
 
@@ -88,14 +104,14 @@ fn less_than_or_equal<V: PartialOrd>(lhs: &HashMap<i32, V>, rhs: &HashMap<i32, V
     return true;
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Entry<V> {
     pub ts: i32,
     pub val: V
 }
 
 impl<V> Entry<V> {
-    fn new(ts: i32, val: V) -> Entry<V> {
+    pub fn new(ts: i32, val: V) -> Entry<V> {
         Entry {
             ts: ts,
             val: val
@@ -115,8 +131,16 @@ impl<V> PartialEq for Entry<V> {
     }
 }
 
+impl<V> Eq for Entry<V> {}
+
 impl<V> PartialOrd for Entry<V> {
     fn partial_cmp(&self, other:&Self) -> Option<Ordering> {
         self.ts.partial_cmp(&other.ts)
+    }
+}
+
+impl<V> Ord for Entry<V> {
+    fn cmp(&self, other:&Self) -> Ordering {
+        self.ts.cmp(&other.ts)
     }
 }

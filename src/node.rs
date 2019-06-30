@@ -16,6 +16,7 @@ use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 
 use crate::register::Register;
+use crate::register::Entry;
 use crate::message::*;
 
 
@@ -27,7 +28,7 @@ pub struct Node<V> {
     socket_addrs: Arc<HashMap<i32, SocketAddr>>
 }
 
-impl<V: Default + Serialize + DeserializeOwned + Debug> Node<V> {
+impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord> Node<V> {
     pub fn new(node_id: i32, socket_addrs: HashMap<i32, SocketAddr>) -> Node<V> {
         let my_socket_addr = socket_addrs.get(&node_id).unwrap();
         let socket = UdpSocket::bind(my_socket_addr).unwrap();
@@ -59,17 +60,36 @@ impl<V: Default + Serialize + DeserializeOwned + Debug> Node<V> {
     }
 
     fn handle_message(&self, message: Message<V>) {
-        println!("Fick {:?}", message);
-
-        /*
-        match message.message_type {
-            WriteMessage => self.handle_write_message(message),
-            WriteAckMessage => self.handle_write_ack_message(message),
-            ReadMessage => self.handle_read_message(message),
-            ReadAckMessage => self.handle_read_ack_message(message)
-        }
-        */
+        match &message.message_type {
+            MessageType::WriteMessage => self.handle_write_message(&message),
+            MessageType::WriteAckMessage => self.handle_write_ack_message(&message),
+            MessageType::ReadMessage => self.handle_read_message(&message),
+            MessageType::ReadAckMessage => self.handle_read_ack_message(&message)
+        };
     }
+
+    fn handle_write_message(&self, message: &Message<V>) {
+        let mut reg = self.reg.lock().unwrap();
+        reg.merge_to_max_from_register(&message.register);
+
+
+        println!("{:?}", *reg);
+    }
+
+    fn handle_write_ack_message(&self, message: &Message<V>) {
+
+    }
+
+
+    fn handle_read_message(&self, message: &Message<V>) {
+
+    }
+
+
+    fn handle_read_ack_message(&self, message: &Message<V>) {
+
+    }
+
 
     fn send_message_to(&self, message: &Message<V>, receiver_id: i32) {
         let json_string = serde_json::to_string(message).unwrap();
@@ -80,6 +100,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug> Node<V> {
     }
 
     pub fn client_op_loop(&self) {
+        /*
         loop {
             let next_id = match *self.id {
                 1 => 2,
@@ -95,8 +116,29 @@ impl<V: Default + Serialize + DeserializeOwned + Debug> Node<V> {
 
             self.send_message_to(&mess, next_id);
 
-            thread::sleep(time::Duration::from_millis(500));
+            thread::sleep(time::Duration::from_millis(50000));
         }
+        */
+
+        if *self.id == 1 {
+            let mut reg = self.reg.lock().unwrap();
+            reg.set(1, Entry::new(7, V::default()));
+
+            thread::sleep(time::Duration::from_millis(500));
+
+            let mess: Message<V> = Message {
+                sender: *self.id,
+                message_type: MessageType::WriteMessage,
+                register: reg.clone()
+            };
+
+            self.send_message_to(&mess, 2);
+
+
+        }
+
+
+
     }
 
 
