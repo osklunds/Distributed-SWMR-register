@@ -5,3 +5,5 @@ authors = ["Oskar Lundström <21679735+osklunds@users.noreply.github.com>"]
 edition = "2018"
 
 [dependencies]
+serde = { version = "1.0.94", features = ["derive"] }
+serde_json = "1.0.39"

@@ -1,6 +1,12 @@
 
 #![allow(dead_code, unused_variables, unused_imports, unused_mut)]
 
+extern crate serde;
+
+mod register;
+mod node;
+mod config_manager;
+mod message;
 
 use std::str;
 
@@ -9,14 +15,8 @@ use std::{thread, time};
 
 use std::collections::{HashMap, HashSet};
 
-
-
-
 use std::default::Default;
 
-mod register;
-mod node;
-mod config_manager;
 
 fn main() {
 

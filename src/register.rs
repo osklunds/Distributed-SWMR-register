@@ -7,6 +7,10 @@ use std::fmt::Display;
 
 use std::cmp::Ordering;
 
+use serde::{Serialize, Deserialize};
+
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Register<V> {
     map: HashMap<i32, Entry<V>>
 }
@@ -84,6 +88,7 @@ fn less_than_or_equal<V: PartialOrd>(lhs: &HashMap<i32, V>, rhs: &HashMap<i32, V
     return true;
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Entry<V> {
     pub ts: i32,
     pub val: V
