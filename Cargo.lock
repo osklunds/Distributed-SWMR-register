@@ -1,4 +1,4 @@
 [[package]]
-name = "distributed_swmr_register"
+name = "distributed_swmr_registers"
 version = "0.1.0"
 
