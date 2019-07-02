@@ -8,6 +8,9 @@ use std::fmt::Display;
 use std::cmp;
 use std::cmp::Ordering;
 
+use std::hash::Hash;
+use std::hash::Hasher;
+
 use serde::{Serialize, Deserialize};
 
 
@@ -78,6 +81,8 @@ impl<V: PartialEq> PartialEq for Register<V> {
     }
 }
 
+impl<V: Eq> Eq for Register<V> {}
+
 impl<V: PartialOrd> PartialOrd for Register<V> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if self.eq(other) {
@@ -102,6 +107,17 @@ fn less_than_or_equal<V: PartialOrd>(lhs: &HashMap<i32, V>, rhs: &HashMap<i32, V
         }
     }
     return true;
+}
+
+impl<V: Hash> Hash for Register<V> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        for node_id in self.map.keys() {
+            let entry = self.map.get(node_id).unwrap();
+
+            node_id.hash(state);
+            entry.hash(state);
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -142,5 +158,11 @@ impl<V> PartialOrd for Entry<V> {
 impl<V> Ord for Entry<V> {
     fn cmp(&self, other:&Self) -> Ordering {
         self.ts.cmp(&other.ts)
+    }
+}
+
+impl<V: Hash> Hash for Entry<V> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.ts.hash(state);
     }
 }

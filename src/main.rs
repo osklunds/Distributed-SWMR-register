@@ -22,10 +22,17 @@ use std::env;
 use node::Node;
 
 
+
 fn main() {
     let mut socket_addrs = HashMap::new();
-    socket_addrs.insert(1, "127.0.0.1:12345".parse().unwrap());
-    socket_addrs.insert(2, "127.0.0.1:12346".parse().unwrap());
+
+    for i in 0..15 {
+        let val = 12345 + i;
+        socket_addrs.insert(i+1, format!("127.0.0.1:{}", val).parse().unwrap());
+
+        //println!("{:?}", socket_addrs.get(&(i+1)));
+    }
+
 
     let args: Vec<String> = env::args().collect();
 
@@ -42,7 +49,20 @@ fn main() {
 
     let client_op_thread_node = Arc::clone(&node);
     let client_op_thread_handle = thread::spawn(move || {
-        client_op_thread_node.client_op_loop();
+        if id == 1 {
+            let mut i = 0;
+
+            loop {
+                i += 1;
+                client_op_thread_node.write(format!("{}", &i));
+
+                if i % 1000 == 0 {
+                    println!("{}", i);
+                }
+            }
+
+
+        }
     });
 
     recv_thread_handle.join().unwrap();
