@@ -23,14 +23,15 @@ use crate::message::*;
 
 
 pub struct Node<V> {
-    id: Arc<i32>,
     ts: Arc<Mutex<i32>>,
     reg: Arc<Mutex<Register<V>>>,
+
+    id: Arc<i32>,
     socket: Arc<UdpSocket>,
     socket_addrs: Arc<HashMap<i32, SocketAddr>>,
-    write_ack_message_bag: Arc<Mutex<HashSet<Message<V>>>>,
-    read_ack_message_bag: Arc<Mutex<HashSet<Message<V>>>>,
-    write_ack_from_majority_cond: Arc<Condvar>
+
+    acking_processors_for_write: Arc<Mutex<HashSet<i32>>>,
+    acking_processors_for_read: Arc<Mutex<HashSet<i32>>>,
 }
 
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash> Node<V> {
@@ -49,9 +50,8 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash
             reg: Arc::new(Mutex::new(Register::new(node_ids))),
             socket: Arc::new(socket),
             socket_addrs: Arc::new(socket_addrs),
-            write_ack_message_bag: Arc::new(Mutex::new(HashSet::new())),
-            read_ack_message_bag: Arc::new(Mutex::new(HashSet::new())),
-            write_ack_from_majority_cond: Arc::new(Condvar::new())
+            acking_processors_for_write: Arc::new(Mutex::new(HashSet::new())),
+            acking_processors_for_read: Arc::new(Mutex::new(HashSet::new())),
         }
     }
 
@@ -63,10 +63,14 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash
             let json_string = str::from_utf8(&buf[0..amt]).unwrap();
             let message: Message<V> = serde_json::from_str(&json_string).unwrap();
 
-            self.handle_message(message);
+            //self.handle_message(message);
         }
     }
 
+    fn handle_json_message_string(&self, json: &str) {
+
+    }
+    /*
     fn handle_message(&self, message: Message<V>) {
         //println!("Ska hantera {:?}", message);
 
@@ -83,7 +87,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash
 
         {
             let mut reg = self.reg.lock().unwrap();
-            reg.merge_to_max_from_register(&message.register);
+            //reg.merge_to_max_from_register(&message.register);
 
             //println!("{:?}", *reg);
 
@@ -125,7 +129,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash
 
         read_ack_message_bag.insert(message.clone());
     }
-
+    */
 
     fn send_message_to(&self, message: &Message<V>, receiver_id: i32) {
         let json_string = serde_json::to_string(message).unwrap();
@@ -140,7 +144,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash
             self.send_message_to(message, *node_id);
         }
     }
-
+    /*
     pub fn write(&self, value: V) {
         //println!("Start write {:?}", &value);
         let value2 = value.clone();
@@ -158,7 +162,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash
 
         //println!("End write {:?}", &value2);
     }
-
+    */
     pub fn update_reg(&self, value: V) -> Message<V> {
         let mut ts = self.ts.lock().unwrap();
         let mut reg = self.reg.lock().unwrap();
@@ -174,7 +178,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash
 
         return write_message;
     }
-
+    /*
     fn write_ack_from_majority(&self) -> bool {
         let maj = 3; // Just temp
 
@@ -191,7 +195,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash
 
         acking_processors >= maj
     }
-
+    */
     pub fn client_op_loop(&self) {
 
     }

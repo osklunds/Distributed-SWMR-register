@@ -5,8 +5,8 @@ extern crate serde;
 
 mod register;
 mod node;
-mod config_manager;
 mod message;
+mod messages;
 
 use std::str;
 
@@ -19,11 +19,35 @@ use std::default::Default;
 
 use std::env;
 
+use serde_json;
+use serde::{Serialize, Deserialize};
+
 use node::Node;
+use messages::WriteMessage;
+use messages::ReadMessage;
+use register::Register;
 
 
 
 fn main() {
+    let mut nodes = HashSet::new();
+    nodes.insert(3);
+    let reg: Register<String> = Register::new(nodes);
+    let m = WriteMessage {
+        sender: 8,
+        register: reg
+    };
+
+    let json_string = serde_json::to_string(&m).unwrap();
+
+    println!("{}", json_string);
+
+    let x: Result<ReadMessage<String>, serde_json::error::Error> = serde_json::from_str(&json_string);
+
+    println!("{:?}", x);
+
+
+    return;
     let mut socket_addrs = HashMap::new();
 
     for i in 0..15 {
@@ -54,7 +78,7 @@ fn main() {
 
             loop {
                 i += 1;
-                client_op_thread_node.write(format!("{}", &i));
+                //client_op_thread_node.write(format!("{}", &i));
 
                 if i % 1000 == 0 {
                     println!("{}", i);
