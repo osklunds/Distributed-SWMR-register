@@ -39,13 +39,13 @@ impl<V: Default + Clone> Register<V> {
         }
     }
 
-    pub fn get(&self, node_id: i32) -> Option<&Entry<V>> {
-        self.map.get(&node_id)
+    pub fn get(&self, node_id: NodeId) -> &Entry<V> {
+        self.map.get(&node_id).expect("Trying to get entry in register, but that node id does not exist.")
     }
 
-    pub fn set(&mut self, node_id: i32, entry: Entry<V>) {
+    pub fn set(&mut self, node_id: NodeId, entry: Entry<V>) {
         if self.map.insert(node_id, entry) == None {
-            panic!("Trying to set entry in register, but that node_id does not exist.");
+            panic!("Trying to set entry in register, but that node id does not exist.");
         } 
     }
 
@@ -161,9 +161,13 @@ mod tests {
         node_ids
     }
 
+    fn register_for_tests() -> Register<String> {
+        Register::new(node_ids_for_tests())
+    }
+
     #[test]
     fn test_that_new_contains_provided_node_ids() {
-        let reg: Register<String> = Register::new(node_ids_for_tests());
+        let reg = register_for_tests();
 
         for node_id in node_ids_for_tests().iter() {
             assert!(reg.map.contains_key(node_id));
@@ -172,7 +176,7 @@ mod tests {
 
     #[test]
     fn test_that_new_contains_no_other_node_ids() {
-        let reg: Register<String> = Register::new(node_ids_for_tests());
+        let reg = register_for_tests();
 
         for node_id in reg.map.keys() {
             assert!(node_ids_for_tests().contains(node_id));
@@ -181,11 +185,34 @@ mod tests {
 
     #[test]
     fn test_that_from_new_timestamps_are_default() {
-        let reg: Register<String> = Register::new(node_ids_for_tests());
+        let reg = register_for_tests();
 
         for (_, entry) in reg.map.iter() {
             assert_eq!(entry.ts, default_timestamp());
         }
+    }
+
+    #[test]
+    fn test_that_get_works_for_existing_node_id() {
+        let reg = register_for_tests();
+
+        assert_eq!(*reg.get(1), Entry::new(default_timestamp(), String::default()));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_that_get_panics_for_non_existing_node_id() {
+        let reg = register_for_tests();
+        reg.get(5);
+    }
+
+    #[test]
+    fn test_that_set_works_for_existing_node_id() {
+        let mut reg = register_for_tests();
+        let entry = Entry::new(10, String::from("Hi"));
+        reg.set(1, entry.clone());
+
+        assert_eq!(*reg.get(1), entry);
     }
 
 
