@@ -25,7 +25,7 @@ use crate::register::Entry;
 use crate::messages::*;
 
 
-pub struct Node<'a, V> {
+pub struct Node<V> {
     ts: Arc<Mutex<i32>>,
     reg: Arc<Mutex<Register<V>>>,
 
@@ -37,11 +37,11 @@ pub struct Node<'a, V> {
     register_being_written: Arc<Mutex<Option<Register<V>>>>,
 
     acking_processors_for_read: Arc<Mutex<HashSet<i32>>>,
-    register_being_read: Arc<Mutex<Option<&'a Register<V>>>>,
+    register_being_read: Arc<Mutex<Option<Register<V>>>>,
 }
 
-impl<'a, V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash> Node<'a, V> {
-    pub fn new(node_id: i32, socket_addrs: HashMap<i32, SocketAddr>) -> Node<'a, V> {
+impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash> Node<V> {
+    pub fn new(node_id: i32, socket_addrs: HashMap<i32, SocketAddr>) -> Node<V> {
         let my_socket_addr = socket_addrs.get(&node_id).unwrap();
         let socket = UdpSocket::bind(my_socket_addr).unwrap();
 
@@ -147,7 +147,7 @@ impl<'a, V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + 
         reg.merge_to_max_from_register(&read_ack_message.register);
 
         let mut register_being_read = self.register_being_read.lock().unwrap();
-        if let Some(register_being_read) = *register_being_read {
+        if let Some(register_being_read) = &*register_being_read {
             if *read_ack_message.register >= *register_being_read {
                 let mut acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
                 acking_processors_for_read.insert(read_ack_message.sender);

@@ -2,14 +2,10 @@
 use std::collections::{HashMap, HashSet, BTreeMap};
 
 use std::fmt;
-use std::fmt::Formatter;
 use std::fmt::Display;
 
 use std::cmp;
 use std::cmp::Ordering;
-
-use std::hash::Hash;
-use std::hash::Hasher;
 
 use serde::{Serialize, Deserialize};
 
@@ -352,9 +348,4 @@ mod tests {
 
         assert!(reg2 < reg1);
     }
-
-
-
-
 }
-
