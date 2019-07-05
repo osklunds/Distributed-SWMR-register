@@ -70,32 +70,32 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash
             let (amt, socket_addr) = self.socket.recv_from(&mut buf).unwrap();
             let json_string = str::from_utf8(&buf[0..amt]).unwrap();
 
-            self.handle_message_json_string(json_string);
+            self.receive_json_string(json_string);
 
             //self.handle_message(message);
         }
     }
 
-    fn handle_message_json_string(&self, json: &str) {
+    fn receive_json_string(&self, json: &str) {
         let write_message: Result<WriteMessage<V>, Error> = serde_json::from_str(&json);
         let write_ack_message: Result<WriteAckMessage<V>, Error> = serde_json::from_str(&json);
         let read_message: Result<ReadMessage<V>, Error> = serde_json::from_str(&json);
         let read_ack_message: Result<ReadAckMessage<V>, Error> = serde_json::from_str(&json);
 
         if let Ok(write_message) = write_message {
-            self.handle_write_message(write_message);
+            self.receive_write_message(write_message);
         } else if let Ok(write_ack_message) = write_ack_message {
-            self.handle_write_ack_message(write_ack_message);
+            self.receive_write_ack_message(write_ack_message);
         } else if let Ok(read_message) = read_message {
-            self.handle_read_message(read_message);
+            self.receive_read_message(read_message);
         } else if let Ok(read_ack_message) = read_ack_message {
-            self.handle_read_ack_message(read_ack_message);
+            self.receive_read_ack_message(read_ack_message);
         } else {
             println!("Could not deserialize: {}",json);
         }
     }
 
-    fn handle_write_message(&self, write_message: WriteMessage<V>) {
+    fn receive_write_message(&self, write_message: WriteMessage<V>) {
         let write_ack_message;
 
         {
@@ -111,7 +111,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash
         }
     }
 
-    fn handle_write_ack_message(&self, write_ack_message: WriteAckMessage<V>) {
+    fn receive_write_ack_message(&self, write_ack_message: WriteAckMessage<V>) {
         let mut reg = self.reg.lock().unwrap();
         reg.merge_to_max_from_register(&write_ack_message.register);
 
@@ -126,7 +126,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash
         }
     }
 
-    fn handle_read_message(&self, read_message: ReadMessage<V>) {
+    fn receive_read_message(&self, read_message: ReadMessage<V>) {
         let read_ack_message;
 
         {
@@ -142,7 +142,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash
         } 
     }
 
-    fn handle_read_ack_message(&self, read_ack_message: ReadAckMessage<V>) {
+    fn receive_read_ack_message(&self, read_ack_message: ReadAckMessage<V>) {
         let mut reg = self.reg.lock().unwrap();
         reg.merge_to_max_from_register(&read_ack_message.register);
 
