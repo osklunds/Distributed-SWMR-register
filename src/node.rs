@@ -20,28 +20,27 @@ use std::hash::Hash;
 
 use std::borrow::Cow;
 
-use crate::register::Register;
-use crate::register::Entry;
+use crate::register::*;
 use crate::messages::*;
 
 
 pub struct Node<V> {
-    ts: Arc<Mutex<i32>>,
+    ts: Arc<Mutex<Timestamp>>,
     reg: Arc<Mutex<Register<V>>>,
 
-    id: Arc<i32>,
+    id: Arc<NodeId>,
     socket: Arc<UdpSocket>,
-    socket_addrs: Arc<HashMap<i32, SocketAddr>>,
+    socket_addrs: Arc<HashMap<NodeId, SocketAddr>>,
 
-    acking_processors_for_write: Arc<Mutex<HashSet<i32>>>,
+    acking_processors_for_write: Arc<Mutex<HashSet<NodeId>>>,
     register_being_written: Arc<Mutex<Option<Register<V>>>>,
 
-    acking_processors_for_read: Arc<Mutex<HashSet<i32>>>,
+    acking_processors_for_read: Arc<Mutex<HashSet<NodeId>>>,
     register_being_read: Arc<Mutex<Option<Register<V>>>>,
 }
 
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
-    pub fn new(node_id: i32, socket_addrs: HashMap<i32, SocketAddr>) -> Node<V> {
+    pub fn new(node_id: NodeId, socket_addrs: HashMap<NodeId, SocketAddr>) -> Node<V> {
         let my_socket_addr = socket_addrs.get(&node_id).unwrap();
         let socket = UdpSocket::bind(my_socket_addr).unwrap();
 
@@ -160,7 +159,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
         }
     }
 
-    fn send_message_to(&self, message: &impl Message, receiver_id: i32) {
+    fn send_message_to(&self, message: &impl Message, receiver_id: NodeId) {
         let json_string = serde_json::to_string(message).unwrap();
         let bytes = json_string.as_bytes();
         let dst_socket_addr = self.socket_addrs.get(&receiver_id).unwrap();

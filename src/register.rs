@@ -10,8 +10,8 @@ use std::cmp::Ordering;
 use serde::{Serialize, Deserialize};
 
 
-type Timestamp = i32;
-type NodeId = i32;
+pub type Timestamp = i32;
+pub type NodeId = i32;
 
 fn default_timestamp() -> Timestamp {
     -1
