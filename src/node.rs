@@ -213,7 +213,7 @@ impl<'a, V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + 
     }
     
     fn write_ack_from_majority(&self) -> bool {
-        let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
+        let acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
 
         acking_processors_for_write.len() >= self.number_of_nodes_in_a_majority()
     }

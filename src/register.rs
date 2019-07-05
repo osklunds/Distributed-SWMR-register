@@ -14,9 +14,12 @@ use std::hash::Hasher;
 use serde::{Serialize, Deserialize};
 
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+type Timestamp = i32;
+type NodeId = i32;
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Register<V> {
-    map: HashMap<i32, Entry<V>>
+    map: HashMap<NodeId, Entry<V>>
 }
 
 impl<V: Default + Clone + Ord> Register<V> {
@@ -31,12 +34,14 @@ impl<V: Default + Clone + Ord> Register<V> {
         }
     }
 
-    pub fn get(&mut self, node_id: i32) -> Option<&Entry<V>> {
+    pub fn get(&self, node_id: i32) -> Option<&Entry<V>> {
         self.map.get(&node_id)
     }
 
     pub fn set(&mut self, node_id: i32, entry: Entry<V>) {
-        self.map.insert(node_id, entry);
+        if self.map.insert(node_id, entry) == None {
+            panic!("Trying to set entry in register, but that node_id does not exist.");
+        } 
     }
 
     pub fn merge_to_max_from_register(&mut self, other: &Register<V>) {
@@ -58,8 +63,7 @@ impl<V: Default + Clone + Ord> Register<V> {
 impl<V: Display> Display for Register<V> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut string = String::new();
-        for node_id in self.map.keys() {
-            let entry = &self.map.get(node_id).unwrap();
+        for (node_id, entry) in self.map.iter() {
             string.push_str(&format!("{}: {}", node_id, entry));
         }
 
@@ -67,67 +71,45 @@ impl<V: Display> Display for Register<V> {
     }
 }
 
-impl<V: PartialEq> PartialEq for Register<V> {
-    fn eq(&self, other: &Self) -> bool {
-        for node_id in self.map.keys() {
-            let my_val = self.map.get(&node_id);
-            let other_val = other.map.get(&node_id);
-
-            if my_val != other_val {
-                return false;
-            }
-        }
-        return true;
-    }
-}
-
-impl<V: Eq> Eq for Register<V> {}
-
 impl<V: PartialOrd> PartialOrd for Register<V> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        if self.eq(other) {
-            Some(Ordering::Equal)
-        } else if less_than_or_equal(&self.map, &other.map) {
+        let lhs = &self.map;
+        let rhs = &other.map;
+
+        let mut lhs_has_one_greater = false;
+        let mut rhs_has_one_greater = false;
+
+        for node_id in lhs.keys() {
+            let lhs_val = lhs.get(&node_id).unwrap();
+            let rhs_val = rhs.get(&node_id).expect("Attempting to compare registers with different keys.");
+
+            if lhs_val > rhs_val {
+                lhs_has_one_greater = true;
+            } else if lhs_val < rhs_val {
+                rhs_has_one_greater = true;
+            }
+        }
+        
+        if lhs_has_one_greater && !rhs_has_one_greater {
             Some(Ordering::Less)
-        } else if less_than_or_equal(&other.map, &self.map) {
+        } else if !lhs_has_one_greater && rhs_has_one_greater {
             Some(Ordering::Greater)
+        } else if !lhs_has_one_greater && !rhs_has_one_greater {
+            Some(Ordering::Equal)
         } else {
             None
         }
     }
 }
 
-fn less_than_or_equal<V: PartialOrd>(lhs: &HashMap<i32, V>, rhs: &HashMap<i32, V>) -> bool {
-    for node_id in lhs.keys() {
-        let lhs_val = lhs.get(&node_id).unwrap();
-        let rhs_val = rhs.get(&node_id).expect("Attempting to compare registers with different keys.");
-
-        if lhs_val > rhs_val {
-            return false;
-        }
-    }
-    return true;
-}
-
-impl<V: Hash> Hash for Register<V> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        for node_id in self.map.keys() {
-            let entry = self.map.get(node_id).unwrap();
-
-            node_id.hash(state);
-            entry.hash(state);
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Entry<V> {
-    pub ts: i32,
+    pub ts: Timestamp,
     pub val: V
 }
 
 impl<V> Entry<V> {
-    pub fn new(ts: i32, val: V) -> Entry<V> {
+    pub fn new(ts: Timestamp, val: V) -> Entry<V> {
         Entry {
             ts: ts,
             val: val
@@ -161,8 +143,3 @@ impl<V> Ord for Entry<V> {
     }
 }
 
-impl<V: Hash> Hash for Entry<V> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.ts.hash(state);
-    }
-}

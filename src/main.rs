@@ -5,7 +5,6 @@ extern crate serde;
 
 mod register;
 mod node;
-mod message;
 mod messages;
 
 use std::str;
