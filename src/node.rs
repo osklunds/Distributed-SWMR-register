@@ -2,6 +2,7 @@
 use std::net::UdpSocket;
 use std::net::SocketAddr;
 use std::net::Ipv4Addr;
+use std::io;
 use std::str;
 
 use std::sync::{Arc, Mutex, Condvar};
@@ -40,16 +41,16 @@ pub struct Node<V> {
 }
 
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
-    pub fn new(node_id: NodeId, socket_addrs: HashMap<NodeId, SocketAddr>) -> Node<V> {
-        let my_socket_addr = socket_addrs.get(&node_id).unwrap();
-        let socket = UdpSocket::bind(my_socket_addr).unwrap();
+    pub fn new(node_id: NodeId, socket_addrs: HashMap<NodeId, SocketAddr>) -> io::Result<Node<V>> {
+        let my_socket_addr = socket_addrs.get(&node_id).expect("My node id was not included among the socket addresses.");
+        let socket = UdpSocket::bind(my_socket_addr)?;
 
         let mut node_ids = HashSet::new();
         for key in socket_addrs.keys() {
             node_ids.insert(*key);
         }
 
-        Node {
+        Ok(Node {
             id: Arc::new(node_id),
             ts: Arc::new(Mutex::new(-1)),
             reg: Arc::new(Mutex::new(Register::new(node_ids))),
@@ -59,7 +60,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
             register_being_written: Arc::new(Mutex::new(None)),
             acking_processors_for_read: Arc::new(Mutex::new(HashSet::new())),
             register_being_read: Arc::new(Mutex::new(None)),
-        }
+        })
     }
 
     pub fn recv_loop(&self) {
@@ -70,8 +71,6 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
             let json_string = str::from_utf8(&buf[0..amt]).unwrap();
 
             self.receive_json_string(json_string);
-
-            //self.handle_message(message);
         }
     }
 
@@ -224,5 +223,4 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
     fn number_of_nodes(&self) -> usize {
         self.socket_addrs.len()
     }
-
 }

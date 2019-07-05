@@ -83,7 +83,7 @@ let v: Vec<i32> = five_fives.collect();
     let id = &args[1];
     let id = id.parse::<i32>().unwrap();
 
-    let node: Node<String> = Node::new(id, socket_addrs);
+    let node: Node<String> = Node::new(id, socket_addrs).unwrap();
     let node = Arc::new(node);
 
     let recv_thread_node = Arc::clone(&node);
