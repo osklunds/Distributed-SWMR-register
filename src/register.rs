@@ -22,7 +22,7 @@ fn default_timestamp() -> Timestamp {
 }
 
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Register<V> {
     map: HashMap<NodeId, Entry<V>>
 }
@@ -65,6 +65,18 @@ impl<V: Default + Clone> Register<V> {
     }
 }
 
+impl<V> Register<V> {
+    fn panic_if_not_same_node_ids(&self, other: &Register<V>) {
+        for node_id in self.map.keys() {
+            other.map.get(node_id).expect("Comparing eq for two registers with different node ids.");
+        }
+
+        for node_id in other.map.keys() {
+            self.map.get(node_id).expect("Comparing eq for two registers with different node ids.");
+        }
+    }
+}
+
 impl<V: Display> Display for Register<V> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut sorted_map = BTreeMap::new();
@@ -80,8 +92,22 @@ impl<V: Display> Display for Register<V> {
     }
 }
 
+impl<V: PartialEq> PartialEq for Register<V> {
+    fn eq(&self, other: &Self) -> bool {
+        if cfg!(debug_assertions) {
+            self.panic_if_not_same_node_ids(other);
+        }
+
+        self.map == other.map
+    }
+}
+
 impl<V: PartialOrd> PartialOrd for Register<V> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if cfg!(debug_assertions) {
+            self.panic_if_not_same_node_ids(other);
+        }
+
         let lhs = &self.map;
         let rhs = &other.map;
 
@@ -90,7 +116,7 @@ impl<V: PartialOrd> PartialOrd for Register<V> {
 
         for node_id in lhs.keys() {
             let lhs_val = lhs.get(&node_id).unwrap();
-            let rhs_val = rhs.get(&node_id).expect("Attempting to compare registers with different keys.");
+            let rhs_val = rhs.get(&node_id).unwrap();
 
             if lhs_val > rhs_val {
                 lhs_has_one_greater = true;
@@ -229,7 +255,33 @@ mod tests {
         assert_eq!(string, correct);
     }
 
+    #[test]
+    fn test_registers_equal() {
+        let reg1 = register_for_tests();
+        let reg2 = register_for_tests();
 
+        assert_eq!(reg1, reg2);
+    }
+
+    #[test]
+    fn test_registers_inequal_entries() {
+        let reg1 = register_for_tests();
+        let mut reg2 = register_for_tests();
+        reg2.set(1, Entry::new(7, String::from("Rust")));
+
+        assert_ne!(reg1, reg2);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_registers_inequal_node_ids() {
+        let reg1 = register_for_tests();
+        let mut node_ids = HashSet::new();
+        node_ids.insert(5);
+        let reg2 = Register::new(node_ids);
+
+        assert_ne!(reg1, reg2);
+    }
 
 }
 
