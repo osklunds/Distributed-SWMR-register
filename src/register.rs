@@ -17,13 +17,18 @@ use serde::{Serialize, Deserialize};
 type Timestamp = i32;
 type NodeId = i32;
 
+fn default_timestamp() -> Timestamp {
+    -1
+}
+
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Register<V> {
     map: HashMap<NodeId, Entry<V>>
 }
 
-impl<V: Default + Clone + Ord> Register<V> {
-    pub fn new(node_ids: HashSet<i32>) -> Register<V> {
+impl<V: Default + Clone> Register<V> {
+    pub fn new(node_ids: HashSet<NodeId>) -> Register<V> {
         let mut map = HashMap::new();
         for node_id in node_ids {
             map.insert(node_id, Entry::new(-1, V::default()));
@@ -141,5 +146,49 @@ impl<V> Ord for Entry<V> {
     fn cmp(&self, other:&Self) -> Ordering {
         self.ts.cmp(&other.ts)
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn node_ids_for_tests() -> HashSet<NodeId> {
+        let mut node_ids = HashSet::new();
+        node_ids.insert(1);
+        node_ids.insert(2);
+        node_ids.insert(3);
+        node_ids.insert(4);
+        node_ids
+    }
+
+    #[test]
+    fn test_that_new_contains_provided_node_ids() {
+        let reg: Register<String> = Register::new(node_ids_for_tests());
+
+        for node_id in node_ids_for_tests().iter() {
+            assert!(reg.map.contains_key(node_id));
+        }
+    }
+
+    #[test]
+    fn test_that_new_contains_no_other_node_ids() {
+        let reg: Register<String> = Register::new(node_ids_for_tests());
+
+        for node_id in reg.map.keys() {
+            assert!(node_ids_for_tests().contains(node_id));
+        }
+    }
+
+    #[test]
+    fn test_that_from_new_timestamps_are_default() {
+        let reg: Register<String> = Register::new(node_ids_for_tests());
+
+        for (_, entry) in reg.map.iter() {
+            assert_eq!(entry.ts, default_timestamp());
+        }
+    }
+
+
+
 }
 
