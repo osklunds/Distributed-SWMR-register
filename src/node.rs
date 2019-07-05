@@ -40,7 +40,7 @@ pub struct Node<V> {
     register_being_read: Arc<Mutex<Option<Register<V>>>>,
 }
 
-impl<V: Default + Serialize + DeserializeOwned + Debug + Clone + Ord + Eq + Hash> Node<V> {
+impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
     pub fn new(node_id: i32, socket_addrs: HashMap<i32, SocketAddr>) -> Node<V> {
         let my_socket_addr = socket_addrs.get(&node_id).unwrap();
         let socket = UdpSocket::bind(my_socket_addr).unwrap();

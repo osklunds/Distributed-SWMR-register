@@ -88,7 +88,7 @@ impl<V: Display> Display for Register<V> {
     }
 }
 
-impl<V: PartialEq> PartialEq for Register<V> {
+impl<V> PartialEq for Register<V> {
     fn eq(&self, other: &Self) -> bool {
         if cfg!(debug_assertions) {
             self.panic_if_not_same_node_ids(other);
@@ -98,7 +98,7 @@ impl<V: PartialEq> PartialEq for Register<V> {
     }
 }
 
-impl<V: PartialOrd> PartialOrd for Register<V> {
+impl<V> PartialOrd for Register<V> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         if cfg!(debug_assertions) {
             self.panic_if_not_same_node_ids(other);
