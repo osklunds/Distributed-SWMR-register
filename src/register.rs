@@ -124,13 +124,15 @@ impl<V: PartialOrd> PartialOrd for Register<V> {
                 rhs_has_one_greater = true;
             }
         }
-        
-        if lhs_has_one_greater && !rhs_has_one_greater {
-            Some(Ordering::Less)
-        } else if !lhs_has_one_greater && rhs_has_one_greater {
-            Some(Ordering::Greater)
-        } else if !lhs_has_one_greater && !rhs_has_one_greater {
+
+        let eq = !lhs_has_one_greater && !rhs_has_one_greater;
+
+        if eq {
             Some(Ordering::Equal)
+        } else if lhs_has_one_greater && !rhs_has_one_greater && !eq {
+            Some(Ordering::Greater)
+        } else if !lhs_has_one_greater && rhs_has_one_greater && !eq {
+            Some(Ordering::Less)
         } else {
             None
         }
@@ -191,8 +193,21 @@ mod tests {
         node_ids
     }
 
+    fn timestamp_for_tests() -> Timestamp {
+        10
+    }
+
+    fn value_for_tests() -> String {
+        String::from("Rust")
+    }
+
     fn register_for_tests() -> Register<String> {
-        Register::new(node_ids_for_tests())
+        let mut reg = Register::new(node_ids_for_tests());
+        for &node_id in node_ids_for_tests().iter() {
+            reg.set(node_id, Entry::new(timestamp_for_tests(), value_for_tests()));
+        }
+
+        reg
     }
 
     #[test]
@@ -215,7 +230,7 @@ mod tests {
 
     #[test]
     fn test_that_from_new_timestamps_are_default() {
-        let reg = register_for_tests();
+        let reg: Register<String> = Register::new(node_ids_for_tests());
 
         for (_, entry) in reg.map.iter() {
             assert_eq!(entry.ts, default_timestamp());
@@ -226,7 +241,7 @@ mod tests {
     fn test_that_get_works_for_existing_node_id() {
         let reg = register_for_tests();
 
-        assert_eq!(*reg.get(1), Entry::new(default_timestamp(), String::default()));
+        assert_eq!(*reg.get(1), Entry::new(timestamp_for_tests(), value_for_tests()));
     }
 
     #[test]
@@ -239,7 +254,7 @@ mod tests {
     #[test]
     fn test_that_set_works_for_existing_node_id() {
         let mut reg = register_for_tests();
-        let entry = Entry::new(10, String::from("Hi"));
+        let entry = Entry::new(timestamp_for_tests(), String::from("Hi"));
         reg.set(1, entry.clone());
 
         assert_eq!(*reg.get(1), entry);
@@ -250,7 +265,7 @@ mod tests {
         let mut reg = register_for_tests();
         reg.set(2, Entry::new(7, String::from("Hi")));
         let string = format!("{}", reg);
-        let correct = String::from("1: [ts = -1, val = ]\n2: [ts = 7, val = Hi]\n3: [ts = -1, val = ]\n4: [ts = -1, val = ]");
+        let correct = String::from(format!("1: [ts = {}, val = {}]\n2: [ts = 7, val = Hi]\n3: [ts = {}, val = {}]\n4: [ts = {}, val = {}]", timestamp_for_tests(), value_for_tests(), timestamp_for_tests(), value_for_tests(), timestamp_for_tests(), value_for_tests()));
 
         assert_eq!(string, correct);
     }
@@ -267,14 +282,14 @@ mod tests {
     fn test_registers_inequal_entries() {
         let reg1 = register_for_tests();
         let mut reg2 = register_for_tests();
-        reg2.set(1, Entry::new(7, String::from("Rust")));
+        reg2.set(1, Entry::new(7, value_for_tests()));
 
         assert_ne!(reg1, reg2);
     }
 
     #[test]
     #[should_panic]
-    fn test_registers_inequal_node_ids() {
+    fn test_registers_eq_inequal_node_ids() {
         let reg1 = register_for_tests();
         let mut node_ids = HashSet::new();
         node_ids.insert(5);
@@ -282,6 +297,64 @@ mod tests {
 
         assert_ne!(reg1, reg2);
     }
+
+    #[test]
+    #[should_panic]
+    fn test_registers_ord_inequal_node_ids() {
+        let reg1 = register_for_tests();
+        let mut node_ids = HashSet::new();
+        node_ids.insert(5);
+        let reg2 = Register::new(node_ids);
+
+        assert_eq!(reg1 >= reg2, false);
+    }
+
+    #[test]
+    fn test_registers_leq_for_equal() {
+        let reg1 = register_for_tests();
+        let reg2 = register_for_tests();
+
+        assert!(reg2 <= reg1);
+    }
+
+    #[test]
+    fn test_registers_leq_for_one_less_entry() {
+        let reg1 = register_for_tests();
+        let mut reg2 = register_for_tests();
+        reg2.set(1, Entry::new(timestamp_for_tests() - 1, value_for_tests()));
+
+        assert!(reg2 <= reg1);
+    }
+
+    #[test]
+    fn test_registers_leq_for_one_less_and_one_greater_entry() {
+        let reg1 = register_for_tests();
+        let mut reg2 = register_for_tests();
+        reg2.set(1, Entry::new(timestamp_for_tests() - 1, value_for_tests()));
+        reg2.set(2, Entry::new(timestamp_for_tests() + 1, value_for_tests()));
+
+        assert!(!(reg2 <= reg1));
+    }
+
+    #[test]
+    fn test_registers_le_for_equal() {
+        let reg1 = register_for_tests();
+        let reg2 = register_for_tests();
+
+        assert!(!(reg2 < reg1));
+    }
+
+    #[test]
+    fn test_registers_le_for_one_less_entry() {
+        let reg1 = register_for_tests();
+        let mut reg2 = register_for_tests();
+        reg2.set(1, Entry::new(timestamp_for_tests() - 1, value_for_tests()));
+
+        assert!(reg2 < reg1);
+    }
+
+
+
 
 }
 
