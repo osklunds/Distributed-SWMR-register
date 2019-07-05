@@ -1,34 +1,47 @@
 
 use serde::{Serialize, Deserialize};
+use std::borrow::Cow;
 
 use crate::register::Register;
 
+pub trait Message : Serialize {}
+
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone)]
-pub struct WriteMessage<V> {
+pub struct WriteMessage<'a, V: Clone> {
     #[serde(rename = "WriteMessage")]
     pub sender: i32,
-    pub register: Register<V>
+    pub register: Cow<'a, Register<V>>
 }
 
-// Idea: custom serialization. Try to deserialize to the different classes.
+impl<'a, V: Serialize + Clone> Message for WriteMessage<'a, V> {}
+
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone)]
-pub struct WriteAckMessage<V> {
+pub struct WriteAckMessage<'a, V: Clone> {
     #[serde(rename = "WriteAckMessage")]
     pub sender: i32,
-    pub register: Register<V>
+    pub register: Cow<'a, Register<V>>
 }
 
+impl<'a, V: Serialize + Clone> Message for WriteAckMessage<'a, V> {}
+
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone)]
-pub struct ReadMessage<V> {
+pub struct ReadMessage<'a, V: Clone> {
     #[serde(rename = "ReadMessage")]
     pub sender: i32,
-    pub register: Register<V>
+    pub register: Cow<'a, Register<V>>
 }
 
+impl<'a, V: Serialize + Clone> Message for ReadMessage<'a, V> {}
+
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone)]
-pub struct ReadAckMessage<V> {
+pub struct ReadAckMessage<'a, V: Clone> {
     #[serde(rename = "ReadAckMessage")]
     pub sender: i32,
-    pub register: Register<V>
+    pub register: Cow<'a, Register<V>>
 }
+
+impl<'a, V: Serialize + Clone> Message for ReadAckMessage<'a, V> {}

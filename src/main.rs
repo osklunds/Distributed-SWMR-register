@@ -30,6 +30,7 @@ use register::Register;
 
 
 fn main() {
+    /*
     let mut nodes = HashSet::new();
     nodes.insert(3);
     let reg: Register<String> = Register::new(nodes);
@@ -48,6 +49,7 @@ fn main() {
 
 
     return;
+    */
     let mut socket_addrs = HashMap::new();
 
     for i in 0..15 {
@@ -78,7 +80,7 @@ fn main() {
 
             loop {
                 i += 1;
-                //client_op_thread_node.write(format!("{}", &i));
+                client_op_thread_node.write(format!("{}", &i));
 
                 if i % 1000 == 0 {
                     println!("{}", i);
