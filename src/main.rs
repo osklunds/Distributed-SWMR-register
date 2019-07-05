@@ -25,10 +25,29 @@ use node::Node;
 use messages::WriteMessage;
 use messages::ReadMessage;
 use register::Register;
+use register::Entry;
 
+    fn node_ids_for_tests() -> HashSet<i32> {
+        let mut node_ids = HashSet::new();
+        node_ids.insert(1);
+        node_ids.insert(2);
+        node_ids.insert(3);
+        node_ids.insert(4);
+        node_ids
+    }
 
+fn register_for_tests() -> Register<String> {
+        Register::new(node_ids_for_tests())
+    }
 
 fn main() {
+    let set = node_ids_for_tests();
+    //let x: Vec<i32> = set.iter().collect();
+
+let five_fives = std::iter::repeat(5).take(5);
+
+let v: Vec<i32> = five_fives.collect();
+
     /*
     let mut nodes = HashSet::new();
     nodes.insert(3);

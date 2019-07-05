@@ -1,5 +1,5 @@
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, BTreeMap};
 
 use std::fmt;
 use std::fmt::Formatter;
@@ -67,12 +67,16 @@ impl<V: Default + Clone> Register<V> {
 
 impl<V: Display> Display for Register<V> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut string = String::new();
+        let mut sorted_map = BTreeMap::new();
         for (node_id, entry) in self.map.iter() {
-            string.push_str(&format!("{}: {}", node_id, entry));
+            sorted_map.insert(node_id, entry);
+        }
+        let mut string = String::new();
+        for (node_id, entry) in sorted_map.iter() {
+            string.push_str(&format!("{}: {}\n", node_id, entry));
         }
 
-        write!(f, "{}", string)
+        write!(f, "{}", string.trim_end())
     }
 }
 
@@ -213,6 +217,16 @@ mod tests {
         reg.set(1, entry.clone());
 
         assert_eq!(*reg.get(1), entry);
+    }
+
+    #[test]
+    fn test_display_register() {
+        let mut reg = register_for_tests();
+        reg.set(2, Entry::new(7, String::from("Hi")));
+        let string = format!("{}", reg);
+        let correct = String::from("1: [ts = -1, val = ]\n2: [ts = 7, val = Hi]\n3: [ts = -1, val = ]\n4: [ts = -1, val = ]");
+
+        assert_eq!(string, correct);
     }
 
 
