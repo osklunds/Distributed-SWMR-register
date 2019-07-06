@@ -5,8 +5,8 @@ use std::net::Ipv4Addr;
 use std::io;
 use std::str;
 
-use std::sync::{Arc, Mutex, Condvar};
-use std::sync::mpsc::channel;
+use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::mpsc::{channel, Sender, Receiver};
 use std::{thread, time};
 
 use std::collections::{HashMap, HashSet};
@@ -39,6 +39,9 @@ pub struct Node<V> {
 
     acking_processors_for_read: Arc<Mutex<HashSet<NodeId>>>,
     register_being_read: Arc<Mutex<Option<Register<V>>>>,
+
+    receive_end: Arc<Mutex<Option<Receiver<()>>>>,
+    send_end: Arc<Mutex<Option<Sender<()>>>>
 }
 
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
@@ -61,7 +64,19 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
             register_being_written: Arc::new(Mutex::new(None)),
             acking_processors_for_read: Arc::new(Mutex::new(HashSet::new())),
             register_being_read: Arc::new(Mutex::new(None)),
+            receive_end: Arc::new(Mutex::new(None)),
+            send_end: Arc::new(Mutex::new(None))
         })
+    }
+
+    pub fn set_receive_end(&self, new_receive_end: Receiver<()>) {
+        let mut receive_end = self.receive_end.lock().unwrap();
+        *receive_end = Some(new_receive_end);
+    }
+
+    pub fn set_send_end(&self, new_send_end: Sender<()>) {
+        let mut send_end = self.send_end.lock().unwrap();
+        *send_end = Some(new_send_end);
     }
 
     pub fn recv_loop(&self) {
@@ -140,11 +155,25 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
         reg.merge_to_max_from_register(&write_ack_message.register);
 
         let mut register_being_written = self.register_being_written.lock().unwrap();
-        if let Some(register_being_written) = &*register_being_written {
-            if *write_ack_message.register >= *register_being_written {
+        if let Some(register_being_written2) = &*register_being_written {
+            if *write_ack_message.register >= *register_being_written2 {
                 let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
                 acking_processors_for_write.insert(write_ack_message.sender);
             }
+
+            if self.write_ack_from_majority() {
+                let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
+                acking_processors_for_write.clear();
+                *register_being_written = None;
+
+                let mut send_end = self.send_end.lock().unwrap();
+
+                if let Some(tx) = &*send_end {
+                    tx.send(()).unwrap();
+                }
+
+            }
+
 
             // TODO: Send () on a channel here
         }
@@ -224,10 +253,18 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
             self.broadcast_message(&write_message);
         }
 
-        while !self.write_ack_from_majority() {
-            //thread::sleep(time::Duration::from_millis(5));
+        {
+            let mut receive_end = self.receive_end.lock().unwrap();
+
+            if let Some(rx) = &*receive_end {
+                // Wait until a majority has acked
+                rx.recv().unwrap();
+            } else {
+                panic!("Must have rx in client.");
+            }
         }
 
+        
         let mut register_being_written = self.register_being_written.lock().unwrap();
         *register_being_written = None;
         let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
