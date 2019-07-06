@@ -39,9 +39,10 @@ use settings::SETTINGS;
 
 
 fn main() {
-    println!("The configuration is {:#?}", *SETTINGS);
-
-    terminal_output::prin("hej");
+    loop {
+        println!("Hej, jag är {}", SETTINGS.node_id);
+        thread::sleep(time::Duration::from_millis(300));
+    }
 
 
 

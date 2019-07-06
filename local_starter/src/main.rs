@@ -1,11 +1,8 @@
 
 use std::process::Command;
-use std::str;
-use std::{thread, time};
-use std::fs::File;
 use std::fs;
 use std::path::Path;
-use std::path;
+use std::vec::Vec;
 
 use clap::{Arg, App, ArgMatches};
 
@@ -14,37 +11,25 @@ use clap::{Arg, App, ArgMatches};
 fn main() {
     let matches = get_matches();
     let number_of_nodes = number_of_nodes(&matches);
-    let number_of_writers = number_of_writers(&matches);
-    let number_of_readers = number_of_readers(&matches);
+    let _number_of_writers = number_of_writers(&matches);
+    let _number_of_readers = number_of_readers(&matches);
 
     create_hosts_file(number_of_nodes);
 
-
-
-
-
-    /*
-    let node_id = 2;
-    let color = "Green";
-
-
-
-
-
-
-
-
-    let mut child = Command::new("/bin/bash")
+    let mut child_processes = Vec::new();
+    for node_id in 1..number_of_nodes+1 {
+        let child_process = Command::new("/bin/bash")
                 .arg("-c")
-                .arg("cargo run --manifest-path ../application/Cargo.toml -- 2 hosts.txt Green")
+                .arg(format!("cargo run --manifest-path ../application/Cargo.toml -- {} hosts.txt Green", node_id))
                 .spawn()
                 .expect("failed to execute process");
 
-
-    thread::sleep(time::Duration::from_millis(5000));
+        child_processes.push(child_process);
+    }
  
-    child.kill();
-    */
+    for child_process in child_processes.iter_mut() {
+        child_process.wait().unwrap();
+    }
 }
 
 fn get_matches() -> ArgMatches<'static> {
