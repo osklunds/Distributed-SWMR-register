@@ -40,10 +40,7 @@ use settings::SETTINGS;
 fn main() {
     println!("The configuration is {:#?}", *SETTINGS);
 
-    loop {
-        println!("{}", "In rust".green());
-        thread::sleep(time::Duration::from_millis(1000));
-    }
+
 
     return;
 
