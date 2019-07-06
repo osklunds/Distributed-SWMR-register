@@ -39,7 +39,7 @@ impl Settings {
 }
 
 fn get_matches() -> ArgMatches<'static> {
-    let colors = &["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White"];
+    let colors = &["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan"];
     App::new("Distributed SWMR registers")
         .version("0.1")
         .author("Oskar Lundström")

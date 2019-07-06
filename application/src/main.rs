@@ -36,54 +36,14 @@ use messages::ReadMessage;
 use register::Register;
 use register::Entry;
 use settings::SETTINGS;
+use terminal_output::printlnu;
 
 
 fn main() {
-    loop {
-        println!("Hej, jag är {}", SETTINGS.node_id);
-        thread::sleep(time::Duration::from_millis(300));
-    }
+    let node_id = SETTINGS.node_id;
+    let socket_addrs = SETTINGS.socket_addrs.clone();
 
-
-
-    return;
-
-    /*
-    let mut nodes = HashSet::new();
-    nodes.insert(3);
-    let reg: Register<String> = Register::new(nodes);
-    let m = WriteMessage {
-        sender: 8,
-        register: reg
-    };
-
-    let json_string = serde_json::to_string(&m).unwrap();
-
-    println!("{}", json_string);
-
-    let x: Result<ReadMessage<String>, serde_json::error::Error> = serde_json::from_str(&json_string);
-
-    println!("{:?}", x);
-
-
-    return;
-    */
-    let mut socket_addrs = HashMap::new();
-
-    for i in 0..15 {
-        let val = 12345 + i;
-        socket_addrs.insert(i+1, format!("127.0.0.1:{}", val).parse().unwrap());
-
-        //println!("{:?}", socket_addrs.get(&(i+1)));
-    }
-
-
-    let args: Vec<String> = env::args().collect();
-
-    let id = &args[1];
-    let id = id.parse::<i32>().unwrap();
-
-    let node: Node<String> = Node::new(id, socket_addrs).unwrap();
+    let node: Node<String> = Node::new(node_id, socket_addrs).unwrap();
     let node = Arc::new(node);
 
     let recv_thread_node = Arc::clone(&node);
@@ -93,7 +53,20 @@ fn main() {
 
     let client_op_thread_node = Arc::clone(&node);
     let client_op_thread_handle = thread::spawn(move || {
-        if id == 1 {
+        loop {
+            printlnu("Hej");
+
+            thread::sleep(time::Duration::from_millis(300));
+
+        }
+
+
+        
+        if node_id == 1 {
+
+
+
+
             let mut i = 0;
 
             loop {
@@ -111,11 +84,6 @@ fn main() {
 
     recv_thread_handle.join().unwrap();
     client_op_thread_handle.join().unwrap();
-
-
-
-
-
 }
     /*
     return;

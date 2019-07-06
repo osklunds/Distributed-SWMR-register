@@ -5,7 +5,8 @@ use std::path::Path;
 use std::vec::Vec;
 
 use clap::{Arg, App, ArgMatches};
-
+use colored::Color;
+use colored::Color::*;
 
 
 fn main() {
@@ -18,9 +19,10 @@ fn main() {
 
     let mut child_processes = Vec::new();
     for node_id in 1..number_of_nodes+1 {
+        let color = color_from_node_id(node_id);
         let child_process = Command::new("/bin/bash")
                 .arg("-c")
-                .arg(format!("cargo run --manifest-path ../application/Cargo.toml -- {} hosts.txt Green", node_id))
+                .arg(format!("cargo run --manifest-path ../application/Cargo.toml -- {} hosts.txt {:?}", node_id, color))
                 .spawn()
                 .expect("failed to execute process");
 
@@ -100,4 +102,9 @@ fn hosts_file_string(number_of_nodes: i32) -> String {
     }
 
     string
+}
+
+fn color_from_node_id(node_id: i32) -> Color {
+    let colors = vec![Black, Red, Green, Yellow, Blue, Magenta, Cyan];
+    colors[(node_id as usize) % 7]
 }
