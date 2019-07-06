@@ -23,6 +23,7 @@ use std::borrow::Cow;
 
 use crate::register::*;
 use crate::messages::*;
+use crate::terminal_output::printlnu;
 
 
 pub struct Node<V> {
@@ -75,22 +76,47 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
     }
 
     fn receive_json_string(&self, json: &str) {
-        let write_message: Result<WriteMessage<V>, Error> = serde_json::from_str(&json);
-        let write_ack_message: Result<WriteAckMessage<V>, Error> = serde_json::from_str(&json);
-        let read_message: Result<ReadMessage<V>, Error> = serde_json::from_str(&json);
-        let read_ack_message: Result<ReadAckMessage<V>, Error> = serde_json::from_str(&json);
-
-        if let Ok(write_message) = write_message {
-            self.receive_write_message(write_message);
-        } else if let Ok(write_ack_message) = write_ack_message {
-            self.receive_write_ack_message(write_ack_message);
-        } else if let Ok(read_message) = read_message {
-            self.receive_read_message(read_message);
-        } else if let Ok(read_ack_message) = read_ack_message {
-            self.receive_read_ack_message(read_ack_message);
-        } else {
-            println!("Could not deserialize: {}",json);
+        if self.json_string_is_write_message(json) {
+            if let Ok(write_message) = serde_json::from_str(&json) {
+                return self.receive_write_message(write_message);
+            }
         }
+
+        if self.json_string_is_write_ack_message(json) {
+            if let Ok(write_ack_message) = serde_json::from_str(&json) {
+                return self.receive_write_ack_message(write_ack_message);
+            }
+        }
+
+        if self.json_string_is_read_message(json) {
+            if let Ok(read_message) = serde_json::from_str(&json) {
+                return self.receive_read_message(read_message);
+            }
+        }
+
+        if self.json_string_is_read_ack_message(json) {
+            if let Ok(read_ack_message) = serde_json::from_str(&json) {
+                return self.receive_read_ack_message(read_ack_message);
+            }
+        }
+
+        printlnu(format!("Could not parse the message {}", json));
+    }
+
+    fn json_string_is_write_message(&self, json: &str) -> bool {
+        json.starts_with("{\"WriteMessage\":")
+    }
+
+    fn json_string_is_write_ack_message(&self, json: &str) -> bool {
+        json.starts_with("{\"WriteAckMessage\":")
+    }
+
+    fn json_string_is_read_message(&self, json: &str) -> bool {
+        json.starts_with("{\"ReadMessage\":")
+    }
+
+    fn json_string_is_read_ack_message(&self, json: &str) -> bool {
+        json.starts_with("{\"ReadAckMessage\":")
     }
 
     fn receive_write_message(&self, write_message: WriteMessage<V>) {
@@ -189,17 +215,17 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
 
             write_message = WriteMessage {
                 sender: *self.id,
-                register: Cow::Borrowed(&reg)
+                register: Cow::Borrowed(&reg_to_write)
             };
 
             let mut register_being_written = self.register_being_written.lock().unwrap();
-            *register_being_written = Some(reg_to_write);
+            *register_being_written = Some(reg.clone());
 
             self.broadcast_message(&write_message);
         }
 
         while !self.write_ack_from_majority() {
-            thread::sleep(time::Duration::from_millis(5));
+            //thread::sleep(time::Duration::from_millis(5));
         }
 
         let mut register_being_written = self.register_being_written.lock().unwrap();

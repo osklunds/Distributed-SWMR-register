@@ -17,6 +17,14 @@ fn main() {
 
     create_hosts_file(number_of_nodes);
 
+    let mut build_process = Command::new("/bin/bash")
+        .arg("-c")
+        .arg(format!("cargo build --manifest-path ../application/Cargo.toml"))
+        .spawn()
+        .expect("failed to execute process");
+
+    build_process.wait().unwrap();
+
     let mut child_processes = Vec::new();
     for node_id in 1..number_of_nodes+1 {
         let color = color_from_node_id(node_id);
