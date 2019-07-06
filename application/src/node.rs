@@ -91,6 +91,11 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
     }
 
     fn receive_json_string(&self, json: &str) {
+        if let Ok(w) = serde_json::from_str(&json) {
+            let x: WriteMessage<V> = w;
+        }
+
+
         if self.json_string_is_write_message(json) {
             if let Ok(write_message) = serde_json::from_str(&json) {
                 return self.receive_write_message(write_message);
@@ -151,31 +156,40 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
     }
 
     fn receive_write_ack_message(&self, write_ack_message: WriteAckMessage<V>) {
-        let mut reg = self.reg.lock().unwrap();
-        reg.merge_to_max_from_register(&write_ack_message.register);
+        {
+            let mut reg = self.reg.lock().unwrap();
+            reg.merge_to_max_from_register(&write_ack_message.register);
+        }
 
         let mut register_being_written = self.register_being_written.lock().unwrap();
-        if let Some(register_being_written2) = &*register_being_written {
-            if *write_ack_message.register >= *register_being_written2 {
+        let mut new_reg = false;
+        let mut majority_reached = false;
+
+        if let Some(register_being_written) = &*register_being_written {
+            if *write_ack_message.register >= *register_being_written {
                 let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
                 acking_processors_for_write.insert(write_ack_message.sender);
+
+                new_reg = true;
             }
+        }
 
-            if self.write_ack_from_majority() {
-                let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
-                acking_processors_for_write.clear();
-                *register_being_written = None;
+        if new_reg && self.write_ack_from_majority() {
+            majority_reached = true;
+            let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
+            acking_processors_for_write.clear();
+        }
 
-                let mut send_end = self.send_end.lock().unwrap();
+        if majority_reached {
+            *register_being_written = None;
 
-                if let Some(tx) = &*send_end {
-                    tx.send(()).unwrap();
-                }
+            let mut send_end = self.send_end.lock().unwrap();
 
+            if let Some(tx) = &*send_end {
+                tx.send(()).unwrap();
+            } else {
+                panic!("Must have a send end.");
             }
-
-
-            // TODO: Send () on a channel here
         }
     }
 
