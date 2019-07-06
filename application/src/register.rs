@@ -304,4 +304,43 @@ mod tests {
 
         assert!(reg2 < reg1);
     }
+
+    #[test]
+    fn test_merge_to_max_overwrites_lower() {
+        let mut reg1 = register_for_tests();
+        let mut reg2 = register_for_tests();
+
+        reg1.set(1, Entry::new(timestamp_for_tests() - 1, value_for_tests()));
+        reg2.set(2, Entry::new(timestamp_for_tests() + 1, value_for_tests()));
+
+        reg1.merge_to_max_from_register(&reg2);
+
+        assert_eq!(*reg1.get(1), Entry::new(timestamp_for_tests(), value_for_tests()));
+    }
+
+    #[test]
+    fn test_merge_to_max_includes_higher() {
+        let mut reg1 = register_for_tests();
+        let mut reg2 = register_for_tests();
+
+        reg1.set(1, Entry::new(timestamp_for_tests() - 1, value_for_tests()));
+        reg2.set(2, Entry::new(timestamp_for_tests() + 1, value_for_tests()));
+
+        reg1.merge_to_max_from_register(&reg2);
+
+        assert_eq!(*reg1.get(2), Entry::new(timestamp_for_tests() + 1, value_for_tests()));
+    }
+
+    #[test]
+    fn test_merge_to_max_keeps_equals_intact() {
+        let mut reg1 = register_for_tests();
+        let mut reg2 = register_for_tests();
+
+        reg1.set(1, Entry::new(timestamp_for_tests() - 1, value_for_tests()));
+        reg2.set(2, Entry::new(timestamp_for_tests() + 1, value_for_tests()));
+
+        reg1.merge_to_max_from_register(&reg2);
+
+        assert_eq!(*reg1.get(3), Entry::new(timestamp_for_tests(), value_for_tests()));
+    }
 }
