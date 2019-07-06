@@ -1,11 +1,14 @@
 
 #![allow(dead_code, unused_variables, unused_imports, unused_mut)]
 
+#[macro_use]
+extern crate lazy_static;
 extern crate serde;
 
 mod register;
 mod node;
 mod messages;
+mod settings;
 
 use std::str;
 
@@ -21,32 +24,28 @@ use std::env;
 use serde_json;
 use serde::{Serialize, Deserialize};
 
+use colored::*;
+
+use clap::{Arg, App, SubCommand};
+
+
 use node::Node;
 use messages::WriteMessage;
 use messages::ReadMessage;
 use register::Register;
 use register::Entry;
+use settings::SETTINGS;
 
-    fn node_ids_for_tests() -> HashSet<i32> {
-        let mut node_ids = HashSet::new();
-        node_ids.insert(1);
-        node_ids.insert(2);
-        node_ids.insert(3);
-        node_ids.insert(4);
-        node_ids
-    }
-
-fn register_for_tests() -> Register<String> {
-        Register::new(node_ids_for_tests())
-    }
 
 fn main() {
-    let set = node_ids_for_tests();
-    //let x: Vec<i32> = set.iter().collect();
+    println!("The configuration is {:#?}", *SETTINGS);
 
-let five_fives = std::iter::repeat(5).take(5);
+    loop {
+        println!("{}", "In rust".green());
+        thread::sleep(time::Duration::from_millis(1000));
+    }
 
-let v: Vec<i32> = five_fives.collect();
+    return;
 
     /*
     let mut nodes = HashSet::new();

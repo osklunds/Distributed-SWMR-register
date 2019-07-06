@@ -8,7 +8,8 @@ fn main() {
     let mut child = Command::new("/bin/bash")
                 .env("RED", "\\033[0;31m")
                 .arg("-c")
-                .arg("printf \"I ${RED}love Stack Overflow\n\"")
+                .arg("printf ${RED}")
+                .arg("cargo run --manifest-path ../application/Cargo.toml --color always")
                 .spawn()
                 .expect("failed to execute process");
 
