@@ -18,6 +18,7 @@ lazy_static! {
 
 #[derive(Debug)]
 pub struct Settings {
+    pub node_id: NodeId,
     pub socket_addrs: HashMap<NodeId, SocketAddr>,
     pub terminal_color: Color
 }
@@ -29,6 +30,9 @@ impl Settings {
                           .version("0.1")
                           .author("Oskar Lundström")
                           .about("Todo")
+                          .arg(Arg::with_name("node-id")
+                                .required(true)
+                                .help("The integer id of this node instance."))
                           .arg(Arg::with_name("hosts-file")
                                 .required(true)
                                 .help("The file with host ids, addresses and ports."))
@@ -51,9 +55,12 @@ impl Settings {
         let string = fs::read_to_string(hosts_file_path).expect("Unable to read file");
         let socket_addrs = socket_addrs_from_string(string);
 
+        let node_id = matches.value_of("node-id").unwrap().parse().unwrap();
+
 
 
         Settings {
+            node_id: node_id,
             socket_addrs: socket_addrs,
             terminal_color: color
         }
