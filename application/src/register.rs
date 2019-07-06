@@ -43,18 +43,13 @@ impl<V: Default + Clone> Register<V> {
     }
 
     pub fn merge_to_max_from_register(&mut self, other: &Register<V>) {
-        // This is an ineffective hack for now
-
-        let mut new_map = HashMap::new();
-
-        for node_id in self.map.keys() {
-            let my_val = self.map.get(node_id).unwrap();
-            let other_val = other.map.get(node_id).unwrap();
-            
-            new_map.insert(*node_id, cmp::max(my_val.clone(), other_val.clone()));
+        for (node_id, entry) in self.map.iter_mut() {
+            let other_entry = other.map.get(node_id).unwrap();
+            if other_entry > entry {
+                entry.ts = other_entry.ts;
+                entry.val = other_entry.val.clone();
+            }
         }
-
-        self.map = new_map;
     }
 }
 
