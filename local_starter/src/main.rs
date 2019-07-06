@@ -3,13 +3,17 @@ use std::process::Command;
 use std::str;
 use std::{thread, time};
 
+use colored::*;
+
 
 fn main() {
+    let node_id = 2;
+    let color = "Green";
+
+
     let mut child = Command::new("/bin/bash")
-                .env("RED", "\\033[0;31m")
                 .arg("-c")
-                .arg("printf ${RED}")
-                .arg("cargo run --manifest-path ../application/Cargo.toml --color always")
+                .arg("cargo run --manifest-path ../application/Cargo.toml -- 2 hosts.txt Green")
                 .spawn()
                 .expect("failed to execute process");
 

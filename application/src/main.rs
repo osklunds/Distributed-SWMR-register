@@ -9,6 +9,7 @@ mod register;
 mod node;
 mod messages;
 mod settings;
+mod terminal_output;
 
 use std::str;
 
@@ -39,6 +40,8 @@ use settings::SETTINGS;
 
 fn main() {
     println!("The configuration is {:#?}", *SETTINGS);
+
+    terminal_output::prin("hej");
 
 
 
