@@ -5,6 +5,7 @@
 extern crate lazy_static;
 extern crate serde;
 
+mod entry;
 mod register;
 mod node;
 mod messages;
@@ -37,7 +38,7 @@ use node::Node;
 use messages::WriteMessage;
 use messages::ReadMessage;
 use register::Register;
-use register::Entry;
+use entry::Entry;
 use settings::SETTINGS;
 use terminal_output::printlnu;
 

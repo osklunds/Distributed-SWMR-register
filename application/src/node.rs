@@ -22,6 +22,7 @@ use std::hash::Hash;
 use std::borrow::Cow;
 
 use crate::register::*;
+use crate::entry::{Entry, Timestamp};
 use crate::messages::*;
 use crate::terminal_output::printlnu;
 
