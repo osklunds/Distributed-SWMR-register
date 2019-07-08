@@ -78,7 +78,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         }
     }
 
-    fn receive_json_string(&self, json: &str) {
+    pub fn receive_json_string(&self, json: &str) {
         if let Ok(w) = serde_json::from_str(&json) {
             let x: WriteMessage<V> = w;
         }
