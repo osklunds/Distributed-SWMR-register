@@ -27,7 +27,7 @@ use crate::messages::*;
 use crate::terminal_output::printlnu;
 
 
-pub struct Node<V> {
+pub struct AbdNode<V> {
     ts: Arc<Mutex<Timestamp>>,
     reg: Arc<Mutex<Register<V>>>,
 
@@ -43,8 +43,8 @@ pub struct Node<V> {
     register_being_read: Arc<Mutex<Option<Register<V>>>>  
 }
 
-impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
-    pub fn new(node_id: NodeId, socket_addrs: HashMap<NodeId, SocketAddr>) -> io::Result<Node<V>> {
+impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
+    pub fn new(node_id: NodeId, socket_addrs: HashMap<NodeId, SocketAddr>) -> io::Result<AbdNode<V>> {
         let my_socket_addr = socket_addrs.get(&node_id).expect("My node id was not included among the socket addresses.");
         let socket = UdpSocket::bind(my_socket_addr)?;
 
@@ -53,7 +53,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
             node_ids.insert(*key);
         }
 
-        Ok(Node {
+        Ok(AbdNode {
             id: Arc::new(node_id),
             ts: Arc::new(Mutex::new(-1)),
             reg: Arc::new(Mutex::new(Register::new(node_ids))),

@@ -7,10 +7,11 @@ extern crate serde;
 
 mod entry;
 mod register;
-mod node;
+mod abd_node;
 mod messages;
 mod settings;
 mod terminal_output;
+mod communicator;
 
 use std::time::SystemTime;
 
@@ -34,7 +35,7 @@ use colored::*;
 use clap::{Arg, App, SubCommand};
 
 
-use node::Node;
+use abd_node::AbdNode;
 use messages::WriteMessage;
 use messages::ReadMessage;
 use register::Register;
@@ -47,7 +48,7 @@ fn main() {
     let node_id = SETTINGS.node_id;
     let socket_addrs = SETTINGS.socket_addrs.clone();
 
-    let node: Node<String> = Node::new(node_id, socket_addrs).unwrap();
+    let node: AbdNode<String> = AbdNode::new(node_id, socket_addrs).unwrap();
     let node = Arc::new(node);
 
     let recv_thread_node = Arc::clone(&node);
