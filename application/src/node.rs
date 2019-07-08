@@ -5,7 +5,7 @@ use std::net::Ipv4Addr;
 use std::io;
 use std::str;
 
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard, Condvar};
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::{thread, time};
 
@@ -37,12 +37,10 @@ pub struct Node<V> {
 
     acking_processors_for_write: Arc<Mutex<HashSet<NodeId>>>,
     register_being_written: Arc<Mutex<Option<Register<V>>>>,
+    write_ack_majority_reached: Arc<Condvar>,
 
     acking_processors_for_read: Arc<Mutex<HashSet<NodeId>>>,
-    register_being_read: Arc<Mutex<Option<Register<V>>>>,
-
-    receive_end: Arc<Mutex<Option<Receiver<()>>>>,
-    send_end: Arc<Mutex<Option<Sender<()>>>>
+    register_being_read: Arc<Mutex<Option<Register<V>>>>  
 }
 
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
@@ -63,21 +61,10 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
             socket_addrs: Arc::new(socket_addrs),
             acking_processors_for_write: Arc::new(Mutex::new(HashSet::new())),
             register_being_written: Arc::new(Mutex::new(None)),
+            write_ack_majority_reached: Arc::new(Condvar::new()),
             acking_processors_for_read: Arc::new(Mutex::new(HashSet::new())),
             register_being_read: Arc::new(Mutex::new(None)),
-            receive_end: Arc::new(Mutex::new(None)),
-            send_end: Arc::new(Mutex::new(None))
         })
-    }
-
-    pub fn set_receive_end(&self, new_receive_end: Receiver<()>) {
-        let mut receive_end = self.receive_end.lock().unwrap();
-        *receive_end = Some(new_receive_end);
-    }
-
-    pub fn set_send_end(&self, new_send_end: Sender<()>) {
-        let mut send_end = self.send_end.lock().unwrap();
-        *send_end = Some(new_send_end);
     }
 
     pub fn recv_loop(&self) {
@@ -95,7 +82,6 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
         if let Ok(w) = serde_json::from_str(&json) {
             let x: WriteMessage<V> = w;
         }
-
 
         if self.json_string_is_write_message(json) {
             if let Ok(write_message) = serde_json::from_str(&json) {
@@ -183,14 +169,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
 
         if majority_reached {
             *register_being_written = None;
-
-            let mut send_end = self.send_end.lock().unwrap();
-
-            if let Some(tx) = &*send_end {
-                tx.send(()).unwrap();
-            } else {
-                panic!("Must have a send end.");
-            }
+            self.write_ack_majority_reached.notify_one();
         }
     }
 
@@ -269,13 +248,10 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Node<V> {
         }
 
         {
-            let mut receive_end = self.receive_end.lock().unwrap();
+            let mut register_being_written = self.register_being_written.lock().unwrap();
 
-            if let Some(rx) = &*receive_end {
-                // Wait until a majority has acked
-                rx.recv().unwrap();
-            } else {
-                panic!("Must have rx in client.");
+            while register_being_written.is_some() {
+                register_being_written = self.write_ack_majority_reached.wait(register_being_written).unwrap();
             }
         }
 

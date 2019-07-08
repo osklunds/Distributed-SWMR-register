@@ -16,7 +16,7 @@ use std::time::SystemTime;
 
 use std::str;
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard, Condvar};
 use std::{thread, time};
 use std::sync::mpsc::channel;
 
@@ -50,17 +50,15 @@ fn main() {
     let node: Node<String> = Node::new(node_id, socket_addrs).unwrap();
     let node = Arc::new(node);
 
-    let (tx,rx) = channel();
-
     let recv_thread_node = Arc::clone(&node);
     let recv_thread_handle = thread::spawn(move || {
-        recv_thread_node.set_send_end(tx);
+    
         recv_thread_node.recv_loop();
     });
 
     let client_op_thread_node = Arc::clone(&node);
     let client_op_thread_handle = thread::spawn(move || {
-        client_op_thread_node.set_receive_end(rx);
+        
 
         if node_id == 1 {
             // Temp hack to wait for the other nodes to start
