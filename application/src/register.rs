@@ -21,9 +21,9 @@ pub struct Register<V> {
 }
 
 impl<V: Default + Clone> Register<V> {
-    pub fn new(node_ids: HashSet<NodeId>) -> Register<V> {
+    pub fn new(node_ids: &HashSet<NodeId>) -> Register<V> {
         let mut map = HashMap::new();
-        for node_id in node_ids {
+        for &node_id in node_ids {
             map.insert(node_id, Entry::new(-1, V::default()));
         }
 

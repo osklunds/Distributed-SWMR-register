@@ -32,8 +32,7 @@ pub struct AbdNode<V> {
     reg: Arc<Mutex<Register<V>>>,
 
     id: Arc<NodeId>,
-    socket: Arc<UdpSocket>,
-    socket_addrs: Arc<HashMap<NodeId, SocketAddr>>,
+    node_ids: Arc<HashSet<NodeId>>,
 
     acking_processors_for_write: Arc<Mutex<HashSet<NodeId>>>,
     register_being_written: Arc<Mutex<Option<Register<V>>>>,
@@ -44,29 +43,21 @@ pub struct AbdNode<V> {
 }
 
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
-    pub fn new(node_id: NodeId, socket_addrs: HashMap<NodeId, SocketAddr>) -> io::Result<AbdNode<V>> {
-        let my_socket_addr = socket_addrs.get(&node_id).expect("My node id was not included among the socket addresses.");
-        let socket = UdpSocket::bind(my_socket_addr)?;
-
-        let mut node_ids = HashSet::new();
-        for key in socket_addrs.keys() {
-            node_ids.insert(*key);
-        }
-
-        Ok(AbdNode {
-            id: Arc::new(node_id),
+    pub fn new(node_id: NodeId, node_ids: HashSet<NodeId>) -> AbdNode<V> {
+        AbdNode {
             ts: Arc::new(Mutex::new(-1)),
-            reg: Arc::new(Mutex::new(Register::new(node_ids))),
-            socket: Arc::new(socket),
-            socket_addrs: Arc::new(socket_addrs),
+            reg: Arc::new(Mutex::new(Register::new(&node_ids))),
+            id: Arc::new(node_id),
+            node_ids: Arc::new(node_ids),
             acking_processors_for_write: Arc::new(Mutex::new(HashSet::new())),
             register_being_written: Arc::new(Mutex::new(None)),
             write_ack_majority_reached: Arc::new(Condvar::new()),
             acking_processors_for_read: Arc::new(Mutex::new(HashSet::new())),
             register_being_read: Arc::new(Mutex::new(None)),
-        })
+        }
     }
 
+    /*
     pub fn recv_loop(&self) {
         loop {
             let mut buf = [0; 4096];
@@ -77,6 +68,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             self.receive_json_string(json_string);
         }
     }
+    */
 
     pub fn receive_json_string(&self, json: &str) {
         if let Ok(w) = serde_json::from_str(&json) {
@@ -207,20 +199,25 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         }
     }
 
+
     fn send_message_to(&self, message: &impl Message, receiver_id: NodeId) {
+
         let json_string = serde_json::to_string(message).unwrap();
         let bytes = json_string.as_bytes();
-        let dst_socket_addr = self.socket_addrs.get(&receiver_id).unwrap();
-        self.socket.send_to(bytes, dst_socket_addr).unwrap();
+        //let dst_socket_addr = self.socket_addrs.get(&receiver_id).unwrap();
+        //self.socket.send_to(bytes, dst_socket_addr).unwrap();
     }
 
     fn broadcast_message(&self, message: &impl Message) {
+        /*
         for node_id in self.socket_addrs.keys() {
             self.send_message_to(message, *node_id);
         }
+        */
     }
     
     pub fn write(&self, value: V) {
+        /*
         //println!("Start write {:?}", &value);
         let value2 = value.clone();
 
@@ -262,6 +259,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         acking_processors_for_write.clear();
 
         //println!("End write {:?}", &value2);
+        */
     }
     
     fn write_ack_from_majority(&self) -> bool {
@@ -275,6 +273,6 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     }
 
     fn number_of_nodes(&self) -> usize {
-        self.socket_addrs.len()
+        self.node_ids.len()
     }
 }

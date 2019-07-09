@@ -12,6 +12,7 @@ mod messages;
 mod settings;
 mod terminal_output;
 mod communicator;
+mod mediator;
 
 use std::time::SystemTime;
 
@@ -45,6 +46,7 @@ use terminal_output::printlnu;
 
 
 fn main() {
+    /*
     let node_id = SETTINGS.node_id;
     let socket_addrs = SETTINGS.socket_addrs.clone();
 
@@ -81,4 +83,5 @@ fn main() {
 
     recv_thread_handle.join().unwrap();
     client_op_thread_handle.join().unwrap();
+    */
 }
