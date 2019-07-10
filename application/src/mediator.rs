@@ -31,13 +31,13 @@ use crate::terminal_output::printlnu;
 
 use crate::settings::SETTINGS;
 
-struct Mediator<AbdV> {
-    communicator: Communicator,
-    abd_node: AbdNode<AbdV>
+pub struct Mediator {
+    communicator: Option<Arc<Communicator>>,
+    abd_node: Option<Arc<AbdNode<String>>>
 }
 
-impl<AbdV: Default + Serialize + DeserializeOwned + Debug + Clone> Mediator<AbdV> {
-    pub fn new() -> Mediator<AbdV> {
+impl Mediator {
+    pub fn new() -> Arc<Mediator> {
         let node_id = SETTINGS.node_id;
         let socket_addrs = SETTINGS.socket_addrs.clone();
 
@@ -46,10 +46,49 @@ impl<AbdV: Default + Serialize + DeserializeOwned + Debug + Clone> Mediator<AbdV
             node_ids.insert(node_id);
         }
 
+        let mut mediator = Mediator {
+            communicator: None,
+            abd_node: None,
+        };
 
-        Mediator {
-            communicator: Communicator::new(node_id, socket_addrs).unwrap(),
-            abd_node: AbdNode::new(node_id, node_ids)
+
+        let mut communicator = Communicator::new(node_id, socket_addrs).unwrap();
+
+        let mut abd_node = AbdNode::new(node_id, node_ids);
+
+        let mediator_raw = &mut mediator as *mut Mediator;
+        let communicator_raw = &mut communicator as *mut Communicator;
+        let abd_node_raw = &mut abd_node as *mut AbdNode<String>;
+
+        let mediator = Arc::new(mediator);
+
+        unsafe {
+            (*mediator_raw).communicator = Some(Arc::new(communicator));
+            (*mediator_raw).abd_node = Some(Arc::new(abd_node));
+
+            (*communicator_raw).mediator = Some(Arc::clone(&mediator));
+            (*abd_node_raw).mediator = Some(Arc::clone(&mediator));
         }
+
+        mediator
+    }
+
+    /*
+    pub fn setup_communicator(mediator: Arc<Mediator>) {
+        mediator.communicator.mediator = Some(mediator);
+
+        let recv_thread_node = Arc::clone(&mediator.communicator);
+        let recv_thread_handle = thread::spawn(move || {
+            recv_thread_node.recv_loop(mediator);
+        });
+    }
+    */
+
+    pub fn send_json_to(&self, json: &str, receiver: NodeId) {
+
+    }
+
+    pub fn json_received(&self, json: &str) {
+
     }
 }

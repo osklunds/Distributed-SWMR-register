@@ -25,9 +25,12 @@ use crate::register::*;
 use crate::entry::{Entry, Timestamp};
 use crate::messages::*;
 use crate::terminal_output::printlnu;
+use crate::mediator::Mediator;
 
 
 pub struct AbdNode<V> {
+    pub mediator: Option<Arc<Mediator>>,
+
     ts: Arc<Mutex<Timestamp>>,
     reg: Arc<Mutex<Register<V>>>,
 
@@ -45,6 +48,7 @@ pub struct AbdNode<V> {
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     pub fn new(node_id: NodeId, node_ids: HashSet<NodeId>) -> AbdNode<V> {
         AbdNode {
+            mediator: None,
             ts: Arc::new(Mutex::new(-1)),
             reg: Arc::new(Mutex::new(Register::new(&node_ids))),
             id: Arc::new(node_id),
@@ -56,19 +60,6 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             register_being_read: Arc::new(Mutex::new(None)),
         }
     }
-
-    /*
-    pub fn recv_loop(&self) {
-        loop {
-            let mut buf = [0; 4096];
-
-            let (amt, socket_addr) = self.socket.recv_from(&mut buf).unwrap();
-            let json_string = str::from_utf8(&buf[0..amt]).unwrap();
-
-            self.receive_json_string(json_string);
-        }
-    }
-    */
 
     pub fn receive_json_string(&self, json: &str) {
         if let Ok(w) = serde_json::from_str(&json) {

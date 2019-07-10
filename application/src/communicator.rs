@@ -27,13 +27,13 @@ use crate::entry::{Entry, Timestamp};
 use crate::messages::*;
 use crate::terminal_output::printlnu;
 use crate::abd_node::AbdNode;
+use crate::mediator::Mediator;
 
 pub struct Communicator {
     id: Arc<NodeId>,
     socket: Arc<UdpSocket>,
     socket_addrs: Arc<HashMap<NodeId, SocketAddr>>,
-
-    //abd_node: AtomicCell<Option<Arc<AbdNode<AbdV>>>>
+    pub mediator: Option<Arc<Mediator>>
 }
 
 impl Communicator {
@@ -44,24 +44,27 @@ impl Communicator {
         Ok(Communicator {
             id: Arc::new(node_id),
             socket: Arc::new(socket),
-            socket_addrs: Arc::new(socket_addrs)
+            socket_addrs: Arc::new(socket_addrs),
+            mediator: None
         })
     }
 
-    fn recv_loop(&self) {
+    pub fn recv_loop(&self) {
         loop {
             let mut buf = [0; 4096];
 
             let (amt, socket_addr) = self.socket.recv_from(&mut buf).unwrap();
             let json_string = str::from_utf8(&buf[0..amt]).unwrap();
 
-            /*
-            if let Some(abd) = self.abd_node.get_mut() {
+            self.mediator().json_received(json_string);
+        }
+    }
 
-                
-                abd.receive_json_string(json_string);
-            }
-            */
+    fn mediator(&self) -> &Arc<Mediator> {
+        if let Some(med) = &self.mediator {
+            return med;
+        } else {
+            panic!("Mediator not set");
         }
     }
 }
