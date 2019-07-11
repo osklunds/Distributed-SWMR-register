@@ -30,6 +30,8 @@ fn main() {
 
     let mediator = Mediator::new();
     
+    thread::sleep(Duration::from_millis(100 * SETTINGS.number_of_nodes() as u64));
+
     let read_thread_mediator = Arc::clone(&mediator);
     let read_thread_handle = thread::spawn(move || {
         if SETTINGS.node_id() == 1 {
