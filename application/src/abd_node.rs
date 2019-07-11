@@ -22,12 +22,13 @@ pub struct AbdNode<V> {
     ts: Mutex<Timestamp>,
     reg: Mutex<Register<V>>,
 
-    acking_processors_for_write: Mutex<HashSet<NodeId>>,
     register_being_written: Mutex<Option<Register<V>>>,
+    acking_processors_for_write: Mutex<HashSet<NodeId>>,
     write_ack_majority_reached: Condvar,
 
+    register_being_read: Mutex<Option<Register<V>>>,
     acking_processors_for_read: Mutex<HashSet<NodeId>>,
-    register_being_read: Mutex<Option<Register<V>>>
+    read_ack_majority_reached: Condvar
 }
 
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
@@ -36,152 +37,15 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             mediator: mediator,
             ts: Mutex::new(entry::default_timestamp()),
             reg: Mutex::new(Register::new(&SETTINGS.node_ids())),
-            acking_processors_for_write: Mutex::new(HashSet::new()),
+            
             register_being_written: Mutex::new(None),
+            acking_processors_for_write: Mutex::new(HashSet::new()),
             write_ack_majority_reached: Condvar::new(),
-            acking_processors_for_read: Mutex::new(HashSet::new()),
+            
             register_being_read: Mutex::new(None),
+            acking_processors_for_read: Mutex::new(HashSet::new()),
+            read_ack_majority_reached: Condvar::new()
         }
-    }
-
-    pub fn json_received(&self, json: &str) {
-        if self.json_string_is_write_message(json) {
-            if let Ok(write_message) = serde_json::from_str(&json) {
-                return self.receive_write_message(write_message);
-            }
-        }
-
-        if self.json_string_is_write_ack_message(json) {
-            if let Ok(write_ack_message) = serde_json::from_str(&json) {
-                return self.receive_write_ack_message(write_ack_message);
-            }
-        }
-
-        if self.json_string_is_read_message(json) {
-            if let Ok(read_message) = serde_json::from_str(&json) {
-                return self.receive_read_message(read_message);
-            }
-        }
-
-        if self.json_string_is_read_ack_message(json) {
-            if let Ok(read_ack_message) = serde_json::from_str(&json) {
-                return self.receive_read_ack_message(read_ack_message);
-            }
-        }
-
-        printlnu(format!("Could not parse the message {}", json));
-    }
-
-    fn json_string_is_write_message(&self, json: &str) -> bool {
-        json.starts_with("{\"WriteMessage\":")
-    }
-
-    fn json_string_is_write_ack_message(&self, json: &str) -> bool {
-        json.starts_with("{\"WriteAckMessage\":")
-    }
-
-    fn json_string_is_read_message(&self, json: &str) -> bool {
-        json.starts_with("{\"ReadMessage\":")
-    }
-
-    fn json_string_is_read_ack_message(&self, json: &str) -> bool {
-        json.starts_with("{\"ReadAckMessage\":")
-    }
-
-    fn receive_write_message(&self, write_message: WriteMessage<V>) {
-        let write_ack_message;
-
-        {
-            let mut reg = self.reg.lock().unwrap();
-            reg.merge_to_max_from_register(&write_message.register);
-
-            write_ack_message = WriteAckMessage {
-                sender: SETTINGS.node_id(),
-                register: Cow::Borrowed(&reg)
-            };
-
-            self.send_message_to(&write_ack_message, write_message.sender);
-        }
-    }
-
-    fn receive_write_ack_message(&self, write_ack_message: WriteAckMessage<V>) {
-        {
-            let mut reg = self.reg.lock().unwrap();
-            reg.merge_to_max_from_register(&write_ack_message.register);
-        }
-
-        let mut register_being_written = self.register_being_written.lock().unwrap();
-        let mut new_reg = false;
-        let mut majority_reached = false;
-
-        if let Some(register_being_written) = &*register_being_written {
-            if *write_ack_message.register >= *register_being_written {
-                let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
-                acking_processors_for_write.insert(write_ack_message.sender);
-
-                new_reg = true;
-            }
-        }
-
-        if new_reg && self.write_ack_from_majority() {
-            majority_reached = true;
-            let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
-            acking_processors_for_write.clear();
-        }
-
-        if majority_reached {
-            *register_being_written = None;
-            self.write_ack_majority_reached.notify_one();
-        }
-    }
-
-    fn receive_read_message(&self, read_message: ReadMessage<V>) {
-        let read_ack_message;
-
-        {
-            let mut reg = self.reg.lock().unwrap();
-            reg.merge_to_max_from_register(&read_message.register);
-
-            read_ack_message = ReadAckMessage {
-                sender: SETTINGS.node_id(),
-                register: Cow::Borrowed(&reg)
-            };
-
-            self.send_message_to(&read_ack_message, read_message.sender);
-        } 
-    }
-
-    fn receive_read_ack_message(&self, read_ack_message: ReadAckMessage<V>) {
-        let mut reg = self.reg.lock().unwrap();
-        reg.merge_to_max_from_register(&read_ack_message.register);
-
-        let mut register_being_read = self.register_being_read.lock().unwrap();
-        if let Some(register_being_read) = &*register_being_read {
-            if *read_ack_message.register >= *register_being_read {
-                let mut acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
-                acking_processors_for_read.insert(read_ack_message.sender);
-            }
-
-            // TODO: Send () on a channel here
-        }
-        else {
-            println!("Tomt");
-        }
-    }
-
-
-    fn send_message_to(&self, message: &impl Message, receiver_id: NodeId) {
-        let json = serde_json::to_string(message).unwrap();
-        self.mediator().send_json_to(&json, receiver_id);
-    }
-
-    fn broadcast_message(&self, message: &impl Message) {
-        let json = serde_json::to_string(message).unwrap();
-        self.mediator().broadcast_json(&json);
-    }
-    
-    fn mediator(&self) -> Arc<Mediator> {
-        self.mediator.upgrade().unwrap()
     }
 
     pub fn write(&self, value: V) {
@@ -235,7 +99,163 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         acking_processors_for_write.len() >= self.number_of_nodes_in_a_majority()
     }
 
+    fn read_ack_from_majority(&self) -> bool {
+        let acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
+
+        acking_processors_for_read.len() >= self.number_of_nodes_in_a_majority()
+    }
+
     fn number_of_nodes_in_a_majority(&self) -> usize {
         SETTINGS.number_of_nodes() / 2 + 1
     }
+
+    fn send_message_to(&self, message: &impl Message, receiver_id: NodeId) {
+        let json = serde_json::to_string(message).unwrap();
+        self.mediator().send_json_to(&json, receiver_id);
+    }
+
+    fn broadcast_message(&self, message: &impl Message) {
+        let json = serde_json::to_string(message).unwrap();
+        self.mediator().broadcast_json(&json);
+    }
+
+    fn mediator(&self) -> Arc<Mediator> {
+        self.mediator.upgrade().unwrap()
+    }
+
+    pub fn json_received(&self, json: &str) {
+        if self.json_is_write_message(json) {
+            if let Ok(write_message) = serde_json::from_str(&json) {
+                return self.receive_write_message(write_message);
+            }
+        }
+
+        if self.json_is_write_ack_message(json) {
+            if let Ok(write_ack_message) = serde_json::from_str(&json) {
+                return self.receive_write_ack_message(write_ack_message);
+            }
+        }
+
+        if self.json_is_read_message(json) {
+            if let Ok(read_message) = serde_json::from_str(&json) {
+                return self.receive_read_message(read_message);
+            }
+        }
+
+        if self.json_is_read_ack_message(json) {
+            if let Ok(read_ack_message) = serde_json::from_str(&json) {
+                return self.receive_read_ack_message(read_ack_message);
+            }
+        }
+
+        printlnu(format!("Could not parse the json: {}", json));
+    }
+
+    fn json_is_write_message(&self, json: &str) -> bool {
+        json.starts_with("{\"WriteMessage\":")
+    }
+
+    fn json_is_write_ack_message(&self, json: &str) -> bool {
+        json.starts_with("{\"WriteAckMessage\":")
+    }
+
+    fn json_is_read_message(&self, json: &str) -> bool {
+        json.starts_with("{\"ReadMessage\":")
+    }
+
+    fn json_is_read_ack_message(&self, json: &str) -> bool {
+        json.starts_with("{\"ReadAckMessage\":")
+    }
+
+    fn receive_write_message(&self, write_message: WriteMessage<V>) {
+        let mut reg = self.reg.lock().unwrap();
+        reg.merge_to_max_from_register(&write_message.register);
+
+        let write_ack_message = WriteAckMessage {
+            sender: SETTINGS.node_id(),
+            register: Cow::Borrowed(&reg)
+        };
+
+        self.send_message_to(&write_ack_message, write_message.sender);
+
+        // Here we have a compromise. Either we lock reg for
+        // a long time, or we clone reg so we can have more
+        // concurrency. For small entries, cloning might be
+        // better. For large entries, longer locking
+        // might be better.
+    }
+
+    fn receive_write_ack_message(&self, write_ack_message: WriteAckMessage<V>) {
+        let received_register: &Register<V> = &write_ack_message.register;        
+        {
+            let mut reg = self.reg.lock().unwrap();
+            reg.merge_to_max_from_register(received_register);
+        }
+
+        let mut register_being_written = self.register_being_written.lock().unwrap();
+        let mut received_register_was_at_least_as_large = false;
+        
+        if let Some(register_being_written) = &*register_being_written {
+            if received_register >= register_being_written {
+                let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
+                acking_processors_for_write.insert(write_ack_message.sender);
+
+                received_register_was_at_least_as_large = true;
+            }
+        }
+
+        if received_register_was_at_least_as_large && self.write_ack_from_majority() {
+            let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
+            acking_processors_for_write.clear();
+
+            *register_being_written = None;
+            self.write_ack_majority_reached.notify_one();
+        }
+    }
+
+    fn receive_read_message(&self, read_message: ReadMessage<V>) {    
+        let mut reg = self.reg.lock().unwrap();
+        reg.merge_to_max_from_register(&read_message.register);
+
+        let read_ack_message = ReadAckMessage {
+            sender: SETTINGS.node_id(),
+            register: Cow::Borrowed(&reg)
+        };
+
+        self.send_message_to(&read_ack_message, read_message.sender);
+    }
+
+    fn receive_read_ack_message(&self, read_ack_message: ReadAckMessage<V>) {
+        let received_register: &Register<V> = &read_ack_message.register;
+        {
+            let mut reg = self.reg.lock().unwrap();
+            reg.merge_to_max_from_register(&received_register);
+        }
+
+        let mut register_being_read = self.register_being_read.lock().unwrap();
+        let mut received_register_was_at_least_as_large = false;
+        
+        if let Some(register_being_read) = &*register_being_read {
+            if received_register >= register_being_read {
+                let mut acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
+                acking_processors_for_read.insert(read_ack_message.sender);
+
+                received_register_was_at_least_as_large = true;
+            }
+        }
+
+        if received_register_was_at_least_as_large && self.read_ack_from_majority() {
+            let mut acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
+            acking_processors_for_read.clear();
+
+            *register_being_read = None;
+            self.read_ack_majority_reached.notify_one();
+        }
+    }
+
+
+    
+
+
+    
 }
