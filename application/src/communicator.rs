@@ -1,7 +1,6 @@
 
 use std::net::UdpSocket;
 use std::net::SocketAddr;
-use std::io;
 use std::str;
 use std::sync::{Arc, Weak};
 use std::collections::HashMap;
@@ -24,16 +23,16 @@ pub struct Communicator {
 }
 
 impl Communicator {
-    pub fn new(node_id: NodeId, socket_addrs: HashMap<NodeId, SocketAddr>, mediator: Weak<Mediator>) -> io::Result<Communicator> {
+    pub fn new(node_id: NodeId, socket_addrs: HashMap<NodeId, SocketAddr>, mediator: Weak<Mediator>) -> Communicator {
         let my_socket_addr = socket_addrs.get(&node_id).expect("My node id was not included among the socket addresses.");
-        let socket = UdpSocket::bind(my_socket_addr)?;
+        let socket = UdpSocket::bind(my_socket_addr).expect("Could not create socket.");
 
-        Ok(Communicator {
+        Communicator {
             id: node_id,
             socket: socket,
             socket_addrs: socket_addrs,
             mediator: mediator
-        })
+        }
     }
 
     pub fn recv_loop(&self) {
