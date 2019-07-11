@@ -57,16 +57,17 @@ fn main() {
         if write_thread_mediator.node_id() == 1 {
             let mut i = 0;
 
-            thread::sleep(Duration::from_millis(1000));
+            thread::sleep(Duration::from_millis(2000));
 
-            loop {
-                i += 1;
-                write_thread_mediator.write(String::from(format!("Hej {}", i)));
+            let start = SystemTime::now();
 
-                if i % 1000 == 0 {
-                    println!("{}", i);
-                }
+            for _ in 0..10000 {
+                write_thread_mediator.write(format!("Hej"));
+                //printlnu(format!("{}", i));
             }
+
+            let elapsed = start.elapsed().unwrap();
+            printlnu(format!("{:?}", elapsed));
         }
     });
     write_thread_handle.join().unwrap();
