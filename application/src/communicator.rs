@@ -17,9 +17,9 @@ use crate::mediator::Mediator;
 
 
 pub struct Communicator {
-    pub id: Arc<NodeId>,
-    socket: Arc<UdpSocket>,
-    socket_addrs: Arc<HashMap<NodeId, SocketAddr>>,
+    pub id: NodeId,
+    socket: UdpSocket,
+    socket_addrs: HashMap<NodeId, SocketAddr>,
     mediator: Weak<Mediator>
 }
 
@@ -29,9 +29,9 @@ impl Communicator {
         let socket = UdpSocket::bind(my_socket_addr)?;
 
         Ok(Communicator {
-            id: Arc::new(node_id),
-            socket: Arc::new(socket),
-            socket_addrs: Arc::new(socket_addrs),
+            id: node_id,
+            socket: socket,
+            socket_addrs: socket_addrs,
             mediator: mediator
         })
     }

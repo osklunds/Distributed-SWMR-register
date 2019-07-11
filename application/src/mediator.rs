@@ -100,6 +100,6 @@ impl Mediator {
     }
 
     pub fn node_id(&self) -> NodeId {
-        *self.communicator().id
+        self.communicator().id
     }
 }

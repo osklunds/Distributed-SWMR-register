@@ -1,5 +1,5 @@
 
-//#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
+#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
 
 #[macro_use]
 extern crate lazy_static;
@@ -57,11 +57,11 @@ fn main() {
         if write_thread_mediator.node_id() == 1 {
             let mut i = 0;
 
-            thread::sleep(Duration::from_millis(2000));
+            thread::sleep(Duration::from_millis(500));
 
             let start = SystemTime::now();
 
-            for _ in 0..10000 {
+            for _ in 0..1000 {
                 write_thread_mediator.write(format!("Hej"));
                 //printlnu(format!("{}", i));
             }
