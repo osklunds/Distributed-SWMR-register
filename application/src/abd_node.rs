@@ -49,13 +49,13 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     }
 
     pub fn write(&self, value: V) {
+        let mut value2 = None;
         if cfg!(debug_assertions) {
             if SETTINGS.print_start_end_of_client_operations() {
                 printlnu(format!("Start write {:?}", &value));
             }
+            value2 = Some(value.clone());
         }
-        
-        let value2 = value.clone();
 
         let write_message;
         let reg_to_write;
@@ -96,7 +96,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
         if cfg!(debug_assertions) {
             if SETTINGS.print_start_end_of_client_operations() {
-                printlnu(format!("End write {:?}", &value2));
+                printlnu(format!("End write {:?}", &value2.unwrap()));
             }
         }
     }
