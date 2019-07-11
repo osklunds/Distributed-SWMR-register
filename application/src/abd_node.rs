@@ -59,14 +59,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             value2 = Some(value.clone());
         }
 
-        // Enclose the three lines below in case the register
-        // lock isn't released immediately after the json
-        // message is created.
-        let register = self.acquire_register_and_update_it_with_value(value);
-        self.clone_register_to_register_being_written(&register);
-        let json_write_message = self.construct_json_write_message_and_release_register(register);
-
-        self.broadcast_json_write_message_until_majority_has_acked(&json_write_message);
+        self.inner_write(value);
 
         if cfg!(debug_assertions) {
             if SETTINGS.print_start_end_of_client_operations() {
@@ -78,6 +71,17 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             assert!(acking_processors_for_write.is_empty());
             assert!(register_being_written.is_none());
         }
+    }
+
+    fn inner_write(&self, value: V) {
+        // Enclose the three lines below in case the register
+        // lock isn't released immediately after the json
+        // message is created.
+        let register = self.acquire_register_and_update_it_with_value(value);
+        self.clone_register_to_register_being_written(&register);
+        let json_write_message = self.construct_json_write_message_and_release_register(register);
+
+        self.broadcast_json_write_message_until_majority_has_acked(&json_write_message);
     }
 
     fn acquire_register_and_update_it_with_value(&self, value: V) -> MutexGuard<Register<V>> {
@@ -117,7 +121,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         let mut register_being_written = self.register_being_written.lock().unwrap();
 
         while register_being_written.is_some() {
-            let timeout = Duration::from_millis(50); // TODO: Have as a parameter somewhere
+            let timeout = Duration::from_millis(100); // TODO: Have as a parameter somewhere
             let result = self.write_ack_majority_reached.wait_timeout(register_being_written, timeout).unwrap();
             register_being_written = result.0;
             if result.1.timed_out() {
@@ -133,6 +137,70 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
     fn mediator(&self) -> Arc<Mediator> {
         self.mediator.upgrade().unwrap()
+    }
+
+    pub fn read(&self) -> V {
+        if cfg!(debug_assertions) {
+            if SETTINGS.print_start_end_of_client_operations() {
+                let mut reg = self.reg.lock().unwrap();
+                printlnu(format!("Start read {:?}", reg.get(SETTINGS.node_id())));
+            }
+        }
+
+        let result = self.inner_read();
+
+        if cfg!(debug_assertions) {
+            if SETTINGS.print_start_end_of_client_operations() {
+                let mut reg = self.reg.lock().unwrap();
+                printlnu(format!("End read {:?}", reg.get(SETTINGS.node_id())));
+            }
+
+            let acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
+            let register_being_read = self.register_being_read.lock().unwrap();
+            assert!(acking_processors_for_read.is_empty());
+            assert!(register_being_read.is_none());
+        }
+
+        result
+    }
+
+    fn inner_read(&self) -> V {
+        let register = self.acquire_register_and_clone_it_to_register_being_read();
+        let json_read_message = self.construct_json_read_message_and_release_register(register);
+
+        self.broadcast_json_read_message_until_majority_has_acked(&json_read_message);
+
+        V::default()
+    }
+
+    fn acquire_register_and_clone_it_to_register_being_read(&self) -> MutexGuard<Register<V>> {
+        let register = self.reg.lock().unwrap();
+        let mut register_being_read = self.register_being_read.lock().unwrap();
+        *register_being_read = Some(register.clone());
+        register
+    }
+
+    fn construct_json_read_message_and_release_register(&self, register: MutexGuard<Register<V>>) -> String {
+        let read_message = ReadMessage {
+            sender: SETTINGS.node_id(),
+            register: Cow::Borrowed(&register)
+        };
+
+        self.jsonify_message(&read_message)
+    }
+
+    fn broadcast_json_read_message_until_majority_has_acked(&self, json_read_message: &str) {
+        self.broadcast_json_message(&json_read_message);
+        let mut register_being_read = self.register_being_read.lock().unwrap();
+
+        while register_being_read.is_some() {
+            let timeout = Duration::from_millis(100); // TODO: Have as a parameter somewhere
+            let result = self.read_ack_majority_reached.wait_timeout(register_being_read, timeout).unwrap();
+            register_being_read = result.0;
+            if result.1.timed_out() {
+                self.broadcast_json_message(&json_read_message);
+            }
+        }
     }
 
     pub fn json_received(&self, json: &str) {
@@ -197,6 +265,11 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         // might be better.
     }
 
+    fn send_message_to(&self, message: &impl Message, receiver_id: NodeId) {
+        let json = serde_json::to_string(message).unwrap();
+        self.mediator().send_json_to(&json, receiver_id);
+    }  
+
     fn receive_write_ack_message(&self, write_ack_message: WriteAckMessage<V>) {
         let received_register: &Register<V> = &write_ack_message.register;        
         {
@@ -223,6 +296,16 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
             self.write_ack_majority_reached.notify_one();
         }
+    }
+
+    fn write_ack_from_majority(&self) -> bool {
+        let acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
+
+        acking_processors_for_write.len() >= self.number_of_nodes_in_a_majority()
+    }
+
+    fn number_of_nodes_in_a_majority(&self) -> usize {
+        SETTINGS.number_of_nodes() / 2 + 1
     }
 
     fn receive_read_message(&self, read_message: ReadMessage<V>) {    
@@ -265,24 +348,9 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         }
     }
 
-    fn write_ack_from_majority(&self) -> bool {
-        let acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
-
-        acking_processors_for_write.len() >= self.number_of_nodes_in_a_majority()
-    }
-
     fn read_ack_from_majority(&self) -> bool {
         let acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
 
         acking_processors_for_read.len() >= self.number_of_nodes_in_a_majority()
     }
-
-    fn number_of_nodes_in_a_majority(&self) -> usize {
-        SETTINGS.number_of_nodes() / 2 + 1
-    }
-
-    fn send_message_to(&self, message: &impl Message, receiver_id: NodeId) {
-        let json = serde_json::to_string(message).unwrap();
-        self.mediator().send_json_to(&json, receiver_id);
-    }    
 }
