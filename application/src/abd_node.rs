@@ -57,8 +57,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             value2 = Some(value.clone());
         }
 
-        let write_message;
-        let reg_to_write;
+        let json_write_message;
 
         {
             let mut ts = self.ts.lock().unwrap();
@@ -67,19 +66,24 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             *ts += 1;
             reg.set(SETTINGS.node_id(), Entry::new(*ts, value));
 
-            reg_to_write = reg.clone();
-
-            write_message = WriteMessage {
-                sender: SETTINGS.node_id(),
-                register: Cow::Borrowed(&reg_to_write)
-            };
-
             let mut register_being_written = self.register_being_written.lock().unwrap();
+
+            if cfg!(debug_assertions) {
+                assert_eq!(*register_being_written, None);
+            }
+
             *register_being_written = Some(reg.clone());
 
-            self.broadcast_message(&write_message);
+            let write_message = WriteMessage {
+                sender: SETTINGS.node_id(),
+                register: Cow::Borrowed(&reg)
+            };
+
+            json_write_message = self.jsonify_message(&write_message);
         }
 
+        self.broadcast_json_message(&json_write_message);
+            
         {
             let mut register_being_written = self.register_being_written.lock().unwrap();
 
@@ -87,10 +91,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
                 register_being_written = self.write_ack_majority_reached.wait(register_being_written).unwrap();
             }
         }
-
         
-        let mut register_being_written = self.register_being_written.lock().unwrap();
-        *register_being_written = None;
         let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
         acking_processors_for_write.clear();
 
@@ -100,6 +101,17 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             }
         }
     }
+
+    fn jsonify_message(&self, message: &impl Message) -> String {
+        serde_json::to_string(message).unwrap()
+    }
+
+    fn broadcast_json_message(&self, json: &str) {
+        self.mediator().broadcast_json(json);
+    }
+
+
+
     
     fn write_ack_from_majority(&self) -> bool {
         let acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
