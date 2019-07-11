@@ -27,13 +27,14 @@ use mediator::Mediator;
 
 fn main() {
     SETTINGS.node_id();
+
     let mediator = Mediator::new();
+
+
     
     let write_thread_mediator = Arc::clone(&mediator);
     let write_thread_handle = thread::spawn(move || {
         if write_thread_mediator.node_id() == 1 {
-            thread::sleep(Duration::from_millis(500));
-
             let start = SystemTime::now();
 
             for _ in 0..1000 {

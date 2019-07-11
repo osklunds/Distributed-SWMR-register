@@ -4,6 +4,8 @@ use std::sync::{Arc, Mutex, MutexGuard, Condvar, Weak};
 use std::collections::HashSet;
 use std::borrow::Cow;
 use std::fmt::Debug;
+use std::thread;
+use std::time::Duration;
 
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -56,7 +58,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             }
             value2 = Some(value.clone());
         }
-        
+
         // Enclose the three lines below in case the register
         // lock isn't released immediately after the json
         // message is created.
@@ -64,15 +66,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         self.clone_register_to_register_being_written(&register);
         let json_write_message = self.construct_json_write_message_and_release_register(register);
 
-        self.broadcast_json_message(&json_write_message);
-            
-        {
-            let mut register_being_written = self.register_being_written.lock().unwrap();
-
-            while register_being_written.is_some() {
-                register_being_written = self.write_ack_majority_reached.wait(register_being_written).unwrap();
-            }
-        }
+        self.broadcast_json_write_message_until_majority_has_acked(&json_write_message);
 
         if cfg!(debug_assertions) {
             if SETTINGS.print_start_end_of_client_operations() {
@@ -116,6 +110,21 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
     fn jsonify_message(&self, message: &impl Message) -> String {
         serde_json::to_string(message).unwrap()
+    }
+
+    fn broadcast_json_write_message_until_majority_has_acked(&self, json_write_message: &str) {
+        self.broadcast_json_message(&json_write_message);
+        let mut register_being_written = self.register_being_written.lock().unwrap();
+
+        while register_being_written.is_some() {
+            let timeout = Duration::from_millis(50); // TODO: Have as a parameter somewhere
+            let result = self.write_ack_majority_reached.wait_timeout(register_being_written, timeout).unwrap();
+            register_being_written = result.0;
+            if result.1.timed_out() {
+                self.broadcast_json_message(&json_write_message);
+                //printlnu(format!("Timed out"));
+            }
+        }
     }
 
     fn broadcast_json_message(&self, json: &str) {
