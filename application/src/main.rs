@@ -13,8 +13,10 @@ mod settings;
 mod terminal_output;
 mod communicator;
 mod mediator;
+mod responsible_cell;
 
 use std::time::SystemTime;
+use std::time::Duration;
 
 use std::str;
 
@@ -43,45 +45,33 @@ use register::Register;
 use entry::Entry;
 use settings::SETTINGS;
 use terminal_output::printlnu;
+use mediator::Mediator;
+
 
 
 fn main() {
-    /*
-    let node_id = SETTINGS.node_id;
-    let socket_addrs = SETTINGS.socket_addrs.clone();
-
-    let node: AbdNode<String> = AbdNode::new(node_id, socket_addrs).unwrap();
-    let node = Arc::new(node);
-
-    let recv_thread_node = Arc::clone(&node);
-    let recv_thread_handle = thread::spawn(move || {
+    let mediator = Mediator::new();
     
-        recv_thread_node.recv_loop();
-    });
+    let write_thread_mediator = Arc::clone(&mediator);
+    let write_thread_handle = thread::spawn(move || {
+        if write_thread_mediator.node_id() == 1 {
+            let mut i = 0;
 
-    let client_op_thread_node = Arc::clone(&node);
-    let client_op_thread_handle = thread::spawn(move || {
-        
+            thread::sleep(Duration::from_millis(1000));
 
-        if node_id == 1 {
-            // Temp hack to wait for the other nodes to start
-            thread::sleep(time::Duration::from_millis(2000));
+            loop {
+                i += 1;
+                write_thread_mediator.write(String::from(format!("Hej {}", i)));
 
-            let start = SystemTime::now();
-
-            for _ in 0..1000 {
-                client_op_thread_node.write(format!("Hej"));
-                //printlnu(format!("{}", i));
+                if i % 1000 == 0 {
+                    println!("{}", i);
+                }
             }
-
-            let elapsed = start.elapsed().unwrap();
-
-            printlnu(format!("{}", elapsed.as_millis()));
-
         }
     });
+    write_thread_handle.join().unwrap();
 
-    recv_thread_handle.join().unwrap();
-    client_op_thread_handle.join().unwrap();
-    */
+    loop {
+        thread::sleep(Duration::from_millis(1000000));
+    }
 }

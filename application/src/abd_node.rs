@@ -5,7 +5,7 @@ use std::net::Ipv4Addr;
 use std::io;
 use std::str;
 
-use std::sync::{Arc, Mutex, MutexGuard, Condvar};
+use std::sync::{Arc, Mutex, MutexGuard, Condvar, Weak};
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::{thread, time};
 
@@ -28,8 +28,9 @@ use crate::terminal_output::printlnu;
 use crate::mediator::Mediator;
 
 
+//#[derive(Debug)]
 pub struct AbdNode<V> {
-    pub mediator: Option<Arc<Mediator>>,
+    mediator: Weak<Mediator>,
 
     ts: Arc<Mutex<Timestamp>>,
     reg: Arc<Mutex<Register<V>>>,
@@ -46,9 +47,9 @@ pub struct AbdNode<V> {
 }
 
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
-    pub fn new(node_id: NodeId, node_ids: HashSet<NodeId>) -> AbdNode<V> {
+    pub fn new(node_id: NodeId, node_ids: HashSet<NodeId>, mediator: Weak<Mediator>) -> AbdNode<V> {
         AbdNode {
-            mediator: None,
+            mediator: mediator,
             ts: Arc::new(Mutex::new(-1)),
             reg: Arc::new(Mutex::new(Register::new(&node_ids))),
             id: Arc::new(node_id),
@@ -61,11 +62,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         }
     }
 
-    pub fn receive_json_string(&self, json: &str) {
-        if let Ok(w) = serde_json::from_str(&json) {
-            let x: WriteMessage<V> = w;
-        }
-
+    pub fn json_received(&self, json: &str) {
         if self.json_string_is_write_message(json) {
             if let Ok(write_message) = serde_json::from_str(&json) {
                 return self.receive_write_message(write_message);
@@ -192,24 +189,21 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
 
     fn send_message_to(&self, message: &impl Message, receiver_id: NodeId) {
-
-        let json_string = serde_json::to_string(message).unwrap();
-        let bytes = json_string.as_bytes();
-        //let dst_socket_addr = self.socket_addrs.get(&receiver_id).unwrap();
-        //self.socket.send_to(bytes, dst_socket_addr).unwrap();
+        let json = serde_json::to_string(message).unwrap();
+        self.mediator().send_json_to(&json, receiver_id);
     }
 
     fn broadcast_message(&self, message: &impl Message) {
-        /*
-        for node_id in self.socket_addrs.keys() {
-            self.send_message_to(message, *node_id);
-        }
-        */
+        let json = serde_json::to_string(message).unwrap();
+        self.mediator().broadcast_json(&json);
     }
     
+    fn mediator(&self) -> Arc<Mediator> {
+        self.mediator.upgrade().unwrap()
+    }
+
     pub fn write(&self, value: V) {
-        /*
-        //println!("Start write {:?}", &value);
+        //printlnu(format!("Start write {:?}", &value));
         let value2 = value.clone();
 
         let write_message;
@@ -249,8 +243,8 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
         acking_processors_for_write.clear();
 
-        //println!("End write {:?}", &value2);
-        */
+        //printlnu(format!("End write {:?}", &value2));
+        
     }
     
     fn write_ack_from_majority(&self) -> bool {

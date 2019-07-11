@@ -7,8 +7,9 @@ use std::net::SocketAddr;
 use std::net::Ipv4Addr;
 use std::io;
 use std::str;
+use std::borrow::Borrow;
 
-use std::sync::{Arc, Mutex, MutexGuard, Condvar};
+use std::sync::{Arc, Mutex, MutexGuard, Condvar, Weak};
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::{thread, time};
 
@@ -24,16 +25,19 @@ use std::hash::Hash;
 
 use std::borrow::Cow;
 
+use crossbeam::atomic::AtomicCell;
+
 use crate::register::*;
 use crate::entry::{Entry, Timestamp};
 use crate::messages::*;
 use crate::terminal_output::printlnu;
-
 use crate::settings::SETTINGS;
+use crate::responsible_cell::ResponsibleCell;
 
+//#[derive(Debug)]
 pub struct Mediator {
-    communicator: Option<Arc<Communicator>>,
-    abd_node: Option<Arc<AbdNode<String>>>
+    communicator: ResponsibleCell<Option<Communicator>>,
+    abd_node: ResponsibleCell<Option<AbdNode<String>>>
 }
 
 impl Mediator {
@@ -46,49 +50,56 @@ impl Mediator {
             node_ids.insert(node_id);
         }
 
-        let mut mediator = Mediator {
-            communicator: None,
-            abd_node: None,
+        let mediator = Mediator {
+            communicator: ResponsibleCell::new(None),
+            abd_node: ResponsibleCell::new(None),
         };
-
-
-        let mut communicator = Communicator::new(node_id, socket_addrs).unwrap();
-
-        let mut abd_node = AbdNode::new(node_id, node_ids);
-
-        let mediator_raw = &mut mediator as *mut Mediator;
-        let communicator_raw = &mut communicator as *mut Communicator;
-        let abd_node_raw = &mut abd_node as *mut AbdNode<String>;
-
         let mediator = Arc::new(mediator);
 
-        unsafe {
-            (*mediator_raw).communicator = Some(Arc::new(communicator));
-            (*mediator_raw).abd_node = Some(Arc::new(abd_node));
+        let communicator = Communicator::new(node_id, socket_addrs, Arc::downgrade(&mediator)).unwrap();
+        let abd_node: AbdNode<String> = AbdNode::new(node_id, node_ids, Arc::downgrade(&mediator));
 
-            (*communicator_raw).mediator = Some(Arc::clone(&mediator));
-            (*abd_node_raw).mediator = Some(Arc::clone(&mediator));
-        }
+        *mediator.communicator.get_mut() = Some(communicator);
+        *mediator.abd_node.get_mut() = Some(abd_node);
+
+        Self::start_recv_thread(Arc::clone(&mediator));
 
         mediator
     }
 
-    /*
-    pub fn setup_communicator(mediator: Arc<Mediator>) {
-        mediator.communicator.mediator = Some(mediator);
-
-        let recv_thread_node = Arc::clone(&mediator.communicator);
+    
+    fn start_recv_thread(mediator: Arc<Mediator>) {
         let recv_thread_handle = thread::spawn(move || {
-            recv_thread_node.recv_loop(mediator);
-        });
+            mediator.communicator().recv_loop();
+         });
     }
-    */
+    
+    fn abd_node(&self) -> &AbdNode<String> {
+        self.abd_node.get().as_ref().unwrap()
+    }
+
+    
+    fn communicator(&self) -> &Communicator {
+        self.communicator.get().as_ref().unwrap()
+    }
 
     pub fn send_json_to(&self, json: &str, receiver: NodeId) {
+        self.communicator().send_json_to(json, receiver);
+    }
 
+    pub fn broadcast_json(&self, json: &str) {
+        self.communicator().broadcast_json(json);
     }
 
     pub fn json_received(&self, json: &str) {
+        self.abd_node().json_received(json);
+    }
 
+    pub fn write(&self, message: String) {
+        self.abd_node().write(message);
+    }
+
+    pub fn node_id(&self) -> NodeId {
+        *self.communicator().id
     }
 }

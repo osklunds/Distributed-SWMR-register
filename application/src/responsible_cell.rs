@@ -1,5 +1,6 @@
 
 use std::cell::UnsafeCell;
+use std::mem;
 
 pub struct ResponsibleCell<T> {
     unsafe_cell: UnsafeCell<T>

@@ -5,7 +5,7 @@ use std::net::Ipv4Addr;
 use std::io;
 use std::str;
 
-use std::sync::{Arc, Mutex, MutexGuard, Condvar};
+use std::sync::{Arc, Mutex, MutexGuard, Condvar, Weak};
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::{thread, time};
 
@@ -29,15 +29,16 @@ use crate::terminal_output::printlnu;
 use crate::abd_node::AbdNode;
 use crate::mediator::Mediator;
 
+//#[derive(Debug)]
 pub struct Communicator {
-    id: Arc<NodeId>,
+    pub id: Arc<NodeId>,
     socket: Arc<UdpSocket>,
     socket_addrs: Arc<HashMap<NodeId, SocketAddr>>,
-    pub mediator: Option<Arc<Mediator>>
+    mediator: Weak<Mediator>
 }
 
 impl Communicator {
-    pub fn new(node_id: NodeId, socket_addrs: HashMap<NodeId, SocketAddr>) -> io::Result<Communicator> {
+    pub fn new(node_id: NodeId, socket_addrs: HashMap<NodeId, SocketAddr>, mediator: Weak<Mediator>) -> io::Result<Communicator> {
         let my_socket_addr = socket_addrs.get(&node_id).expect("My node id was not included among the socket addresses.");
         let socket = UdpSocket::bind(my_socket_addr)?;
 
@@ -45,7 +46,7 @@ impl Communicator {
             id: Arc::new(node_id),
             socket: Arc::new(socket),
             socket_addrs: Arc::new(socket_addrs),
-            mediator: None
+            mediator: mediator
         })
     }
 
@@ -60,11 +61,21 @@ impl Communicator {
         }
     }
 
-    fn mediator(&self) -> &Arc<Mediator> {
-        if let Some(med) = &self.mediator {
-            return med;
-        } else {
-            panic!("Mediator not set");
+    fn mediator(&self) -> Arc<Mediator> {
+        self.mediator.upgrade().unwrap()
+    }
+    
+
+    pub fn send_json_to(&self, json: &str, receiver_id: NodeId) {
+        let bytes = json.as_bytes();
+        let dst_socket_addr = self.socket_addrs.get(&receiver_id).unwrap();
+        self.socket.send_to(bytes, dst_socket_addr).unwrap();
+    }
+
+    pub fn broadcast_json(&self, json: &str) {
+        let bytes = json.as_bytes();
+        for (_, socket_addr) in self.socket_addrs.iter() {
+            self.socket.send_to(bytes, socket_addr).unwrap();
         }
     }
 }
