@@ -8,6 +8,7 @@ use crate::settings::{SETTINGS, NodeId};
 use crate::responsible_cell::ResponsibleCell;
 use crate::abd_node::AbdNode;
 use crate::communicator::Communicator;
+use crate::register::Register;
 
 
 pub struct Mediator {
@@ -74,7 +75,11 @@ impl Mediator {
         self.abd_node().write(message);
     }
 
-    pub fn node_id(&self) -> NodeId {
-        self.communicator().id
+    pub fn read(&self, node_id: NodeId) -> String {
+        self.abd_node().read(node_id)
+    }
+
+    pub fn read_all(&self) -> Register<String> {
+        self.abd_node().read_all()
     }
 }

@@ -29,26 +29,39 @@ fn main() {
     SETTINGS.node_id();
 
     let mediator = Mediator::new();
-
-
     
-    let write_thread_mediator = Arc::clone(&mediator);
-    let write_thread_handle = thread::spawn(move || {
-        if write_thread_mediator.node_id() == 1 {
-            let start = SystemTime::now();
-
-            for _ in 0..1000 {
-                write_thread_mediator.write(format!("Hej"));
-                //printlnu(format!("{}", i));
+    let read_thread_mediator = Arc::clone(&mediator);
+    let read_thread_handle = thread::spawn(move || {
+        if SETTINGS.node_id() == 1 {
+            printlnu(format!("I am going to read {}", SETTINGS.node_id()));
+            let mut i = 0;
+            loop {
+                i += 1;
+                printlnu(format!("Start read {}", i));
+                let res = read_thread_mediator.read_all();
+                printlnu(format!("Stop read {}\n{}", i, res));
             }
-
-            let elapsed = start.elapsed().unwrap();
-            printlnu(format!("{:?}", elapsed));
         }
     });
-    write_thread_handle.join().unwrap();
 
-    loop {
-        thread::sleep(Duration::from_millis(1000000));
-    }
+    let write_thread_mediator = Arc::clone(&mediator);
+    let write_thread_handle = thread::spawn(move || {
+        if SETTINGS.node_id() != 1 {
+            printlnu(format!("I am going to write {}", SETTINGS.node_id()));
+            let mut i = 0;
+            loop {
+                i += 1;
+                printlnu(format!("Start write {}", i));
+                write_thread_mediator.write("".to_string());
+                printlnu(format!("Stop write {}", i));
+            }
+        }
+    });
+
+
+
+
+
+    read_thread_handle.join().unwrap();
+    write_thread_handle.join().unwrap();
 }

@@ -51,21 +51,9 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     }
 
     pub fn write(&self, value: V) {
-        let mut value2 = None;
-        if cfg!(debug_assertions) {
-            if SETTINGS.print_start_end_of_client_operations() {
-                printlnu(format!("Start write {:?}", &value));
-            }
-            value2 = Some(value.clone());
-        }
-
         self.inner_write(value);
 
         if cfg!(debug_assertions) {
-            if SETTINGS.print_start_end_of_client_operations() {
-                printlnu(format!("End write {:?}", &value2.unwrap()));
-            }
-
             let acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
             let register_being_written = self.register_being_written.lock().unwrap();
             assert!(acking_processors_for_write.is_empty());
@@ -77,6 +65,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         // Enclose the three lines below in case the register
         // lock isn't released immediately after the json
         // message is created.
+
         let register = self.acquire_register_and_update_it_with_value(value);
         self.clone_register_to_register_being_written(&register);
         let json_write_message = self.construct_json_write_message_and_release_register(register);
@@ -139,38 +128,23 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         self.mediator.upgrade().unwrap()
     }
 
-    pub fn read(&self) -> V {
-        if cfg!(debug_assertions) {
-            if SETTINGS.print_start_end_of_client_operations() {
-                let mut reg = self.reg.lock().unwrap();
-                printlnu(format!("Start read {:?}", reg.get(SETTINGS.node_id())));
-            }
-        }
-
+    pub fn read(&self, node_id: NodeId) -> V {
         let result = self.inner_read();
-
-        if cfg!(debug_assertions) {
-            if SETTINGS.print_start_end_of_client_operations() {
-                let mut reg = self.reg.lock().unwrap();
-                printlnu(format!("End read {:?}", reg.get(SETTINGS.node_id())));
-            }
-
-            let acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
-            let register_being_read = self.register_being_read.lock().unwrap();
-            assert!(acking_processors_for_read.is_empty());
-            assert!(register_being_read.is_none());
-        }
-
-        result
+        result.get(node_id).clone().val
     }
 
-    fn inner_read(&self) -> V {
+    pub fn read_all(&self) -> Register<V> {
+        let result = self.inner_read();
+        result.clone()
+    }
+
+    fn inner_read(&self) -> MutexGuard<Register<V>> {
         let register = self.acquire_register_and_clone_it_to_register_being_read();
         let json_read_message = self.construct_json_read_message_and_release_register(register);
 
         self.broadcast_json_read_message_until_majority_has_acked(&json_read_message);
 
-        V::default()
+        self.reg.lock().unwrap()
     }
 
     fn acquire_register_and_clone_it_to_register_being_read(&self) -> MutexGuard<Register<V>> {
