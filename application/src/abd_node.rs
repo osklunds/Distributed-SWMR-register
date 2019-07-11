@@ -91,14 +91,14 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
                 register_being_written = self.write_ack_majority_reached.wait(register_being_written).unwrap();
             }
         }
-        
-        let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
-        acking_processors_for_write.clear();
 
         if cfg!(debug_assertions) {
             if SETTINGS.print_start_end_of_client_operations() {
                 printlnu(format!("End write {:?}", &value2.unwrap()));
             }
+
+            let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
+            assert!(acking_processors_for_write.is_empty());
         }
     }
 
@@ -227,8 +227,8 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         if received_register_was_at_least_as_large && self.write_ack_from_majority() {
             let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
             acking_processors_for_write.clear();
-
             *register_being_written = None;
+
             self.write_ack_majority_reached.notify_one();
         }
     }
