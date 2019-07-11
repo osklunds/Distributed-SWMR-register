@@ -8,6 +8,7 @@ use std::fmt::Debug;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
+use crate::settings::NodeId;
 use crate::register::*;
 use crate::entry::{Entry, Timestamp};
 use crate::messages::*;

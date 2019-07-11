@@ -6,7 +6,7 @@ use std::sync::{Arc, Weak};
 use std::collections::HashMap;
 
 
-use crate::register::NodeId;
+use crate::settings::NodeId;
 //use crate::terminal_output::printlnu;
 use crate::mediator::Mediator;
 

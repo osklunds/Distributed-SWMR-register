@@ -26,7 +26,7 @@ use mediator::Mediator;
 
 
 fn main() {
-    SETTINGS.node_id;
+    SETTINGS.node_id();
     let mediator = Mediator::new();
     
     let write_thread_mediator = Arc::clone(&mediator);

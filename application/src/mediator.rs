@@ -3,15 +3,13 @@ use std::sync::Arc;
 use std::thread;
 use std::collections::HashSet;
 
-use crate::register::*;
 //use crate::terminal_output::printlnu;
-use crate::settings::SETTINGS;
+use crate::settings::{SETTINGS, NodeId};
 use crate::responsible_cell::ResponsibleCell;
 use crate::abd_node::AbdNode;
 use crate::communicator::Communicator;
 
 
-//#[derive(Debug)]
 pub struct Mediator {
     communicator: ResponsibleCell<Option<Communicator>>,
     abd_node: ResponsibleCell<Option<AbdNode<String>>>
@@ -19,8 +17,8 @@ pub struct Mediator {
 
 impl Mediator {
     pub fn new() -> Arc<Mediator> {
-        let node_id = SETTINGS.node_id;
-        let socket_addrs = SETTINGS.socket_addrs.clone();
+        let node_id = SETTINGS.node_id();
+        let socket_addrs = SETTINGS.socket_addrs().clone();
 
         let mut node_ids = HashSet::new();
         for &node_id in socket_addrs.keys() {

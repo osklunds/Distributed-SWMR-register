@@ -3,14 +3,10 @@ use std::collections::{HashMap, HashSet, BTreeMap};
 use std::fmt::{Formatter, Display, Result};
 use std::cmp::Ordering;
 
-
 use serde::{Serialize, Deserialize};
 
-
 use crate::entry::{self, Entry};
-
-
-pub type NodeId = i32;
+use crate::settings::NodeId;
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

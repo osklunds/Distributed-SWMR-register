@@ -1,5 +1,6 @@
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::iter::FromIterator;
 use std::net::SocketAddr;
 use std::fs;
 
@@ -8,7 +9,7 @@ use colored::*;
 use clap::{Arg, App, ArgMatches};
 
 
-use crate::register::NodeId;
+pub type NodeId = i32;
 
 
 lazy_static! {
@@ -18,9 +19,9 @@ lazy_static! {
 
 #[derive(Debug)]
 pub struct Settings {
-    pub node_id: NodeId,
-    pub socket_addrs: HashMap<NodeId, SocketAddr>,
-    pub terminal_color: Color
+    node_id: NodeId,
+    socket_addrs: HashMap<NodeId, SocketAddr>,
+    terminal_color: Color
 }
 
 impl Settings {
@@ -35,6 +36,26 @@ impl Settings {
             socket_addrs: socket_addrs,
             terminal_color: color
         }
+    }
+
+    pub fn node_id(&self) -> NodeId {
+        self.node_id
+    }
+
+    pub fn socket_addrs(&self) -> &HashMap<NodeId, SocketAddr> {
+        &self.socket_addrs
+    }
+
+    pub fn terminal_color(&self) -> Color {
+        self.terminal_color
+    }
+
+    pub fn number_of_nodes(&self) -> usize {
+        self.socket_addrs.len()
+    }
+
+    pub fn node_ids(&self) -> HashSet<NodeId> {
+        HashSet::from_iter(self.socket_addrs.keys().map(|id| *id))
     }
 }
 
