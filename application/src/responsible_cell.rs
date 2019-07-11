@@ -2,6 +2,23 @@
 use std::cell::UnsafeCell;
 use std::mem;
 
+/*
+In order to create a circular reference, I need to create
+references to both objects, but at the same time create
+mutable references to them, so I can modify them to
+include the reference to the other object. This is why I
+created ResponsibleCell. How the above is achieved is shown
+in the Mediator struct.
+
+This violates Rust's borrowing rules even at run-time.
+However, I haven't seen a problem doing this. The code
+doesn't panic. It might be because this struct is only
+used in a "responsible" way, hence the name. Because after
+the intial wiring-up of circular references, the mutable
+references are dropped and onwards only immutable references
+are made. Furthermore, the initialiazation happens on
+only a single thread.
+*/
 pub struct ResponsibleCell<T> {
     unsafe_cell: UnsafeCell<T>
 }
@@ -38,21 +55,21 @@ mod tests {
 
     #[test]
     fn test_double_mutation() {
-        let t = TestStruct {
+        let test_value = TestStruct {
             inner: String::from("hej")
         };
-        let cell = ResponsibleCell::new(t);
+        let cell = ResponsibleCell::new(test_value);
         
-        let x = cell.get_mut();
-        let y = cell.get_mut();
+        let mut1 = cell.get_mut();
+        let mut2 = cell.get_mut();
 
-        x.inner = String::from("hi");
-        y.inner = String::from("hello");
+        mut1.inner = String::from("hi");
+        mut2.inner = String::from("hello");
 
-        let z = cell.get();
+        let imut = cell.get();
 
-        assert_eq!(x.inner, String::from("hello"));
-        assert_eq!(y.inner, String::from("hello"));
-        assert_eq!(z.inner, String::from("hello"));
+        assert_eq!(mut1.inner, String::from("hello"));
+        assert_eq!(mut2.inner, String::from("hello"));
+        assert_eq!(imut.inner, String::from("hello"));
     }
 }
