@@ -27,3 +27,31 @@ impl<T> ResponsibleCell<T> {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct TestStruct {
+        pub inner: String
+    }
+
+    #[test]
+    fn test_double_mutation() {
+        let t = TestStruct {
+            inner: String::from("hej")
+        };
+        let cell = ResponsibleCell::new(t);
+        
+        let x = cell.get_mut();
+        let y = cell.get_mut();
+
+        x.inner = String::from("hi");
+        y.inner = String::from("hello");
+
+        let z = cell.get();
+
+        assert_eq!(x.inner, String::from("hello"));
+        assert_eq!(y.inner, String::from("hello"));
+        assert_eq!(z.inner, String::from("hello"));
+    }
+}
