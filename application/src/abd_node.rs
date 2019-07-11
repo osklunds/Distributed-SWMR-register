@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 
 use crate::settings::{SETTINGS, NodeId};
 use crate::register::*;
-use crate::entry::{Entry, Timestamp};
+use crate::entry::{self, Entry, Timestamp};
 use crate::messages::*;
 use crate::terminal_output::printlnu;
 use crate::mediator::Mediator;
@@ -19,28 +19,28 @@ use crate::mediator::Mediator;
 pub struct AbdNode<V> {
     mediator: Weak<Mediator>,
 
-    ts: Arc<Mutex<Timestamp>>,
-    reg: Arc<Mutex<Register<V>>>,
+    ts: Mutex<Timestamp>,
+    reg: Mutex<Register<V>>,
 
-    acking_processors_for_write: Arc<Mutex<HashSet<NodeId>>>,
-    register_being_written: Arc<Mutex<Option<Register<V>>>>,
-    write_ack_majority_reached: Arc<Condvar>,
+    acking_processors_for_write: Mutex<HashSet<NodeId>>,
+    register_being_written: Mutex<Option<Register<V>>>,
+    write_ack_majority_reached: Condvar,
 
-    acking_processors_for_read: Arc<Mutex<HashSet<NodeId>>>,
-    register_being_read: Arc<Mutex<Option<Register<V>>>>  
+    acking_processors_for_read: Mutex<HashSet<NodeId>>,
+    register_being_read: Mutex<Option<Register<V>>>
 }
 
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     pub fn new(node_id: NodeId, node_ids: HashSet<NodeId>, mediator: Weak<Mediator>) -> AbdNode<V> {
         AbdNode {
             mediator: mediator,
-            ts: Arc::new(Mutex::new(-1)),
-            reg: Arc::new(Mutex::new(Register::new(&SETTINGS.node_ids()))),
-            acking_processors_for_write: Arc::new(Mutex::new(HashSet::new())),
-            register_being_written: Arc::new(Mutex::new(None)),
-            write_ack_majority_reached: Arc::new(Condvar::new()),
-            acking_processors_for_read: Arc::new(Mutex::new(HashSet::new())),
-            register_being_read: Arc::new(Mutex::new(None)),
+            ts: Mutex::new(entry::default_timestamp()),
+            reg: Mutex::new(Register::new(&SETTINGS.node_ids())),
+            acking_processors_for_write: Mutex::new(HashSet::new()),
+            register_being_written: Mutex::new(None),
+            write_ack_majority_reached: Condvar::new(),
+            acking_processors_for_read: Mutex::new(HashSet::new()),
+            register_being_read: Mutex::new(None),
         }
     }
 
