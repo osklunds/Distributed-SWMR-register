@@ -32,7 +32,7 @@ impl Mediator {
         let mediator = Arc::new(mediator);
 
         let communicator = Communicator::new(node_id, socket_addrs, Arc::downgrade(&mediator));
-        let abd_node: AbdNode<String> = AbdNode::new(node_id, node_ids, Arc::downgrade(&mediator));
+        let abd_node: AbdNode<String> = AbdNode::new(Arc::downgrade(&mediator));
 
         *mediator.communicator.get_mut() = Some(communicator);
         *mediator.abd_node.get_mut() = Some(abd_node);

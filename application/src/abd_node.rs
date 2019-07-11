@@ -32,7 +32,7 @@ pub struct AbdNode<V> {
 }
 
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
-    pub fn new(node_id: NodeId, node_ids: HashSet<NodeId>, mediator: Weak<Mediator>) -> AbdNode<V> {
+    pub fn new(mediator: Weak<Mediator>) -> AbdNode<V> {
         AbdNode {
             mediator: mediator,
             ts: Mutex::new(entry::default_timestamp()),
@@ -97,8 +97,10 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
                 printlnu(format!("End write {:?}", &value2.unwrap()));
             }
 
-            let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
+            let acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
+            let register_being_written = self.register_being_written.lock().unwrap();
             assert!(acking_processors_for_write.is_empty());
+            assert!(register_being_written.is_none());
         }
     }
 
@@ -108,35 +110,6 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
     fn broadcast_json_message(&self, json: &str) {
         self.mediator().broadcast_json(json);
-    }
-
-
-
-    
-    fn write_ack_from_majority(&self) -> bool {
-        let acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
-
-        acking_processors_for_write.len() >= self.number_of_nodes_in_a_majority()
-    }
-
-    fn read_ack_from_majority(&self) -> bool {
-        let acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
-
-        acking_processors_for_read.len() >= self.number_of_nodes_in_a_majority()
-    }
-
-    fn number_of_nodes_in_a_majority(&self) -> usize {
-        SETTINGS.number_of_nodes() / 2 + 1
-    }
-
-    fn send_message_to(&self, message: &impl Message, receiver_id: NodeId) {
-        let json = serde_json::to_string(message).unwrap();
-        self.mediator().send_json_to(&json, receiver_id);
-    }
-
-    fn broadcast_message(&self, message: &impl Message) {
-        let json = serde_json::to_string(message).unwrap();
-        self.mediator().broadcast_json(&json);
     }
 
     fn mediator(&self) -> Arc<Mediator> {
@@ -273,9 +246,24 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         }
     }
 
+    fn write_ack_from_majority(&self) -> bool {
+        let acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
 
-    
+        acking_processors_for_write.len() >= self.number_of_nodes_in_a_majority()
+    }
 
+    fn read_ack_from_majority(&self) -> bool {
+        let acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
 
-    
+        acking_processors_for_read.len() >= self.number_of_nodes_in_a_majority()
+    }
+
+    fn number_of_nodes_in_a_majority(&self) -> usize {
+        SETTINGS.number_of_nodes() / 2 + 1
+    }
+
+    fn send_message_to(&self, message: &impl Message, receiver_id: NodeId) {
+        let json = serde_json::to_string(message).unwrap();
+        self.mediator().send_json_to(&json, receiver_id);
+    }    
 }
