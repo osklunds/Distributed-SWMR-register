@@ -4,17 +4,18 @@ use std::net::SocketAddr;
 use std::net::Ipv4Addr;
 use std::fs;
 
+
 use colored::*;
 use clap::{Arg, App, ArgMatches};
 
+
 use crate::register::NodeId;
-
-
 
 
 lazy_static! {
     pub static ref SETTINGS: Settings = Settings::new();
 }
+
 
 #[derive(Debug)]
 pub struct Settings {
