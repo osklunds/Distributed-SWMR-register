@@ -124,6 +124,7 @@ impl<V> PartialOrd for Register<V> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::entry::Timestamp;
 
     fn node_ids_for_tests() -> HashSet<NodeId> {
         let mut node_ids = HashSet::new();

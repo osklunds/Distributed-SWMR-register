@@ -8,7 +8,7 @@ use std::fmt::Debug;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
-use crate::settings::NodeId;
+use crate::settings::{SETTINGS, NodeId};
 use crate::register::*;
 use crate::entry::{Entry, Timestamp};
 use crate::messages::*;
@@ -21,9 +21,6 @@ pub struct AbdNode<V> {
 
     ts: Arc<Mutex<Timestamp>>,
     reg: Arc<Mutex<Register<V>>>,
-
-    id: Arc<NodeId>,
-    node_ids: Arc<HashSet<NodeId>>,
 
     acking_processors_for_write: Arc<Mutex<HashSet<NodeId>>>,
     register_being_written: Arc<Mutex<Option<Register<V>>>>,
@@ -38,9 +35,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         AbdNode {
             mediator: mediator,
             ts: Arc::new(Mutex::new(-1)),
-            reg: Arc::new(Mutex::new(Register::new(&node_ids))),
-            id: Arc::new(node_id),
-            node_ids: Arc::new(node_ids),
+            reg: Arc::new(Mutex::new(Register::new(&SETTINGS.node_ids()))),
             acking_processors_for_write: Arc::new(Mutex::new(HashSet::new())),
             register_being_written: Arc::new(Mutex::new(None)),
             write_ack_majority_reached: Arc::new(Condvar::new()),
@@ -101,7 +96,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             reg.merge_to_max_from_register(&write_message.register);
 
             write_ack_message = WriteAckMessage {
-                sender: *self.id,
+                sender: SETTINGS.node_id(),
                 register: Cow::Borrowed(&reg)
             };
 
@@ -148,7 +143,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             reg.merge_to_max_from_register(&read_message.register);
 
             read_ack_message = ReadAckMessage {
-                sender: *self.id,
+                sender: SETTINGS.node_id(),
                 register: Cow::Borrowed(&reg)
             };
 
@@ -201,12 +196,12 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             let mut reg = self.reg.lock().unwrap();
 
             *ts += 1;
-            reg.set(*self.id, Entry::new(*ts, value));
+            reg.set(SETTINGS.node_id(), Entry::new(*ts, value));
 
             reg_to_write = reg.clone();
 
             write_message = WriteMessage {
-                sender: *self.id,
+                sender: SETTINGS.node_id(),
                 register: Cow::Borrowed(&reg_to_write)
             };
 
@@ -241,10 +236,6 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     }
 
     fn number_of_nodes_in_a_majority(&self) -> usize {
-        self.number_of_nodes() / 2 + 1
-    }
-
-    fn number_of_nodes(&self) -> usize {
-        self.node_ids.len()
+        SETTINGS.number_of_nodes() / 2 + 1
     }
 }
