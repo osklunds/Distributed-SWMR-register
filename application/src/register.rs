@@ -1,13 +1,10 @@
 
 use std::collections::{HashMap, HashSet, BTreeMap};
-
-use std::fmt;
-use std::fmt::Display;
-
-use std::cmp;
+use std::fmt::{Formatter, Display, Result};
 use std::cmp::Ordering;
 
 use serde::{Serialize, Deserialize};
+
 
 use crate::entry::{self, Entry, Timestamp};
 
@@ -24,7 +21,7 @@ impl<V: Default + Clone> Register<V> {
     pub fn new(node_ids: &HashSet<NodeId>) -> Register<V> {
         let mut map = HashMap::new();
         for &node_id in node_ids {
-            map.insert(node_id, Entry::new(-1, V::default()));
+            map.insert(node_id, Entry::new(entry::default_timestamp(), V::default()));
         }
 
         Register {
@@ -66,7 +63,7 @@ impl<V> Register<V> {
 }
 
 impl<V: Display> Display for Register<V> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         let mut sorted_map = BTreeMap::new();
         for (node_id, entry) in self.map.iter() {
             sorted_map.insert(node_id, entry);
@@ -149,7 +146,7 @@ mod tests {
     }
 
     fn register_for_tests() -> Register<String> {
-        let mut reg = Register::new(node_ids_for_tests());
+        let mut reg = Register::new(&node_ids_for_tests());
         for &node_id in node_ids_for_tests().iter() {
             reg.set(node_id, Entry::new(timestamp_for_tests(), value_for_tests()));
         }
@@ -177,7 +174,7 @@ mod tests {
 
     #[test]
     fn test_that_from_new_timestamps_are_default() {
-        let reg: Register<String> = Register::new(node_ids_for_tests());
+        let reg: Register<String> = Register::new(&node_ids_for_tests());
 
         for (_, entry) in reg.map.iter() {
             assert_eq!(entry.ts, entry::default_timestamp());
@@ -240,7 +237,7 @@ mod tests {
         let reg1 = register_for_tests();
         let mut node_ids = HashSet::new();
         node_ids.insert(5);
-        let reg2 = Register::new(node_ids);
+        let reg2 = Register::new(&node_ids);
 
         assert_ne!(reg1, reg2);
     }
@@ -251,7 +248,7 @@ mod tests {
         let reg1 = register_for_tests();
         let mut node_ids = HashSet::new();
         node_ids.insert(5);
-        let reg2 = Register::new(node_ids);
+        let reg2 = Register::new(&node_ids);
 
         assert_eq!(reg1 >= reg2, false);
     }

@@ -1,8 +1,6 @@
 
 use std::fmt;
 use std::fmt::Display;
-
-use std::cmp;
 use std::cmp::Ordering;
 
 use serde::{Serialize, Deserialize};
@@ -103,6 +101,4 @@ mod tests {
             }
         }
     }
-
-
 }
