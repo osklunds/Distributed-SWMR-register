@@ -14,18 +14,14 @@ fn main() {
     let number_of_nodes = number_of_nodes(&matches);
     let _number_of_writers = number_of_writers(&matches);
     let _number_of_readers = number_of_readers(&matches);
-    let release_mode = release_mode(&matches);
+    let release_mode_string = release_mode_string(&matches);
+    let print_start_end_string = print_start_end_string(&matches);
 
     create_hosts_file(number_of_nodes);
 
-    let mut release_string = "";
-    if release_mode {
-        release_string = "--release";
-    }
-
     let mut build_process = Command::new("/bin/bash")
         .arg("-c")
-        .arg(format!("cargo build {} --manifest-path ../application/Cargo.toml", release_string))
+        .arg(format!("cargo build {} --manifest-path ../application/Cargo.toml", release_mode_string))
         .spawn()
         .expect("failed to execute process");
 
@@ -36,7 +32,7 @@ fn main() {
         let color = color_from_node_id(node_id);
         let child_process = Command::new("/bin/bash")
                 .arg("-c")
-                .arg(format!("cargo run {} --manifest-path ../application/Cargo.toml -- {} hosts.txt {:?}", release_string, node_id, color))
+                .arg(format!("cargo run {} --manifest-path ../application/Cargo.toml -- {} {} hosts.txt {:?}", release_mode_string, node_id, print_start_end_string, color))
                 .spawn()
                 .expect("failed to execute process");
 
@@ -76,6 +72,12 @@ fn get_matches() -> ArgMatches<'static> {
             .long("optimize")
             .takes_value(false)
             .help("With this option, cargo will build/run in release mode. This uses optimizations and yields higher performance."))
+
+        .arg(Arg::with_name("print-start-end")
+            .short("p")
+            .long("print-start-end")
+            .takes_value(false)
+            .help("Print start/end when a client operation starts respectively ends."))
 
         .get_matches()
 }
@@ -132,6 +134,26 @@ fn color_from_node_id(node_id: i32) -> Color {
     colors[(node_id as usize) % 7]
 }
 
+fn release_mode_string(matches: &ArgMatches<'static>) -> String {
+    if release_mode(matches) {
+        String::from("--optimize")
+    } else {
+        String::from("")
+    }
+}
+
 fn release_mode(matches: &ArgMatches<'static>) -> bool {
     matches.is_present("optimize")
+}
+
+fn print_start_end_string(matches: &ArgMatches<'static>) -> String {
+    if print_start_end(matches) {
+        String::from("--print-start-end")
+    } else {
+        String::from("")
+    }
+}
+
+fn print_start_end(matches: &ArgMatches<'static>) -> bool {
+    matches.is_present("print-start-end")
 }

@@ -49,7 +49,12 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     }
 
     pub fn write(&self, value: V) {
-        //printlnu(format!("Start write {:?}", &value));
+        if cfg!(debug_assertions) {
+            if SETTINGS.print_start_end_of_client_operations() {
+                printlnu(format!("Start write {:?}", &value));
+            }
+        }
+        
         let value2 = value.clone();
 
         let write_message;
@@ -89,8 +94,11 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
         acking_processors_for_write.clear();
 
-        //printlnu(format!("End write {:?}", &value2));
-        
+        if cfg!(debug_assertions) {
+            if SETTINGS.print_start_end_of_client_operations() {
+                printlnu(format!("End write {:?}", &value2));
+            }
+        }
     }
     
     fn write_ack_from_majority(&self) -> bool {
