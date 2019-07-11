@@ -1,6 +1,6 @@
 
 use std::str;
-use std::sync::{Arc, Mutex, Condvar, Weak};
+use std::sync::{Arc, Mutex, MutexGuard, Condvar, Weak};
 use std::collections::HashSet;
 use std::borrow::Cow;
 use std::fmt::Debug;
@@ -56,31 +56,13 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             }
             value2 = Some(value.clone());
         }
-
-        let json_write_message;
-
-        {
-            let mut ts = self.ts.lock().unwrap();
-            let mut reg = self.reg.lock().unwrap();
-
-            *ts += 1;
-            reg.set(SETTINGS.node_id(), Entry::new(*ts, value));
-
-            let mut register_being_written = self.register_being_written.lock().unwrap();
-
-            if cfg!(debug_assertions) {
-                assert_eq!(*register_being_written, None);
-            }
-
-            *register_being_written = Some(reg.clone());
-
-            let write_message = WriteMessage {
-                sender: SETTINGS.node_id(),
-                register: Cow::Borrowed(&reg)
-            };
-
-            json_write_message = self.jsonify_message(&write_message);
-        }
+        
+        // Enclose the three lines below in case the register
+        // lock isn't released immediately after the json
+        // message is created.
+        let register = self.acquire_register_and_update_it_with_value(value);
+        self.clone_register_to_register_being_written(&register);
+        let json_write_message = self.construct_json_write_message_and_release_register(register);
 
         self.broadcast_json_message(&json_write_message);
             
@@ -102,6 +84,34 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             assert!(acking_processors_for_write.is_empty());
             assert!(register_being_written.is_none());
         }
+    }
+
+    fn acquire_register_and_update_it_with_value(&self, value: V) -> MutexGuard<Register<V>> {
+        let mut ts = self.ts.lock().unwrap();
+        let mut reg = self.reg.lock().unwrap();
+
+        *ts += 1;
+        reg.set(SETTINGS.node_id(), Entry::new(*ts, value));
+        reg
+    }
+
+    fn clone_register_to_register_being_written(&self, register: &Register<V>) {
+       let mut register_being_written = self.register_being_written.lock().unwrap();
+
+        if cfg!(debug_assertions) {
+            assert_eq!(*register_being_written, None);
+        }
+
+        *register_being_written = Some(register.clone());
+    }
+
+    fn construct_json_write_message_and_release_register(&self, register: MutexGuard<Register<V>>) -> String {
+        let write_message = WriteMessage {
+            sender: SETTINGS.node_id(),
+            register: Cow::Borrowed(&register)
+        };
+
+        self.jsonify_message(&write_message)
     }
 
     fn jsonify_message(&self, message: &impl Message) -> String {
