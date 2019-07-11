@@ -1,6 +1,5 @@
 
 use std::cell::UnsafeCell;
-use std::mem;
 
 /*
 In order to create a circular reference, I need to create

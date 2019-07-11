@@ -1,38 +1,15 @@
 
+use std::sync::Arc;
+use std::thread;
+use std::collections::HashSet;
+
+use crate::register::*;
+//use crate::terminal_output::printlnu;
+use crate::settings::SETTINGS;
+use crate::responsible_cell::ResponsibleCell;
 use crate::abd_node::AbdNode;
 use crate::communicator::Communicator;
 
-use std::net::UdpSocket;
-use std::net::SocketAddr;
-use std::net::Ipv4Addr;
-use std::io;
-use std::str;
-use std::borrow::Borrow;
-
-use std::sync::{Arc, Mutex, MutexGuard, Condvar, Weak};
-use std::sync::mpsc::{channel, Sender, Receiver};
-use std::{thread, time};
-
-use std::collections::{HashMap, HashSet};
-
-use serde_json;
-use serde_json::Error;
-use serde::{Serialize, Deserialize};
-use serde::de::DeserializeOwned;
-
-use std::fmt::Debug;
-use std::hash::Hash;
-
-use std::borrow::Cow;
-
-use crossbeam::atomic::AtomicCell;
-
-use crate::register::*;
-use crate::entry::{Entry, Timestamp};
-use crate::messages::*;
-use crate::terminal_output::printlnu;
-use crate::settings::SETTINGS;
-use crate::responsible_cell::ResponsibleCell;
 
 //#[derive(Debug)]
 pub struct Mediator {

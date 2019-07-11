@@ -4,14 +4,10 @@ use std::net::SocketAddr;
 use std::str;
 use std::sync::{Arc, Weak};
 use std::collections::HashMap;
-use std::fmt::Debug;
-
-
-use serde_json;
 
 
 use crate::register::NodeId;
-use crate::terminal_output::printlnu;
+//use crate::terminal_output::printlnu;
 use crate::mediator::Mediator;
 
 

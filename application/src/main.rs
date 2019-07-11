@@ -1,5 +1,5 @@
 
-#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
+//#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
 
 #[macro_use]
 extern crate lazy_static;
@@ -17,46 +17,21 @@ mod responsible_cell;
 
 use std::time::SystemTime;
 use std::time::Duration;
+use std::sync::Arc;
+use std::thread;
 
-use std::str;
-
-use std::sync::{Arc, Mutex, MutexGuard, Condvar};
-use std::{thread, time};
-use std::sync::mpsc::channel;
-
-use std::collections::{HashMap, HashSet};
-
-use std::default::Default;
-
-use std::env;
-
-use serde_json;
-use serde::{Serialize, Deserialize};
-
-use colored::*;
-
-use clap::{Arg, App, SubCommand};
-
-
-use abd_node::AbdNode;
-use messages::WriteMessage;
-use messages::ReadMessage;
-use register::Register;
-use entry::Entry;
 use settings::SETTINGS;
 use terminal_output::printlnu;
 use mediator::Mediator;
 
 
-
 fn main() {
+    SETTINGS.node_id;
     let mediator = Mediator::new();
     
     let write_thread_mediator = Arc::clone(&mediator);
     let write_thread_handle = thread::spawn(move || {
         if write_thread_mediator.node_id() == 1 {
-            let mut i = 0;
-
             thread::sleep(Duration::from_millis(500));
 
             let start = SystemTime::now();

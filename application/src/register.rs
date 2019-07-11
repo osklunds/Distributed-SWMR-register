@@ -7,7 +7,7 @@ use std::cmp::Ordering;
 use serde::{Serialize, Deserialize};
 
 
-use crate::entry::{self, Entry, Timestamp};
+use crate::entry::{self, Entry};
 
 
 pub type NodeId = i32;
