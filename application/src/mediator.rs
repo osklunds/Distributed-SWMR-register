@@ -1,6 +1,5 @@
 
 use std::sync::Arc;
-use std::thread;
 
 //use crate::terminal_output::printlnu;
 use crate::settings::{SETTINGS, NodeId};
@@ -11,7 +10,7 @@ use crate::register::Register;
 
 
 pub struct Mediator {
-    communicator: ResponsibleCell<Option<Communicator>>,
+    communicator: ResponsibleCell<Option<Arc<Communicator>>>,
     abd_node: ResponsibleCell<Option<AbdNode<String>>>
 }
 
@@ -34,15 +33,7 @@ impl Mediator {
         *mediator.communicator.get_mut() = Some(communicator);
         *mediator.abd_node.get_mut() = Some(abd_node);
 
-        Self::start_recv_thread(Arc::clone(&mediator));
-
         mediator
-    }
-    
-    fn start_recv_thread(mediator: Arc<Mediator>) {
-        thread::spawn(move || {
-            mediator.communicator().recv_loop();
-        });
     }
     
     fn abd_node(&self) -> &AbdNode<String> {

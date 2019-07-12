@@ -3,6 +3,7 @@ use std::net::UdpSocket;
 use std::net::SocketAddr;
 use std::str;
 use std::sync::{Arc, Weak}; 
+use std::thread;
 use std::collections::HashMap;
 
 use crate::settings::NodeId;
@@ -16,14 +17,20 @@ pub struct Communicator {
 }
 
 impl Communicator {
-    pub fn new(own_socket_addr: SocketAddr, socket_addrs: HashMap<NodeId, SocketAddr>, mediator: Weak<Mediator>) -> Communicator {
+    pub fn new(own_socket_addr: SocketAddr, socket_addrs: HashMap<NodeId, SocketAddr>, mediator: Weak<Mediator>) -> Arc<Communicator> {
         let socket = UdpSocket::bind(own_socket_addr).expect("Could not create socket.");
 
-        Communicator {
+        let communicator = Communicator {
             socket: socket,
             socket_addrs: socket_addrs,
             mediator: mediator
-        }
+        };
+        let communicator = Arc::new(communicator);
+        let recv_thread_communicator = Arc::clone(&communicator);
+        thread::spawn(move || {
+            recv_thread_communicator.recv_loop();
+        });
+        communicator
     }
 
     pub fn recv_loop(&self) {
