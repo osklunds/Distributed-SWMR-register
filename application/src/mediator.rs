@@ -17,6 +17,7 @@ pub struct Mediator {
 }
 
 impl Mediator {
+    #[allow(dead_code)]
     pub fn new() -> Arc<Mediator> {
         let node_id = SETTINGS.node_id();
         let socket_addrs = SETTINGS.socket_addrs().clone();
@@ -45,9 +46,9 @@ impl Mediator {
 
     
     fn start_recv_thread(mediator: Arc<Mediator>) {
-        let recv_thread_handle = thread::spawn(move || {
+        thread::spawn(move || {
             mediator.communicator().recv_loop();
-         });
+        });
     }
     
     fn abd_node(&self) -> &AbdNode<String> {
@@ -71,14 +72,17 @@ impl Mediator {
         self.abd_node().json_received(json);
     }
 
+    #[allow(dead_code)]
     pub fn write(&self, message: String) {
         self.abd_node().write(message);
     }
 
+    #[allow(dead_code)]
     pub fn read(&self, node_id: NodeId) -> String {
         self.abd_node().read(node_id)
     }
 
+    #[allow(dead_code)]
     pub fn read_all(&self) -> Register<String> {
         self.abd_node().read_all()
     }

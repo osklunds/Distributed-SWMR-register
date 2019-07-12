@@ -15,6 +15,7 @@ pub struct Register<V> {
 }
 
 impl<V: Default + Clone> Register<V> {
+    #[allow(dead_code)]
     pub fn new(node_ids: &HashSet<NodeId>) -> Register<V> {
         let mut map = HashMap::new();
         for &node_id in node_ids {
@@ -26,16 +27,19 @@ impl<V: Default + Clone> Register<V> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn get(&self, node_id: NodeId) -> &Entry<V> {
         self.map.get(&node_id).expect("Trying to get entry in register, but that node id does not exist.")
     }
 
+    #[allow(dead_code)]
     pub fn set(&mut self, node_id: NodeId, entry: Entry<V>) {
         if self.map.insert(node_id, entry) == None {
             panic!("Trying to set entry in register, but that node id does not exist.");
         } 
     }
 
+    #[allow(dead_code)]
     pub fn merge_to_max_from_register(&mut self, other: &Register<V>) {
         for (node_id, entry) in self.map.iter_mut() {
             let other_entry = other.map.get(node_id).unwrap();

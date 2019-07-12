@@ -2,12 +2,10 @@
 use std::net::UdpSocket;
 use std::net::SocketAddr;
 use std::str;
-use std::sync::{Arc, Weak};
+use std::sync::{Arc, Weak}; 
 use std::collections::HashMap;
 
-
 use crate::settings::NodeId;
-//use crate::terminal_output::printlnu;
 use crate::mediator::Mediator;
 
 
@@ -35,7 +33,7 @@ impl Communicator {
         loop {
             let mut buf = [0; 4096];
 
-            let (amt, socket_addr) = self.socket.recv_from(&mut buf).unwrap();
+            let amt = self.socket.recv(&mut buf).unwrap();
             let json_string = str::from_utf8(&buf[0..amt]).unwrap();
 
             self.mediator().json_received(json_string);

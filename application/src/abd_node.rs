@@ -4,7 +4,6 @@ use std::sync::{Arc, Mutex, MutexGuard, Condvar, Weak};
 use std::collections::HashSet;
 use std::borrow::Cow;
 use std::fmt::Debug;
-use std::thread;
 use std::time::Duration;
 
 use serde::Serialize;
@@ -34,6 +33,7 @@ pub struct AbdNode<V> {
 }
 
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
+    #[allow(dead_code)]
     pub fn new(mediator: Weak<Mediator>) -> AbdNode<V> {
         AbdNode {
             mediator: mediator,
@@ -50,6 +50,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn write(&self, value: V) {
         self.inner_write(value);
 
@@ -128,11 +129,13 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         self.mediator.upgrade().unwrap()
     }
 
+    #[allow(dead_code)]
     pub fn read(&self, node_id: NodeId) -> V {
         let result = self.inner_read();
         result.get(node_id).clone().val
     }
 
+    #[allow(dead_code)]
     pub fn read_all(&self) -> Register<V> {
         let result = self.inner_read();
         result.clone()
@@ -177,6 +180,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn json_received(&self, json: &str) {
         if self.json_is_write_message(json) {
             if let Ok(write_message) = serde_json::from_str(&json) {
