@@ -1,25 +1,49 @@
 
+#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
+
 use std::collections::{HashMap, HashSet};
 //use std::iter::FromIterator;
 use std::net::SocketAddr;
+use std::net::IpAddr::V4;
 use std::net::ToSocketAddrs;
 
 use std::process::Command;
 use std::fs;
 use std::path::Path;
+use std::path::PathBuf;
 use std::vec::Vec;
+
 
 use clap::{Arg, App, ArgMatches};
 
 
 type NodeId = i32;
 
+#[derive(PartialEq, Eq, Hash)]
+pub struct NodeInfo {
+    pub node_id: NodeId,
+    pub socket_addr: SocketAddr,
+    pub key_path: String,
+    pub username: String
+}
+
 
 fn main() {
     let matches = get_matches();
-    let socket_addrs = socket_addrs_from_matches(&matches);
+    let node_infos = node_infos_from_matches(&matches);
 
-    println!("{:?}", socket_addrs);
+    for node_info in node_infos.iter() {
+        if let V4(ip_addr) = node_info.socket_addr.ip() {
+            let mut install_process = Command::new("/bin/bash")
+                .arg("-c")
+                .arg(format!("ssh -i {} {}@{} \"curl https://sh.rustup.rs -sSf > rustup.sh;sh rustup.sh -y; exit\"", node_info.key_path, node_info.username, ip_addr))
+                .spawn()
+                .expect("failed to execute the install process");
+
+            install_process.wait().unwrap();
+
+        }
+    }
 
     /*
 
@@ -114,24 +138,33 @@ fn release_mode(matches: &ArgMatches<'static>) -> bool {
     matches.is_present("optimize")
 }
 
-fn socket_addrs_from_matches(matches: &ArgMatches<'static>) -> HashMap<NodeId, SocketAddr> {
+fn node_infos_from_matches(matches: &ArgMatches<'static>) -> HashSet<NodeInfo> {
     let hosts_file_path = matches.value_of("hosts-file").unwrap();
     let string = fs::read_to_string(hosts_file_path).expect("Unable to read file");
-    socket_addrs_from_string(string)
+    socket_addrs_and_key_paths_from_string(string)
 }
 
-fn socket_addrs_from_string(string: String) -> HashMap<NodeId, SocketAddr> {
-    let mut socket_addrs = HashMap::new();
+fn socket_addrs_and_key_paths_from_string(string: String) -> HashSet<NodeInfo> {
+    let mut node_infos = HashSet::new();
 
     for line in string.lines() {
         let components: Vec<&str> = line.split(",").collect();
         let id = components[0].parse().unwrap();
         let socket_addr = components[1].to_socket_addrs().unwrap().next().unwrap();
+        let key_path = components[2].to_string();
+        let username = components[3].to_string();
 
-        socket_addrs.insert(id, socket_addr);
+        let node_info = NodeInfo {
+            node_id: id,
+            socket_addr: socket_addr,
+            key_path: key_path,
+            username: username
+        };
+
+        node_infos.insert(node_info);
     }
 
-    socket_addrs
+    node_infos
 }
 
 
