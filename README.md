@@ -12,6 +12,8 @@ The goal of this project is for me to become a better Rust programmer. For anoth
 3. Uncomment the `printlnu` lines in `application/src/main.rs` to actually see something printed to the terminal.
 4. Change directory to `local_starter` and type `cargo run n` where `n` is the number of local nodes you want to have. I suggest `n=5`.
 
+Each node will print to the terminal in its own color. It will print when it starts/ends a write/read. The read end operations will also show the value of all nodes' registers. So you see a sequence of write and read operations and what the values of the registers were in the different places in that execution.
+
 ## ABD overview
 
 ![ABD visualization](doc/ABD.png)
