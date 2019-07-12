@@ -129,7 +129,7 @@ fn color_from_node_id(node_id: i32) -> Color {
 
 fn release_mode_string(matches: &ArgMatches<'static>) -> String {
     if release_mode(matches) {
-        String::from("--optimize")
+        String::from("--release")
     } else {
         String::from("")
     }
