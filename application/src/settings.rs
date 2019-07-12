@@ -21,8 +21,7 @@ lazy_static! {
 pub struct Settings {
     node_id: NodeId,
     socket_addrs: HashMap<NodeId, SocketAddr>,
-    terminal_color: Color,
-    print_start_end_of_client_operations: bool
+    terminal_color: Color
 }
 
 impl Settings {
@@ -31,14 +30,12 @@ impl Settings {
         let color = color_from_matches(&matches);
         let socket_addrs = socket_addrs_from_matches(&matches);
         let node_id = node_id_from_matches(&matches);
-        let print_start_end_of_client_operations = print_start_end_from_matches(&matches);
 
 
         Settings {
             node_id: node_id,
             socket_addrs: socket_addrs,
-            terminal_color: color,
-            print_start_end_of_client_operations: print_start_end_of_client_operations
+            terminal_color: color
         }
     }
 
@@ -52,11 +49,6 @@ impl Settings {
 
     pub fn terminal_color(&self) -> Color {
         self.terminal_color
-    }
-
-    #[allow(dead_code)]
-    pub fn print_start_end_of_client_operations(&self) -> bool {
-        self.print_start_end_of_client_operations
     }
 
     pub fn number_of_nodes(&self) -> usize {
@@ -91,12 +83,6 @@ fn get_matches() -> ArgMatches<'static> {
             .default_value("Black")
             .help("Sets the color of the terminal output"))
 
-        .arg(Arg::with_name("print-start-end")
-            .short("p")
-            .long("print-start-end")
-            .takes_value(false)
-            .help("Print start/end when a client operation starts respectively ends."))
-
         .get_matches()
 }
 
@@ -126,8 +112,4 @@ fn socket_addrs_from_string(string: String) -> HashMap<NodeId, SocketAddr> {
 
 fn node_id_from_matches(matches: &ArgMatches<'static>) -> NodeId {
     matches.value_of("node-id").unwrap().parse().unwrap()
-}
-
-fn print_start_end_from_matches(matches: &ArgMatches<'static>) -> bool {
-    matches.is_present("print-start-end")
 }
