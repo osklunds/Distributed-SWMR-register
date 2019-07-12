@@ -7,7 +7,7 @@ use std::net::SocketAddr;
 use std::net::IpAddr::V4;
 use std::net::ToSocketAddrs;
 
-use std::process::Command;
+use std::process::{Command, Child};
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
@@ -27,11 +27,22 @@ pub struct NodeInfo {
     pub username: String
 }
 
+impl NodeInfo {
+    pub fn ip_addr_string(&self) -> String {
+        if let V4(ip_addr) = self.socket_addr.ip() {
+            format!("{}", ip_addr)
+        } else {
+            panic!("Ipv6 not supported");
+        }
+    }
+}
+
 
 fn main() {
     let matches = get_matches();
     let node_infos = node_infos_from_matches(&matches);
 
+    let mut install_processes = Vec::new();
     for node_info in node_infos.iter() {
         if let V4(ip_addr) = node_info.socket_addr.ip() {
             let mut install_process = Command::new("/bin/bash")
@@ -40,42 +51,56 @@ fn main() {
                 .spawn()
                 .expect("failed to execute the install process");
 
-            install_process.wait().unwrap();
-
+            install_processes.push(install_process);
+        } else {
+            panic!("Ipv6 addresses are not allowed.");
         }
     }
 
-    /*
-
-    let mut build_process = Command::new("/bin/bash")
-        .arg("-c")
-        .arg(format!("cargo build {} --manifest-path ../application/Cargo.toml", release_mode_string))
-        .spawn()
-        .expect("failed to execute process");
-
-    build_process.wait().unwrap();
-
-    let mut child_processes = Vec::new();
-    for node_id in 1..number_of_nodes+1 {
-        let color = color_from_node_id(node_id);
-        let child_process = Command::new("/bin/bash")
-                .arg("-c")
-                .arg(format!("cargo run {} --manifest-path ../application/Cargo.toml -- {} hosts.txt {:?}", release_mode_string, node_id, color))
-                .spawn()
-                .expect("failed to execute process");
-
-        child_processes.push(child_process);
+    for install_process in install_processes.iter_mut() {
+        install_process.wait().unwrap();
     }
+
+    //let mut upload_processes = Vec::new();
+    for node_info in node_infos.iter() {
+        if let V4(ip_addr) = node_info.socket_addr.ip() {
+            execute_remote_command("rm -r distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
+            execute_remote_command("mkdir distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
+
+            execute_scp_copy_of_path("src/", &node_info).wait().unwrap();
+            execute_scp_copy_of_path("Cargo.toml", &node_info).wait().unwrap();
+            execute_scp_copy_of_path("Cargo.lock", &node_info).wait().unwrap();
+        }    
+    }
+
+
+
+
  
-    for child_process in child_processes.iter_mut() {
-        child_process.wait().unwrap();
-    }
+}
 
-    */
+fn execute_command(command: &str) -> Child {
+    Command::new("/bin/bash")
+        .arg("-c")
+        .arg(command)
+        .spawn()
+        .expect(&format!("Failed to execute the command: {}", command))
+}
+
+fn execute_remote_command(command: &str, node_info: &NodeInfo) -> Child {
+    let ssh_command = format!("ssh -i {} {}@{} {}", node_info.key_path, node_info.username, node_info.ip_addr_string(), command);
+
+    execute_command(&ssh_command)
+}
+
+fn execute_scp_copy_of_path(path: &str, node_info: &NodeInfo) -> Child {
+    let scp_command = format!("scp -i {} -r ../application/{} {}@{}:distributed_swmr_registers_remote_directory/{}", node_info.key_path, path, node_info.username, node_info.ip_addr_string(), path);
+
+    execute_command(&scp_command)
 }
 
 fn get_matches() -> ArgMatches<'static> {
-    App::new("Distributed SWMR registers: Local starter")
+    App::new("Distributed SWMR registers: Remote starter")
         .version("0.1")
         .author("Oskar Lundström")
         .about("Todo")
