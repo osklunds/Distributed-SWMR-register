@@ -1,0 +1,7 @@
+[package]
+name = "remote_starter"
+version = "0.1.0"
+authors = ["Oskar Lundström <21679735+osklunds@users.noreply.github.com>"]
+edition = "2018"
+
+[dependencies]
