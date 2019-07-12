@@ -1,0 +1,8 @@
+
+1. Install rust and cargo
+2. Upload the application folder
+3. Upload the correct hosts file
+
+--- Wait until all are done ---
+
+4. Start with correct parameters
