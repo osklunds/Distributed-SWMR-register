@@ -1,7 +1,6 @@
 
 use std::sync::Arc;
 use std::thread;
-use std::collections::HashSet;
 
 //use crate::terminal_output::printlnu;
 use crate::settings::{SETTINGS, NodeId};
@@ -19,21 +18,17 @@ pub struct Mediator {
 impl Mediator {
     #[allow(dead_code)]
     pub fn new() -> Arc<Mediator> {
-        let node_id = SETTINGS.node_id();
-        let socket_addrs = SETTINGS.socket_addrs().clone();
-
-        let mut node_ids = HashSet::new();
-        for &node_id in socket_addrs.keys() {
-            node_ids.insert(node_id);
-        }
-
         let mediator = Mediator {
             communicator: ResponsibleCell::new(None),
             abd_node: ResponsibleCell::new(None),
         };
         let mediator = Arc::new(mediator);
 
-        let communicator = Communicator::new(node_id, socket_addrs, Arc::downgrade(&mediator));
+        let node_id = SETTINGS.node_id();
+        let socket_addrs = SETTINGS.socket_addrs().clone();
+        let own_socket_addr = socket_addrs.get(&node_id).unwrap();
+
+        let communicator = Communicator::new(*own_socket_addr, socket_addrs, Arc::downgrade(&mediator));
         let abd_node: AbdNode<String> = AbdNode::new(Arc::downgrade(&mediator));
 
         *mediator.communicator.get_mut() = Some(communicator);
@@ -43,7 +38,6 @@ impl Mediator {
 
         mediator
     }
-
     
     fn start_recv_thread(mediator: Arc<Mediator>) {
         thread::spawn(move || {
@@ -54,7 +48,6 @@ impl Mediator {
     fn abd_node(&self) -> &AbdNode<String> {
         self.abd_node.get().as_ref().unwrap()
     }
-
     
     fn communicator(&self) -> &Communicator {
         self.communicator.get().as_ref().unwrap()

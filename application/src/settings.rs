@@ -54,6 +54,7 @@ impl Settings {
         self.terminal_color
     }
 
+    #[allow(dead_code)]
     pub fn print_start_end_of_client_operations(&self) -> bool {
         self.print_start_end_of_client_operations
     }

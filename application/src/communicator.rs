@@ -10,19 +10,16 @@ use crate::mediator::Mediator;
 
 
 pub struct Communicator {
-    pub id: NodeId,
     socket: UdpSocket,
     socket_addrs: HashMap<NodeId, SocketAddr>,
     mediator: Weak<Mediator>
 }
 
 impl Communicator {
-    pub fn new(node_id: NodeId, socket_addrs: HashMap<NodeId, SocketAddr>, mediator: Weak<Mediator>) -> Communicator {
-        let my_socket_addr = socket_addrs.get(&node_id).expect("My node id was not included among the socket addresses.");
-        let socket = UdpSocket::bind(my_socket_addr).expect("Could not create socket.");
+    pub fn new(own_socket_addr: SocketAddr, socket_addrs: HashMap<NodeId, SocketAddr>, mediator: Weak<Mediator>) -> Communicator {
+        let socket = UdpSocket::bind(own_socket_addr).expect("Could not create socket.");
 
         Communicator {
-            id: node_id,
             socket: socket,
             socket_addrs: socket_addrs,
             mediator: mediator
@@ -43,7 +40,6 @@ impl Communicator {
     fn mediator(&self) -> Arc<Mediator> {
         self.mediator.upgrade().unwrap()
     }
-    
 
     pub fn send_json_to(&self, json: &str, receiver_id: NodeId) {
         let bytes = json.as_bytes();
@@ -53,7 +49,7 @@ impl Communicator {
 
     pub fn broadcast_json(&self, json: &str) {
         let bytes = json.as_bytes();
-        for (_, socket_addr) in self.socket_addrs.iter() {
+        for socket_addr in self.socket_addrs.values() {
             self.socket.send_to(bytes, socket_addr).unwrap();
         }
     }
