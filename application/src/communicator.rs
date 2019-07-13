@@ -1,6 +1,6 @@
 
 use std::net::UdpSocket;
-use std::net::SocketAddr;
+use std::net::{SocketAddr, IpAddr, Ipv4Addr};
 use std::str;
 use std::sync::{Arc, Weak}; 
 use std::thread;
@@ -18,6 +18,7 @@ pub struct Communicator {
 
 impl Communicator {
     pub fn new(own_socket_addr: SocketAddr, socket_addrs: HashMap<NodeId, SocketAddr>, mediator: Weak<Mediator>) -> Arc<Communicator> {
+        let own_socket_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0,0,0,0)), own_socket_addr.port());
         let socket = UdpSocket::bind(own_socket_addr).expect("Could not create socket.");
 
         let communicator = Communicator {
