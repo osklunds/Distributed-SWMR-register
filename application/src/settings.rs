@@ -39,8 +39,6 @@ impl Settings {
         let color = color_from_matches(&matches);
         let run_length = run_length_from_matches(&matches);
 
-        println!("{}", matches.is_present("print-client-operations"));
-
         Settings {
             node_id: node_id,
             socket_addrs: socket_addrs,

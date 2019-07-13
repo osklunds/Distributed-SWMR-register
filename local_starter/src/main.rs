@@ -42,7 +42,7 @@ fn main() {
         };
 
         let command_string = format!("cargo run {} --manifest-path ../application/Cargo.toml -- {} hosts.txt {} {:?} {} {} {} {}", release_mode_string, node_id, run_length, color, print_client_operations_string, record_evaluation_info_string, write_string, read_string);
-        
+
         let child_process = Command::new("/bin/bash")
                 .arg("-c")
                 .arg(command_string)
@@ -66,16 +66,22 @@ fn get_matches() -> ArgMatches<'static> {
         .arg(Arg::with_name("number-of-nodes")
             .required(true)
             .takes_value(true)
+            .short("n")
+            .long("number-of-nodes")
             .help("The number of local nodes to run."))
 
         .arg(Arg::with_name("number-of-writers")
             .required(true)
             .takes_value(true)
+            .short("w")
+            .long("number-of-writers")
             .help("The number of nodes that should write."))
 
         .arg(Arg::with_name("number-of-readers")
             .required(true)
             .takes_value(true)
+            .short("r")
+            .long("number-of-readers")
             .help("The number of nodes that should read."))
 
         .arg(Arg::with_name("optimize")
@@ -93,6 +99,8 @@ fn get_matches() -> ArgMatches<'static> {
         .arg(Arg::with_name("run-length")
             .takes_value(true)
             .required(true)
+            .short("l")
+            .long("run-length")
             .help("The number of seconds the program should run for. If 0 is given, the program will until aborted with Ctrl-C."))
 
         .arg(Arg::with_name("record-evaluation-info")
