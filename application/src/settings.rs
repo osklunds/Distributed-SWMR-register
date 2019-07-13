@@ -39,15 +39,17 @@ impl Settings {
         let color = color_from_matches(&matches);
         let run_length = run_length_from_matches(&matches);
 
+        println!("{}", matches.is_present("print-client-operations"));
+
         Settings {
             node_id: node_id,
             socket_addrs: socket_addrs,
             terminal_color: color,
             should_write: matches.is_present("write"),
             should_read: matches.is_present("read"),
-            print_client_operations: matches.is_present("print_client_operations"),
+            print_client_operations: matches.is_present("print-client-operations"),
             run_length: run_length,
-            record_evaluation_info: matches.is_present("evaluation-length"),
+            record_evaluation_info: matches.is_present("run-length"),
         }
     }
 
@@ -122,7 +124,7 @@ fn get_matches() -> ArgMatches<'static> {
             .takes_value(false)
             .help("Makes this node perform read operations."))
 
-        .arg(Arg::with_name("print_client_operations")
+        .arg(Arg::with_name("print-client-operations")
             .short("p")
             .long("print-client-operations")
             .takes_value(false)
@@ -131,7 +133,7 @@ fn get_matches() -> ArgMatches<'static> {
         .arg(Arg::with_name("run-length")
             .takes_value(true)
             .required(true)
-            .help("The number of seconds the program should run for."))
+            .help("The number of seconds the program should run for. If 0 is given, the program will until aborted with Ctrl-C."))
 
         .arg(Arg::with_name("record-evaluation-info")
             .short("e")

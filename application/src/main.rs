@@ -18,7 +18,7 @@ mod responsible_cell;
 use std::time::Duration;
 use std::sync::Arc;
 use std::thread;
-use std::sync::mpsc::{self, TryRecvError};
+use std::sync::mpsc::{self, TryRecvError, Receiver};
 
 
 use settings::SETTINGS;
@@ -44,58 +44,74 @@ fn main() {
     let read_thread_mediator = Arc::clone(&mediator);
     let read_thread_handle = thread::spawn(move || {
         if SETTINGS.should_read() {
-            let mut read_number = 0;
-            loop {
-                read_number += 1;
-
-                if SETTINGS.print_client_operations() {
-                    printlnu(format!("Start read {}", read_number));
-                }
-
-                let res = read_thread_mediator.read_all();
-                
-                if SETTINGS.print_client_operations() {
-                    printlnu(format!("Stop read {}\n{}", read_number, res));
-                }               
-
-                match read_rx.try_recv() {
-                    Err(TryRecvError::Empty) => {},
-                    _                        => break
-                }
-            }
+            client_reads(read_rx, read_thread_mediator);
         }
     });
 
     let write_thread_mediator = Arc::clone(&mediator);
     let write_thread_handle = thread::spawn(move || {
         if SETTINGS.should_write() {
-            let mut write_number = 0;
-            loop {
-                write_number += 1;
-
-                if SETTINGS.print_client_operations() {
-                    printlnu(format!("Start write {}", write_number));
-                }
-
-                write_thread_mediator.write("".to_string());
-
-                if SETTINGS.print_client_operations() {
-                    printlnu(format!("End write {}", write_number));
-                }
-
-                match write_rx.try_recv() {
-                    Err(TryRecvError::Empty) => {},
-                    _                        => break
-                }
-            }
+            client_writes(write_rx, write_thread_mediator);
         }
     });
 
-    thread::sleep(SETTINGS.run_length());
+    if SETTINGS.run_length() == Duration::from_secs(0) {
+        loop {
+            thread::sleep(Duration::from_secs(60));
+        }
+    } else {
+        thread::sleep(SETTINGS.run_length());
+    }
 
     let _ = read_tx.send(());
     let _ = write_tx.send(());
 
     read_thread_handle.join().unwrap();
     write_thread_handle.join().unwrap();
+}
+
+fn client_reads(read_rx: Receiver<()>, mediator: Arc<Mediator>) {
+    if SETTINGS.should_read() {
+        let mut read_number = 0;
+        loop {
+            read_number += 1;
+
+            if SETTINGS.print_client_operations() {
+                printlnu(format!("Start read {}", read_number));
+            }
+
+            let res = mediator.read_all();
+            
+            if SETTINGS.print_client_operations() {
+                printlnu(format!("Stop read {}\n{}", read_number, res));
+            }               
+
+            match read_rx.try_recv() {
+                Err(TryRecvError::Empty) => {},
+                _                        => break
+            }
+        }
+    }
+}
+
+fn client_writes(write_rx: Receiver<()>, mediator: Arc<Mediator>) {
+    let mut write_number = 0;
+    loop {
+        write_number += 1;
+
+        if SETTINGS.print_client_operations() {
+            printlnu(format!("Start write {}", write_number));
+        }
+
+        mediator.write("".to_string());
+
+        if SETTINGS.print_client_operations() {
+            printlnu(format!("End write {}", write_number));
+        }
+
+        match write_rx.try_recv() {
+            Err(TryRecvError::Empty) => {},
+            _                        => break
+        }
+    }
 }
