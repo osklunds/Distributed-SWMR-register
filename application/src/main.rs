@@ -43,14 +43,20 @@ fn main() {
 
     let read_thread_mediator = Arc::clone(&mediator);
     let read_thread_handle = thread::spawn(move || {
-        if SETTINGS.node_id() == 1 {
-            let mut i = 0;
+        if SETTINGS.should_read() {
+            let mut read_number = 0;
             loop {
-                i += 1;
+                read_number += 1;
 
-                //printlnu(format!("Start read {}", i));
-                let _res = read_thread_mediator.read_all();
-                //printlnu(format!("Stop read {}\n{}", i, res));
+                if SETTINGS.print_client_operations() {
+                    printlnu(format!("Start read {}", read_number));
+                }
+
+                let res = read_thread_mediator.read_all();
+                
+                if SETTINGS.print_client_operations() {
+                    printlnu(format!("Stop read {}\n{}", read_number, res));
+                }               
 
                 match read_rx.try_recv() {
                     Err(TryRecvError::Empty) => {},
@@ -62,14 +68,20 @@ fn main() {
 
     let write_thread_mediator = Arc::clone(&mediator);
     let write_thread_handle = thread::spawn(move || {
-        if SETTINGS.node_id() != 1 {
-            let mut write_i = 0;
+        if SETTINGS.should_write() {
+            let mut write_number = 0;
             loop {
-                write_i += 1;
+                write_number += 1;
 
-                //printlnu(format!("Start write {}", i));
+                if SETTINGS.print_client_operations() {
+                    printlnu(format!("Start write {}", write_number));
+                }
+
                 write_thread_mediator.write("".to_string());
-                //printlnu(format!("Stop write {}", i));
+
+                if SETTINGS.print_client_operations() {
+                    printlnu(format!("End write {}", write_number));
+                }
 
                 match write_rx.try_recv() {
                     Err(TryRecvError::Empty) => {},
@@ -79,19 +91,11 @@ fn main() {
         }
     });
 
-    thread::sleep(Duration::from_secs(10));
+    thread::sleep(SETTINGS.run_length());
 
     let _ = read_tx.send(());
     let _ = write_tx.send(());
 
     read_thread_handle.join().unwrap();
     write_thread_handle.join().unwrap();
-
-
-
-    // If a node doesn't read or write, we let it sleep forever
-    // so that it still sends ack messages.
-    loop {
-        thread::sleep(Duration::from_millis(100000));
-    }
 }

@@ -63,6 +63,7 @@ impl Settings {
         self.terminal_color
     }
 
+    #[allow(dead_code)]
     pub fn record_evaluation_info(&self) -> bool {
         self.record_evaluation_info
     }
@@ -77,6 +78,18 @@ impl Settings {
 
     pub fn node_ids(&self) -> HashSet<NodeId> {
         HashSet::from_iter(self.socket_addrs.keys().map(|id| *id))
+    }
+
+    pub fn should_read(&self) -> bool {
+        self.should_read
+    }
+
+    pub fn should_write(&self) -> bool {
+        self.should_write
+    }
+
+    pub fn run_length(&self) -> Duration {
+        self.run_length
     }
 }
 
