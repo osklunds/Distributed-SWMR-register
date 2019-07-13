@@ -23,13 +23,13 @@ use crate::arguments::{ARGUMENTS, Arguments, NodeInfo};
 
 
 fn main() {
-    if ARGUMENTS.full_install {
+    if ARGUMENTS.install {
         install_rust_on_remote_computers();
         upload_source_code_and_hosts_file();
         build_source_code();
+    } else {
+        run_application_on_remote_computers();
     }
-
-    run_application_on_remote_computers();
 }
 
 fn install_rust_on_remote_computers() {

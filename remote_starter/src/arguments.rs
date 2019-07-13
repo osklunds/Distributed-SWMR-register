@@ -40,7 +40,7 @@ pub struct Arguments {
     pub print_client_operations_string: String,
     pub run_length_string: String,
     pub record_evaluation_info_string: String,
-    pub full_install: bool
+    pub install: bool
 }
 
 impl Arguments {
@@ -54,8 +54,7 @@ impl Arguments {
         let print_client_operations_string = print_client_operations_string_from_matches(&matches);
         let run_length_string = run_length_string_from_matches(&matches);
         let record_evaluation_info_string = record_evaluation_info_string_from_matches(&matches);
-        let full_install = full_install_from_matches(&matches);
-
+        let install = install_from_matches(&matches);
 
         Arguments {
             node_infos: node_infos,
@@ -65,7 +64,7 @@ impl Arguments {
             print_client_operations_string: print_client_operations_string,
             run_length_string: run_length_string,
             record_evaluation_info_string: record_evaluation_info_string,
-            full_install: full_install
+            install: install
         }
     }
 }
@@ -79,25 +78,28 @@ fn get_matches() -> ArgMatches<'static> {
         .arg(Arg::with_name("hosts-file")
             .required(true)
             .takes_value(true)
-            .help("The file with host ids, addresses and ports."))
+            .help("The file with node ids, addresses, ports, ssh key paths and usernames."))
 
         .arg(Arg::with_name("number-of-writers")
-            .required(true)
+            .required(false)
             .takes_value(true)
+            .default_value("0")
             .short("w")
             .long("number-of-writers")
             .help("The number of nodes that should write."))
 
         .arg(Arg::with_name("number-of-readers")
-            .required(true)
+            .required(false)
             .takes_value(true)
+            .default_value("0")
             .short("r")
             .long("number-of-readers")
             .help("The number of nodes that should read."))
 
         .arg(Arg::with_name("run-length")
+            .required(false)
             .takes_value(true)
-            .required(true)
+            .default_value("0")
             .short("l")
             .long("run-length")
             .help("The number of seconds the program should run for. If 0 is given, the program will until aborted with Ctrl-C."))
@@ -106,7 +108,7 @@ fn get_matches() -> ArgMatches<'static> {
             .short("e")
             .long("record-evaluation-info")
             .takes_value(false)
-            .help("Record information used for the evaluation, such as latency and number of messages sent. If not included, the performance might be slightly higher."))
+            .help("Record information used for the evaluation, such as latency and number of messages sent. If not done, the performance might be slightly higher."))
 
         .arg(Arg::with_name("optimize")
             .takes_value(false)
@@ -114,11 +116,11 @@ fn get_matches() -> ArgMatches<'static> {
             .long("optimize")
             .help("With this option, cargo will build/run in release mode. This uses optimizations and yields higher performance."))
 
-        .arg(Arg::with_name("full-install")
+        .arg(Arg::with_name("install")
             .takes_value(false)
             .short("f")
-            .long("full-install")
-            .help("Without this option, the application will just be launched. With this option, Rust will be installed, the source code and configuration files will be uploaded and the application will be built."))
+            .long("install")
+            .help("With this option, Rust will be installed, the source code and configuration files will be uploaded and the application will be built. Without this option, the application will be launched."))
 
         .get_matches()
 }
@@ -135,13 +137,13 @@ fn node_infos_from_string(string: String) -> HashSet<NodeInfo> {
 
     for line in string.lines() {
         let components: Vec<&str> = line.split(",").collect();
-        let id = components[0].parse().unwrap();
+        let node_id = components[0].parse().unwrap();
         let socket_addr = components[1].to_socket_addrs().unwrap().next().unwrap();
         let key_path = components[2].to_string();
         let username = components[3].to_string();
 
         let node_info = NodeInfo {
-            node_id: id,
+            node_id: node_id,
             socket_addr: socket_addr,
             key_path: key_path,
             username: username
@@ -154,34 +156,24 @@ fn node_infos_from_string(string: String) -> HashSet<NodeInfo> {
 }
 
 fn number_of_writers_from_matches(matches: &ArgMatches<'static>) -> i32 {
-    if let Some(number_of_writers) = matches.value_of("number-of-writers") {
-        number_of_writers.parse().unwrap()
-    } else {
-        0
-    }
+    matches.value_of("number-of-writers").unwrap().parse().unwrap()
 }
 
 fn number_of_readers_from_matches(matches: &ArgMatches<'static>) -> i32 {
-    if let Some(number_of_readers) = matches.value_of("number-of-readers") {
-        number_of_readers.parse().unwrap()
-    } else {
-        0
-    }
+    matches.value_of("number-of-readers").unwrap().parse().unwrap()
 }
 
 fn release_mode_string_from_matches(matches: &ArgMatches<'static>) -> String {
-    if matches.is_present("optimize") {
-        "--release".to_string()
-    } else {
-        "".to_string()
+    match matches.is_present("optimize") {
+        true  => "--release".to_string(),
+        false => "".to_string()
     }
 }
 
 fn print_client_operations_string_from_matches(matches: &ArgMatches<'static>) -> String {
-    if matches.is_present("print-client-operations") {
-        "--print-client-operations".to_string()
-    } else {
-        "".to_string()
+    match matches.is_present("print-client-operations") {
+        true  => "--print-client-operations".to_string(),
+        false => "".to_string()
     }
 }
 
@@ -190,13 +182,12 @@ fn run_length_string_from_matches(matches: &ArgMatches<'static>) -> String {
 }
 
 fn record_evaluation_info_string_from_matches(matches: &ArgMatches<'static>) -> String {
-    if matches.is_present("record-evaluation-info") {
-        "--record-evaluation-info".to_string()
-    } else {
-        "".to_string()
+    match matches.is_present("record-evaluation-info") {
+        true  => "--record-evaluation-info".to_string(),
+        false => "".to_string()
     }
 }
 
-fn full_install_from_matches(matches: &ArgMatches<'static>) -> bool {
+fn install_from_matches(matches: &ArgMatches<'static>) -> bool {
     matches.is_present("full-install")
 }
