@@ -18,7 +18,7 @@ mod responsible_cell;
 use std::time::Duration;
 use std::sync::Arc;
 use std::thread;
-use std::sync::mpsc::{self, TryRecvError, Receiver};
+use std::sync::mpsc::{self, TryRecvError, Receiver, Sender};
 
 
 use settings::SETTINGS;
@@ -30,7 +30,7 @@ fn main() {
     SETTINGS.node_id();
 
     let mediator = Mediator::new();
-    
+
     // This is important when running locally. If some application
     // processes start before all have been built, they will
     // consume so much CPU time that the build processes
@@ -38,36 +38,33 @@ fn main() {
     // a longer time than others.
     thread::sleep(Duration::from_millis(100 * SETTINGS.number_of_nodes() as u64));
 
+    let (read_tx, write_tx) = start_client_threads_and_get_channel_send_ends(&mediator);
+
+    sleep_time_specified_by_arguments();
+
+    let _ = read_tx.send(());
+    let _ = write_tx.send(());
+}
+
+fn start_client_threads_and_get_channel_send_ends(mediator: &Arc<Mediator>) -> (Sender<()>, Sender<()>) {
     let (read_tx, read_rx) = mpsc::channel();
     let (write_tx, write_rx) = mpsc::channel();
 
-    let read_thread_mediator = Arc::clone(&mediator);
-    let read_thread_handle = thread::spawn(move || {
+    let read_thread_mediator = Arc::clone(mediator);
+    thread::spawn(move || {
         if SETTINGS.should_read() {
             client_reads(read_rx, read_thread_mediator);
         }
     });
-
-    let write_thread_mediator = Arc::clone(&mediator);
-    let write_thread_handle = thread::spawn(move || {
+    
+    let write_thread_mediator = Arc::clone(mediator);
+    thread::spawn(move || {
         if SETTINGS.should_write() {
-            client_writes(write_rx, write_thread_mediator);
+            //client_writes(write_rx, write_thread_mediator);
         }
     });
 
-    if SETTINGS.run_length() == Duration::from_secs(0) {
-        loop {
-            thread::sleep(Duration::from_secs(60));
-        }
-    } else {
-        thread::sleep(SETTINGS.run_length());
-    }
-
-    let _ = read_tx.send(());
-    let _ = write_tx.send(());
-
-    read_thread_handle.join().unwrap();
-    write_thread_handle.join().unwrap();
+    (read_tx, write_tx)
 }
 
 fn client_reads(read_rx: Receiver<()>, mediator: Arc<Mediator>) {
@@ -113,5 +110,15 @@ fn client_writes(write_rx: Receiver<()>, mediator: Arc<Mediator>) {
             Err(TryRecvError::Empty) => {},
             _                        => break
         }
+    }
+}
+
+fn sleep_time_specified_by_arguments() {
+    if SETTINGS.run_length() == Duration::from_secs(0) {
+        loop {
+            thread::sleep(Duration::from_secs(60));
+        }
+    } else {
+        thread::sleep(SETTINGS.run_length());
     }
 }

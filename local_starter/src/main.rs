@@ -43,6 +43,8 @@ fn main() {
 
         let command_string = format!("cargo run {} --manifest-path ../application/Cargo.toml -- {} hosts.txt {} {:?} {} {} {} {}", release_mode_string, node_id, run_length, color, print_client_operations_string, record_evaluation_info_string, write_string, read_string);
 
+        println!("{}", command_string);
+
         let child_process = Command::new("/bin/bash")
                 .arg("-c")
                 .arg(command_string)

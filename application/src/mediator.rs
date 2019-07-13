@@ -25,7 +25,7 @@ impl Mediator {
 
         let node_id = SETTINGS.node_id();
         let socket_addrs = SETTINGS.socket_addrs().clone();
-        let own_socket_addr = socket_addrs.get(&node_id).unwrap();
+        let own_socket_addr = socket_addrs.get(&node_id).expect("Could not find own socket addres.");
 
         let communicator = Communicator::new(*own_socket_addr, socket_addrs, Arc::downgrade(&mediator));
         let abd_node: AbdNode<String> = AbdNode::new(Arc::downgrade(&mediator));
@@ -37,11 +37,11 @@ impl Mediator {
     }
     
     fn abd_node(&self) -> &AbdNode<String> {
-        self.abd_node.get().as_ref().unwrap()
+        self.abd_node.get().as_ref().expect("AbdNode not set on Mediator.")
     }
     
     fn communicator(&self) -> &Communicator {
-        self.communicator.get().as_ref().unwrap()
+        self.communicator.get().as_ref().expect("Communicator not set on Mediator.")
     }
 
     pub fn send_json_to(&self, json: &str, receiver: NodeId) {

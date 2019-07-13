@@ -103,7 +103,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     }
 
     fn jsonify_message(&self, message: &impl Message) -> String {
-        serde_json::to_string(message).unwrap()
+        serde_json::to_string(message).expect("Could not serialize a message")
     }
 
     fn broadcast_json_write_message_until_majority_has_acked(&self, json_write_message: &str) {
@@ -112,7 +112,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
         while register_being_written.is_some() {
             let timeout = Duration::from_millis(100); // TODO: Have as a parameter somewhere
-            let result = self.write_ack_majority_reached.wait_timeout(register_being_written, timeout).unwrap();
+            let result = self.write_ack_majority_reached.wait_timeout(register_being_written, timeout).expect("Error when waiting on write ack Condvar");
             register_being_written = result.0;
             if result.1.timed_out() {
                 self.broadcast_json_message(&json_write_message);
@@ -126,7 +126,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     }
 
     fn mediator(&self) -> Arc<Mediator> {
-        self.mediator.upgrade().unwrap()
+        self.mediator.upgrade().expect("Error upgrading mediator in AbdNode")
     }
 
     #[allow(dead_code)]
@@ -168,11 +168,12 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
     fn broadcast_json_read_message_until_majority_has_acked(&self, json_read_message: &str) {
         self.broadcast_json_message(&json_read_message);
+
         let mut register_being_read = self.register_being_read.lock().unwrap();
 
         while register_being_read.is_some() {
             let timeout = Duration::from_millis(100); // TODO: Have as a parameter somewhere
-            let result = self.read_ack_majority_reached.wait_timeout(register_being_read, timeout).unwrap();
+            let result = self.read_ack_majority_reached.wait_timeout(register_being_read, timeout).expect("Error waiting on read ack condvar");
             register_being_read = result.0;
             if result.1.timed_out() {
                 self.broadcast_json_message(&json_read_message);
@@ -244,7 +245,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     }
 
     fn send_message_to(&self, message: &impl Message, receiver_id: NodeId) {
-        let json = serde_json::to_string(message).unwrap();
+        let json = serde_json::to_string(message).expect("Error serializing a message");
         self.mediator().send_json_to(&json, receiver_id);
     }  
 

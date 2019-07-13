@@ -47,7 +47,7 @@ impl Settings {
             should_read: matches.is_present("read"),
             print_client_operations: matches.is_present("print-client-operations"),
             run_length: run_length,
-            record_evaluation_info: matches.is_present("run-length"),
+            record_evaluation_info: matches.is_present("record-evaluation-info"),
         }
     }
 
