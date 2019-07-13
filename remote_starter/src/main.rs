@@ -29,11 +29,7 @@ pub struct NodeInfo {
 
 impl NodeInfo {
     pub fn ip_addr_string(&self) -> String {
-        if let V4(ip_addr) = self.socket_addr.ip() {
-            format!("{}", ip_addr)
-        } else {
-            panic!("Ipv6 not supported");
-        }
+        format!("{}", self.socket_addr.ip())
     }
 }
 
@@ -41,42 +37,36 @@ impl NodeInfo {
 fn main() {
     let matches = get_matches();
     let node_infos = node_infos_from_matches(&matches);
-
+    /*
     let mut install_processes = Vec::new();
     for node_info in node_infos.iter() {
-        if let V4(ip_addr) = node_info.socket_addr.ip() {
-            let mut install_process = Command::new("/bin/bash")
-                .arg("-c")
-                .arg(format!("ssh -i {} {}@{} \"curl https://sh.rustup.rs -sSf > rustup.sh;sh rustup.sh -y; exit\"", node_info.key_path, node_info.username, ip_addr))
-                .spawn()
-                .expect("failed to execute the install process");
-
-            install_processes.push(install_process);
-        } else {
-            panic!("Ipv6 addresses are not allowed.");
-        }
+        let install_process = execute_remote_command("\"curl https://sh.rustup.rs -sSf > rustup.sh;sh rustup.sh -y\"", &node_info);
+        install_processes.push(install_process);
     }
 
     for install_process in install_processes.iter_mut() {
         install_process.wait().unwrap();
     }
+    */
 
-    //let mut upload_processes = Vec::new();
     for node_info in node_infos.iter() {
-        if let V4(ip_addr) = node_info.socket_addr.ip() {
-            execute_remote_command("rm -r distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
-            execute_remote_command("mkdir distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
+        execute_remote_command("rm -r distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
+        execute_remote_command("mkdir distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
 
-            execute_scp_copy_of_path("src/", &node_info).wait().unwrap();
-            execute_scp_copy_of_path("Cargo.toml", &node_info).wait().unwrap();
-            execute_scp_copy_of_path("Cargo.lock", &node_info).wait().unwrap();
-        }    
+        execute_scp_copy_of_path("src/", &node_info).wait().unwrap();
+        execute_scp_copy_of_path("Cargo.toml", &node_info).wait().unwrap();
+        execute_scp_copy_of_path("Cargo.lock", &node_info).wait().unwrap();
     }
 
+    let mut build_processes = Vec::new();
+    for node_info in node_infos.iter() {
+        let build_process = execute_remote_command("\"cd distributed_swmr_registers_remote_directory/;../.cargo/bin/cargo build;cd ..\"", &node_info);
+        build_processes.push(build_process);
+    }
+    for build_process in build_processes.iter_mut() {
+        build_process.wait().unwrap();
+    }
 
-
-
- 
 }
 
 fn execute_command(command: &str) -> Child {
