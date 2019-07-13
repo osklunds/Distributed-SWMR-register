@@ -186,7 +186,7 @@ fn print_client_operations_string(matches: &ArgMatches<'static>) -> String {
 
 fn record_evaluation_info_string(matches: &ArgMatches<'static>) -> String {
     if matches.is_present("record-evaluation-info") {
-        "record-evaluation-info".to_string()
+        "--record-evaluation-info".to_string()
     } else {
         "".to_string()
     }
