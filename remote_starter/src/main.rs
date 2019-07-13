@@ -49,14 +49,18 @@ fn main() {
     }
     */
 
+    
     for node_info in node_infos.iter() {
         execute_remote_command("rm -r distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
         execute_remote_command("mkdir distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
 
-        execute_scp_copy_of_path("src/", &node_info).wait().unwrap();
-        execute_scp_copy_of_path("Cargo.toml", &node_info).wait().unwrap();
-        execute_scp_copy_of_path("Cargo.lock", &node_info).wait().unwrap();
+        execute_scp_copy_of_application_path("src/", &node_info).wait().unwrap();
+        execute_scp_copy_of_application_path("Cargo.toml", &node_info).wait().unwrap();
+        execute_scp_copy_of_application_path("Cargo.lock", &node_info).wait().unwrap();
+        execute_scp_copy_of_remote_starter_path("hosts.txt", &node_info).wait().unwrap();
     }
+
+    
 
     let mut build_processes = Vec::new();
     for node_info in node_infos.iter() {
@@ -65,6 +69,15 @@ fn main() {
     }
     for build_process in build_processes.iter_mut() {
         build_process.wait().unwrap();
+    }
+
+    let mut run_processes = Vec::new();
+    for node_info in node_infos.iter() {
+        let run_process = execute_remote_command(&format!("\"cd distributed_swmr_registers_remote_directory/;../.cargo/bin/cargo run {} {};cd ..\"", node_info.node_id, "hosts.txt"), &node_info);
+        run_processes.push(run_process);
+    }
+    for run_process in run_processes.iter_mut() {
+        run_process.wait().unwrap();
     }
 
 }
@@ -83,8 +96,14 @@ fn execute_remote_command(command: &str, node_info: &NodeInfo) -> Child {
     execute_command(&ssh_command)
 }
 
-fn execute_scp_copy_of_path(path: &str, node_info: &NodeInfo) -> Child {
+fn execute_scp_copy_of_application_path(path: &str, node_info: &NodeInfo) -> Child {
     let scp_command = format!("scp -i {} -r ../application/{} {}@{}:distributed_swmr_registers_remote_directory/{}", node_info.key_path, path, node_info.username, node_info.ip_addr_string(), path);
+
+    execute_command(&scp_command)
+}
+
+fn execute_scp_copy_of_remote_starter_path(path: &str, node_info: &NodeInfo) -> Child {
+    let scp_command = format!("scp -i {} -r {} {}@{}:distributed_swmr_registers_remote_directory/{}", node_info.key_path, path, node_info.username, node_info.ip_addr_string(), path);
 
     execute_command(&scp_command)
 }
