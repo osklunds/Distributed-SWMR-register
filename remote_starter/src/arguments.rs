@@ -38,7 +38,7 @@ pub struct Arguments {
     pub number_of_readers: i32,
     pub release_mode_string: String,
     pub print_client_operations_string: String,
-    pub run_length: String,
+    pub run_length_string: String,
     pub record_evaluation_info_string: String,
     pub full_install: bool
 }
@@ -186,7 +186,7 @@ fn print_client_operations_string_from_matches(matches: &ArgMatches<'static>) ->
 }
 
 fn run_length_string_from_matches(matches: &ArgMatches<'static>) -> String {
-    matches.value_of("run-length").unwrap()
+    matches.value_of("run-length").unwrap().to_string()
 }
 
 fn record_evaluation_info_string_from_matches(matches: &ArgMatches<'static>) -> String {
