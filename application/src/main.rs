@@ -63,9 +63,9 @@ fn main() {
     let write_thread_mediator = Arc::clone(&mediator);
     let write_thread_handle = thread::spawn(move || {
         if SETTINGS.node_id() != 1 {
-            let mut i = 0;
+            let mut write_i = 0;
             loop {
-                i += 1;
+                write_i += 1;
 
                 //printlnu(format!("Start write {}", i));
                 write_thread_mediator.write("".to_string());

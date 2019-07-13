@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 use std::net::SocketAddr;
 use std::fs;
+use std::time::Duration;
 
 
 use colored::*;
@@ -21,21 +22,32 @@ lazy_static! {
 pub struct Settings {
     node_id: NodeId,
     socket_addrs: HashMap<NodeId, SocketAddr>,
-    terminal_color: Color
+    terminal_color: Color,
+    should_write: bool,
+    should_read: bool,
+    print_client_operations: bool,
+    run_length: Duration,
+    record_evaluation_info: bool,
 }
 
 impl Settings {
     fn new() -> Settings {
         let matches = get_matches();
-        let color = color_from_matches(&matches);
-        let socket_addrs = socket_addrs_from_matches(&matches);
-        let node_id = node_id_from_matches(&matches);
 
+        let node_id = node_id_from_matches(&matches);
+        let socket_addrs = socket_addrs_from_matches(&matches);
+        let color = color_from_matches(&matches);
+        let run_length = run_length_from_matches(&matches);
 
         Settings {
             node_id: node_id,
             socket_addrs: socket_addrs,
-            terminal_color: color
+            terminal_color: color,
+            should_write: matches.is_present("write"),
+            should_read: matches.is_present("read"),
+            print_client_operations: matches.is_present("print_client_operations"),
+            run_length: run_length,
+            record_evaluation_info: matches.is_present("evaluation-length"),
         }
     }
 
@@ -49,6 +61,14 @@ impl Settings {
 
     pub fn terminal_color(&self) -> Color {
         self.terminal_color
+    }
+
+    pub fn record_evaluation_info(&self) -> bool {
+        self.record_evaluation_info
+    }
+
+    pub fn print_client_operations(&self) -> bool {
+        self.print_client_operations
     }
 
     pub fn number_of_nodes(&self) -> usize {
@@ -77,17 +97,46 @@ fn get_matches() -> ArgMatches<'static> {
             .takes_value(true)
             .help("The file with host ids, addresses and ports."))
 
+        .arg(Arg::with_name("write")
+            .short("w")
+            .long("write")
+            .takes_value(false)
+            .help("Makes this node perform write operations."))
+
+        .arg(Arg::with_name("read")
+            .short("r")
+            .long("read")
+            .takes_value(false)
+            .help("Makes this node perform read operations."))
+
+        .arg(Arg::with_name("print_client_operations")
+            .short("p")
+            .long("print-client-operations")
+            .takes_value(false)
+            .help("Print when a read/write operation starts/ends. If not included, the performance might be slightly higher."))
+
+        .arg(Arg::with_name("run-length")
+            .takes_value(true)
+            .required(true)
+            .help("The number of seconds the program should run for."))
+
+        .arg(Arg::with_name("record-evaluation-info")
+            .short("e")
+            .long("record-evaluation-info")
+            .takes_value(false)
+            .help("Record information used for the evaluation, such as latency and number of messages sent. If not included, the performance might be slightly higher."))
+
         .arg(Arg::with_name("color")
             .takes_value(true)
             .possible_values(colors)
             .default_value("Black")
-            .help("Sets the color of the terminal output"))
-
+            .help("The color of the terminal output"))
+        
         .get_matches()
 }
 
-fn color_from_matches(matches: &ArgMatches<'static>) -> Color {
-    matches.value_of("color").unwrap().parse().unwrap()
+fn node_id_from_matches(matches: &ArgMatches<'static>) -> NodeId {
+    matches.value_of("node-id").unwrap().parse().unwrap()
 }
 
 fn socket_addrs_from_matches(matches: &ArgMatches<'static>) -> HashMap<NodeId, SocketAddr> {
@@ -110,6 +159,11 @@ fn socket_addrs_from_string(string: String) -> HashMap<NodeId, SocketAddr> {
     socket_addrs
 }
 
-fn node_id_from_matches(matches: &ArgMatches<'static>) -> NodeId {
-    matches.value_of("node-id").unwrap().parse().unwrap()
+fn color_from_matches(matches: &ArgMatches<'static>) -> Color {
+    matches.value_of("color").unwrap().parse().unwrap()
+}
+
+fn run_length_from_matches(matches: &ArgMatches<'static>) -> Duration {
+    let seconds = matches.value_of("run-length").unwrap().parse().unwrap();
+    Duration::from_secs(seconds)
 }
