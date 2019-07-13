@@ -21,20 +21,19 @@ use std::vec::Vec;
 use crate::arguments::{ARGUMENTS, Arguments, NodeInfo};
 
 
-
-
-
-
-
-
 fn main() {
-    
+    if ARGUMENTS.full_install {
+        install_rust_on_remote_computers();
+        upload_source_code_and_hosts_file();
+        build_source_code();
+    }
 
+    run_application_on_remote_computers();
+}
 
-
-    /*
+fn install_rust_on_remote_computers() {
     let mut install_processes = Vec::new();
-    for node_info in node_infos.iter() {
+    for node_info in ARGUMENTS.node_infos.iter() {
         let install_process = execute_remote_command("\"curl https://sh.rustup.rs -sSf > rustup.sh;sh rustup.sh -y\"", &node_info);
         install_processes.push(install_process);
     }
@@ -42,10 +41,10 @@ fn main() {
     for install_process in install_processes.iter_mut() {
         install_process.wait().unwrap();
     }
-    */
+}
 
-    
-    for node_info in node_infos.iter() {
+fn upload_source_code_and_hosts_file() {
+    for node_info in ARGUMENTS.node_infos.iter() {
         execute_remote_command("rm -r distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
         execute_remote_command("mkdir distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
 
@@ -54,18 +53,22 @@ fn main() {
         execute_scp_copy_of_application_path("Cargo.lock", &node_info).wait().unwrap();
         execute_scp_copy_of_remote_starter_path("hosts.txt", &node_info).wait().unwrap();
     }
+}
 
-    
-
+fn build_source_code() {
     let mut build_processes = Vec::new();
+
     for node_info in node_infos.iter() {
         let build_process = execute_remote_command("\"cd distributed_swmr_registers_remote_directory/;../.cargo/bin/cargo build;cd ..\"", &node_info);
         build_processes.push(build_process);
     }
+
     for build_process in build_processes.iter_mut() {
         build_process.wait().unwrap();
     }
+}
 
+fn run_application_on_remote_computers() {
     let mut run_processes = Vec::new();
     for node_info in node_infos.iter() {
         let write_string = match node_info.node_id <= number_of_writers {
@@ -95,8 +98,9 @@ fn main() {
     for run_process in run_processes.iter_mut() {
         run_process.wait().unwrap();
     }
-
 }
+
+
 
 
 fn execute_command(command: &str) -> Child {

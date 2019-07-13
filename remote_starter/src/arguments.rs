@@ -33,13 +33,14 @@ impl NodeInfo {
 
 #[derive(Debug)]
 pub struct Arguments {
-    node_infos: HashSet<NodeInfo>,
-    number_of_writers: i32,
-    number_of_readers: i32,
-    release_mode_string: String,
-    print_client_operations_string: String,
-    run_length: String,
-    record_evaluation_info_string: String
+    pub node_infos: HashSet<NodeInfo>,
+    pub number_of_writers: i32,
+    pub number_of_readers: i32,
+    pub release_mode_string: String,
+    pub print_client_operations_string: String,
+    pub run_length: String,
+    pub record_evaluation_info_string: String,
+    pub full_install: bool
 }
 
 impl Arguments {
@@ -53,6 +54,8 @@ impl Arguments {
         let print_client_operations_string = print_client_operations_string_from_matches(&matches);
         let run_length_string = run_length_string_from_matches(&matches);
         let record_evaluation_info_string = record_evaluation_info_string_from_matches(&matches);
+        let full_install = full_install_from_matches(&matches);
+
 
         Arguments {
             node_infos: node_infos,
@@ -61,7 +64,8 @@ impl Arguments {
             release_mode_string: release_mode_string,
             print_client_operations_string: print_client_operations_string,
             run_length_string: run_length_string,
-            record_evaluation_info_string: record_evaluation_info_string
+            record_evaluation_info_string: record_evaluation_info_string,
+            full_install: full_install
         }
     }
 }
@@ -109,6 +113,12 @@ fn get_matches() -> ArgMatches<'static> {
             .short("o")
             .long("optimize")
             .help("With this option, cargo will build/run in release mode. This uses optimizations and yields higher performance."))
+
+        .arg(Arg::with_name("full-install")
+            .takes_value(false)
+            .short("f")
+            .long("full-install")
+            .help("Without this option, the application will just be launched. With this option, Rust will be installed, the source code and configuration files will be uploaded and the application will be built."))
 
         .get_matches()
 }
@@ -185,4 +195,8 @@ fn record_evaluation_info_string_from_matches(matches: &ArgMatches<'static>) -> 
     } else {
         "".to_string()
     }
+}
+
+fn full_install_from_matches(matches: &ArgMatches<'static>) -> bool {
+    matches.is_present("full-install")
 }
