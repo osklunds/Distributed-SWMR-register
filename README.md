@@ -9,10 +9,9 @@ The goal of this project is for me to become a better Rust programmer. For anoth
 
 1. [Install Rust](https://www.rust-lang.org/tools/install).
 2. Clone this repository.
-3. Uncomment the `printlnu` lines in `application/src/main.rs` to actually see something printed to the terminal.
-4. Change directory to `local_starter` and type `cargo run n` where `n` is the number of local nodes you want to have. I suggest `n=5`.
+3. Change directory to `local_starter` and type `cargo run -n 3 -w 3 -r 3 -p`.
 
-Each node will print to the terminal in its own color. It will print when it starts/ends a write/read. The read end operations will also show the value of all nodes' registers. So you see a sequence of write and read operations and what the values of the registers were in the different places in that execution.
+This will create three nodes on your local computer that all write and read to the shared registers all the time. Each node will print to the terminal in its own color when it starts/ends and write or read operation. When a read operation ends, the values of all nodes' registers will also be shown. So you see a sequence of write and read operations and what the values of the registers were in the different places in that execution.
 
 ## ABD overview
 
@@ -25,3 +24,14 @@ The figure above shows a visualization of the ABD algorithm with three nodes. Th
 The `application` directory contains the code for an instance of an ABD node. On each computer you want to be part of this network, you run the code in this directory. More details are in `application/README.md`. This is the most important and interesting part of this repository.
 
 The `local_starter` directory contains the code for a helper tool. `local_starter` automatically starts the user-supplied number of ABD nodes on the local machine, to simplify testing of the code. Note that `local_starter` is purely for convenience. `application` works as a standalone program. More details are in `local_starter/README.md`.
+
+The `remote_starter` directory contains the code for another helper tool. `remote_starter` automatically starts ABD nodes on remote machines via SSH. More details are in `remote_starter/README.md`.
+
+## Platform compatibility
+
+|                                 | Linux | Mac | Windows |
+|---------------------------------|-------|-----|---------|
+| application                     | Yes   | Yes | Yes     |
+| local_starter                   | Yes   | Yes | No      |
+| remote_starter: local computer  | Yes   | Yes | No      |
+| remote_starter: remote computer | Yes   | Yes | No      |
