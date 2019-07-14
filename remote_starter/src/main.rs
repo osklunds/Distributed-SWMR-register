@@ -37,10 +37,14 @@ fn main() {
 
 fn install_rust_on_remote_computers() {
     let mut install_processes = Vec::new();
+    let mut handled_ip_addrs = HashSet::new();
 
     for node_info in ARGUMENTS.node_infos.iter() {
-        let install_process = execution::execute_remote_command("\"curl https://sh.rustup.rs -sSf > rustup.sh;sh rustup.sh -y\"", &node_info);
-        install_processes.push(install_process);
+        let ip_addr = node_info.ip_addr_string();
+        if handled_ip_addrs.insert(ip_addr) {
+            let install_process = execution::execute_remote_command("\"curl https://sh.rustup.rs -sSf > rustup.sh;sh rustup.sh -y\"", &node_info);
+            install_processes.push(install_process);
+        }
     }
 
     for install_process in install_processes.iter_mut() {
@@ -49,24 +53,33 @@ fn install_rust_on_remote_computers() {
 }
 
 fn upload_source_code_and_hosts_file() {
-    for node_info in ARGUMENTS.node_infos.iter() {
-        execution::execute_remote_command("rm -r distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
-        execution::execute_remote_command("mkdir distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
+    let mut handled_ip_addrs = HashSet::new();
 
-        execution::execute_scp_copy_of_path_relative_to_application_directory("src/", &node_info).wait().unwrap();
-        execution::execute_scp_copy_of_path_relative_to_application_directory("Cargo.toml", &node_info).wait().unwrap();
-        execution::execute_scp_copy_of_path_relative_to_application_directory("Cargo.lock", &node_info).wait().unwrap();
-        execution::execute_scp_copy_of_path_relative_to_remote_starter_directory("hosts.txt", &node_info).wait().unwrap();
+    for node_info in ARGUMENTS.node_infos.iter() {
+        let ip_addr = node_info.ip_addr_string();
+        if handled_ip_addrs.insert(ip_addr) {
+            execution::execute_remote_command("rm -r distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
+            execution::execute_remote_command("mkdir distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
+
+            execution::execute_scp_copy_of_path_relative_to_application_directory("src/", &node_info).wait().unwrap();
+            execution::execute_scp_copy_of_path_relative_to_application_directory("Cargo.toml", &node_info).wait().unwrap();
+            execution::execute_scp_copy_of_path_relative_to_application_directory("Cargo.lock", &node_info).wait().unwrap();
+            execution::execute_scp_copy_of_path_relative_to_remote_starter_directory("hosts.txt", &node_info).wait().unwrap();
+        }
     }
 }
 
 fn build_source_code() {
     let mut build_processes = Vec::new();
+    let mut handled_ip_addrs = HashSet::new();
 
     for node_info in ARGUMENTS.node_infos.iter() {
-        let command = format!("\"cd distributed_swmr_registers_remote_directory/;../.cargo/bin/cargo build {};cd ..\"", ARGUMENTS.release_mode_string);
-        let build_process = execution::execute_remote_command(&command, &node_info);
-        build_processes.push(build_process);
+        let ip_addr = node_info.ip_addr_string();
+        if handled_ip_addrs.insert(ip_addr) {
+            let command = format!("\"cd distributed_swmr_registers_remote_directory/;../.cargo/bin/cargo build {};cd ..\"", ARGUMENTS.release_mode_string);
+            let build_process = execution::execute_remote_command(&command, &node_info);
+            build_processes.push(build_process);
+        }
     }
 
     for build_process in build_processes.iter_mut() {
