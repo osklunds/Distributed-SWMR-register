@@ -95,10 +95,10 @@ impl Settings {
 
 fn get_matches() -> ArgMatches<'static> {
     let colors = &["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan"];
-    App::new("Distributed SWMR registers")
+    App::new("Distributed-SWMR-registers: Application")
         .version("0.1")
         .author("Oskar Lundström")
-        .about("Todo")
+        .about("The application code, that is an instance of an ABD node.")
 
         .arg(Arg::with_name("node-id")
             .required(true)
@@ -131,7 +131,7 @@ fn get_matches() -> ArgMatches<'static> {
         .arg(Arg::with_name("run-length")
             .takes_value(true)
             .required(true)
-            .help("The number of seconds the program should run for. If 0 is given, the program will until aborted with Ctrl-C."))
+            .help("The number of seconds the program should run for. If 0 is given, the program will run until aborted with Ctrl+C."))
 
         .arg(Arg::with_name("record-evaluation-info")
             .short("e")
