@@ -12,26 +12,48 @@ use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
 use std::net::IpAddr::V4;
 use std::net::ToSocketAddrs;
-
+use std::time::Duration;
 use std::process::{Command, Child};
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use std::vec::Vec;
+use std::thread;
 
 use colored::Color;
 use colored::Color::*;
+use ctrlc;
 
 use crate::arguments::{ARGUMENTS, Arguments, NodeInfo, NodeId};
 
 
 fn main() {
+    ctrlc::set_handler(move || {
+        println!("I will now exit. But first I will stop all processes I have started on the remote computers.");
+        stop_all_remote_processes();
+
+    }).unwrap();
+
     if ARGUMENTS.install {
         install_rust_on_remote_computers();
         upload_source_code_and_hosts_file();
         build_source_code();
     } else {
         run_application_on_remote_computers();
+    }
+}
+
+fn stop_all_remote_processes() {
+    let mut stop_processes = Vec::new();
+
+    for node_info in ARGUMENTS.node_infos.iter() {
+        let command = "killall distributed_swmr_registers";
+        let stop_process = execution::execute_remote_command(command, &node_info);
+        stop_processes.push(stop_process);
+    }
+
+    for stop_process in stop_processes.iter_mut() {
+        stop_process.wait().unwrap();
     }
 }
 
