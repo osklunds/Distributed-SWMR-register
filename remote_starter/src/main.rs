@@ -132,8 +132,6 @@ fn run_application_on_remote_computers() {
             write_string, 
             read_string);
 
-        println!("{}", command_string);
-
         let run_process = execution::execute_remote_command(&command_string, &node_info);
 
         run_processes.push(run_process);
