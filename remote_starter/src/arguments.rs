@@ -122,6 +122,12 @@ fn get_matches() -> ArgMatches<'static> {
             .long("install")
             .help("With this option, Rust will be installed, the source code and configuration files will be uploaded and the application will be built. Without this option, the application will be launched."))
 
+        .arg(Arg::with_name("print-client-operations")
+            .short("p")
+            .long("print-client-operations")
+            .takes_value(false)
+            .help("Print when a read/write operation starts/ends. If not included, the performance might be slightly higher."))
+
         .get_matches()
 }
 

@@ -19,7 +19,10 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::vec::Vec;
 
-use crate::arguments::{ARGUMENTS, Arguments, NodeInfo};
+use colored::Color;
+use colored::Color::*;
+
+use crate::arguments::{ARGUMENTS, Arguments, NodeInfo, NodeId};
 
 
 fn main() {
@@ -84,10 +87,11 @@ fn run_application_on_remote_computers() {
             false => ""
         };
 
-        let command_string = format!("\"cd distributed_swmr_registers_remote_directory/;../.cargo/bin/cargo run {} -- {} hosts.txt {} {} {} {} {};cd..\"", 
+        let command_string = format!("\"cd distributed_swmr_registers_remote_directory/;../.cargo/bin/cargo run {} -- {} hosts.txt {} {:?} {} {} {} {};cd ..\"", 
             ARGUMENTS.release_mode_string,
-            node_info.node_id, 
+            node_info.node_id,
             ARGUMENTS.run_length_string,
+            color_from_node_id(node_info.node_id),
             ARGUMENTS.record_evaluation_info_string,
             ARGUMENTS.print_client_operations_string,
             write_string, 
@@ -103,4 +107,9 @@ fn run_application_on_remote_computers() {
     for run_process in run_processes.iter_mut() {
         run_process.wait().unwrap();
     }
+}
+
+fn color_from_node_id(node_id: NodeId) -> Color {
+    let colors = vec![Black, Red, Green, Yellow, Blue, Magenta, Cyan];
+    colors[(node_id as usize) % 7]
 }
