@@ -118,7 +118,7 @@ fn get_matches() -> ArgMatches<'static> {
 
         .arg(Arg::with_name("install")
             .takes_value(false)
-            .short("f")
+            .short("i")
             .long("install")
             .help("With this option, Rust will be installed, the source code and configuration files will be uploaded and the application will be built. Without this option, the application will be launched."))
 
@@ -189,5 +189,5 @@ fn record_evaluation_info_string_from_matches(matches: &ArgMatches<'static>) -> 
 }
 
 fn install_from_matches(matches: &ArgMatches<'static>) -> bool {
-    matches.is_present("full-install")
+    matches.is_present("install")
 }

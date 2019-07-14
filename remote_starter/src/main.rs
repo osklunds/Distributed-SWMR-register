@@ -34,6 +34,7 @@ fn main() {
 
 fn install_rust_on_remote_computers() {
     let mut install_processes = Vec::new();
+
     for node_info in ARGUMENTS.node_infos.iter() {
         let install_process = execution::execute_remote_command("\"curl https://sh.rustup.rs -sSf > rustup.sh;sh rustup.sh -y\"", &node_info);
         install_processes.push(install_process);
@@ -60,7 +61,8 @@ fn build_source_code() {
     let mut build_processes = Vec::new();
 
     for node_info in ARGUMENTS.node_infos.iter() {
-        let build_process = execution::execute_remote_command("\"cd distributed_swmr_registers_remote_directory/;../.cargo/bin/cargo build;cd ..\"", &node_info);
+        let command = format!("\"cd distributed_swmr_registers_remote_directory/;../.cargo/bin/cargo build {};cd ..\"", ARGUMENTS.release_mode_string);
+        let build_process = execution::execute_remote_command(&command, &node_info);
         build_processes.push(build_process);
     }
 
@@ -71,6 +73,7 @@ fn build_source_code() {
 
 fn run_application_on_remote_computers() {
     let mut run_processes = Vec::new();
+
     for node_info in ARGUMENTS.node_infos.iter() {
         let write_string = match node_info.node_id <= ARGUMENTS.number_of_writers {
             true  => "--write",
@@ -81,8 +84,8 @@ fn run_application_on_remote_computers() {
             false => ""
         };
 
-        let command_string = format!("\"cd distributed_swmr_registers_remote_directory/;../.cargo/bin/cargo run {} -- {} hosts.txt {} {} {} {} {};cd..\"", 
-            ARGUMENTS.release_mode_string, 
+        let command_string = format!("\"cd distributed_swmr_registers_remote_directory/;../.cargo/bin/cargo run {} -- {} hosts.txt {} {} {} {} {};cd..\"", 
+            ARGUMENTS.release_mode_string,
             node_info.node_id, 
             ARGUMENTS.run_length_string,
             ARGUMENTS.record_evaluation_info_string,
@@ -96,13 +99,8 @@ fn run_application_on_remote_computers() {
 
         run_processes.push(run_process);
     }
+
     for run_process in run_processes.iter_mut() {
         run_process.wait().unwrap();
     }
 }
-
-
-
-
-
-

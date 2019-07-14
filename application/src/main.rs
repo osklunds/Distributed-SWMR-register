@@ -60,7 +60,7 @@ fn start_client_threads_and_get_channel_send_ends(mediator: &Arc<Mediator>) -> (
     let write_thread_mediator = Arc::clone(mediator);
     thread::spawn(move || {
         if SETTINGS.should_write() {
-            //client_writes(write_rx, write_thread_mediator);
+            client_writes(write_rx, write_thread_mediator);
         }
     });
 
