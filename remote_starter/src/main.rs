@@ -28,6 +28,8 @@ use crate::arguments::{ARGUMENTS, Arguments, NodeInfo, NodeId};
 
 
 fn main() {
+    stop_all_remote_processes();
+    
     ctrlc::set_handler(move || {
         println!("I will now exit. But first I will stop all processes I have started on the remote computers.");
         stop_all_remote_processes();
