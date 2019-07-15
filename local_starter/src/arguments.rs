@@ -42,10 +42,10 @@ impl Arguments {
 
 
 fn get_matches() -> ArgMatches<'static> {
-    App::new("Distributed SWMR registers: Local starter")
+    App::new("Distributed-SWMR-registers: Local starter")
         .version("0.1")
         .author("Oskar Lundström")
-        .about("Todo")
+        .about("A helper utility that starts multiple nodes on your local computer.")
 
         .arg(Arg::with_name("number-of-nodes")
             .required(true)
