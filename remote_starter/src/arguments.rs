@@ -73,7 +73,7 @@ fn get_matches() -> ArgMatches<'static> {
     App::new("Distributed SWMR registers: Remote starter")
         .version("0.1")
         .author("Oskar Lundström")
-        .about("Todo")
+        .about("A helper utility that starts multiple nodes on remote machines via SSH.")
 
         .arg(Arg::with_name("hosts-file")
             .required(true)
