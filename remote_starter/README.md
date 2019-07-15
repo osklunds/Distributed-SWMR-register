@@ -1,5 +1,5 @@
 
-# Remote starter - A helper utilty that starts multiple nodes on your local computer
+# Remote starter - A helper utilty that starts multiple nodes on remote computers
 
 This directory contains the code for a helper utility for starting multiple nodes on remote computers via SSH. Make sure to change your current directory to the `remote_starter` directory. If you type `cargo run -- --help` you will see the following:
 
