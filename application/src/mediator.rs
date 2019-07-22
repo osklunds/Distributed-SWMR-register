@@ -8,6 +8,7 @@ use crate::abd_node::AbdNode;
 use crate::communicator::Communicator;
 use crate::register::Register;
 use crate::run_result::RunResult;
+use crate::messages;
 
 
 pub struct Mediator {
@@ -50,14 +51,44 @@ impl Mediator {
 
     pub fn send_json_to(&self, json: &str, receiver: NodeId) {
         self.communicator().send_json_to(json, receiver);
+
+        if messages::json_is_write_message(json) {
+            self.run_result().write_message.sent += 1;
+        } else if messages::json_is_write_ack_message(json) {
+            self.run_result().write_ack_message.sent += 1;
+        } else if messages::json_is_read_message(json) {
+            self.run_result().read_message.sent += 1;
+        } else if messages::json_is_read_ack_message(json) {
+            self.run_result().read_ack_message.sent += 1;
+        }
     }
 
     pub fn broadcast_json(&self, json: &str) {
         self.communicator().broadcast_json(json);
+
+        if messages::json_is_write_message(json) {
+            self.run_result().write_message.sent += SETTINGS.number_of_nodes();
+        } else if messages::json_is_write_ack_message(json) {
+            self.run_result().write_ack_message.sent += SETTINGS.number_of_nodes();
+        } else if messages::json_is_read_message(json) {
+            self.run_result().read_message.sent += SETTINGS.number_of_nodes();
+        } else if messages::json_is_read_ack_message(json) {
+            self.run_result().read_ack_message.sent += SETTINGS.number_of_nodes();
+        }
     }
 
     pub fn json_received(&self, json: &str) {
         self.abd_node().json_received(json);
+
+        if messages::json_is_write_message(json) {
+            self.run_result().write_message.received += 1;
+        } else if messages::json_is_write_ack_message(json) {
+            self.run_result().write_ack_message.received += 1;
+        } else if messages::json_is_read_message(json) {
+            self.run_result().read_message.received += 1;
+        } else if messages::json_is_read_ack_message(json) {
+            self.run_result().read_ack_message.received += 1;
+        }
     }
 
     #[allow(dead_code)]

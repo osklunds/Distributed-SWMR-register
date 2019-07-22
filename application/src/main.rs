@@ -61,7 +61,7 @@ fn main() {
         run_result.metadata.is_reader = SETTINGS.should_read();
         run_result.metadata.is_writer = SETTINGS.should_write();
 
-        printlnu(format!("{:?}", run_result));
+        printlnu(format!("{}", serde_json::to_string(&*run_result).unwrap()));
     }
 }
 

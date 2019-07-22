@@ -8,11 +8,11 @@ use crate::settings::NodeId;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RunResult {
-    pub write_ops: i32,
-    pub write_quorum_accesses: i32,
+    pub write_ops: usize,
+    pub write_quorum_accesses: usize,
     pub write_latency: Option<f32>,
-    pub read_ops: i32,
-    pub read_quorum_accesses: i32,
+    pub read_ops: usize,
+    pub read_quorum_accesses: usize,
     pub read_latency: Option<f32>,
 
     // The latencies are Option, because if a node doesn't write,
@@ -50,8 +50,8 @@ impl RunResult {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MessageTypeResult {
-    pub sent: i32,
-    pub received: i32,
+    pub sent: usize,
+    pub received: usize,
     pub nodes_received_from: HashSet<NodeId>
 }
 
