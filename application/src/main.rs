@@ -14,6 +14,7 @@ mod terminal_output;
 mod communicator;
 mod mediator;
 mod responsible_cell;
+mod run_result;
 
 use std::time::Duration;
 use std::sync::Arc;

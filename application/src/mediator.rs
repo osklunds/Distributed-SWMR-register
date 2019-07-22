@@ -1,5 +1,5 @@
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 //use crate::terminal_output::printlnu;
 use crate::settings::{SETTINGS, NodeId};
@@ -7,11 +7,14 @@ use crate::responsible_cell::ResponsibleCell;
 use crate::abd_node::AbdNode;
 use crate::communicator::Communicator;
 use crate::register::Register;
+use crate::run_result::RunResult;
 
 
 pub struct Mediator {
     communicator: ResponsibleCell<Option<Arc<Communicator>>>,
-    abd_node: ResponsibleCell<Option<AbdNode<String>>>
+    abd_node: ResponsibleCell<Option<AbdNode<String>>>,
+
+    run_result: Mutex<RunResult>
 }
 
 impl Mediator {
@@ -20,6 +23,7 @@ impl Mediator {
         let mediator = Mediator {
             communicator: ResponsibleCell::new(None),
             abd_node: ResponsibleCell::new(None),
+            run_result: Mutex::new(RunResult::new())
         };
         let mediator = Arc::new(mediator);
 
