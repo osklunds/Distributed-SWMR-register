@@ -46,13 +46,19 @@ fn main() {
     let _ = read_tx.send(());
     let _ = write_tx.send(());
 
-    {
+    if SETTINGS.record_evaluation_info() {
         let mut run_result = mediator.run_result();
-        run_result.read_latency =  SETTINGS.run_length().as_secs() as f32 / run_result.read_ops as f32;
-        run_result.write_latency = SETTINGS.run_length().as_secs() as f32 / run_result.write_ops as f32;
-    }
 
-    printlnu(format!("{:?}", mediator.run_result()));
+        if run_result.read_ops > 0 {
+            run_result.read_latency = Some(SETTINGS.run_length().as_secs() as f32 / run_result.read_ops as f32);
+        }
+
+        if run_result.write_ops > 0 {
+            run_result.write_latency = Some(SETTINGS.run_length().as_secs() as f32 / run_result.write_ops as f32);
+        }
+
+        printlnu(format!("{:?}", run_result));
+    }
 }
 
 fn start_client_threads_and_get_channel_send_ends(mediator: &Arc<Mediator>) -> (Sender<()>, Sender<()>) {
@@ -92,7 +98,9 @@ fn client_reads(read_rx: Receiver<()>, mediator: Arc<Mediator>) {
                 printlnu(format!("Stop read {}\n{}", read_number, res));
             }              
 
-            mediator.run_result().read_ops = read_number;
+            if SETTINGS.record_evaluation_info() {
+                mediator.run_result().read_ops = read_number;
+            }
 
             match read_rx.try_recv() {
                 Err(TryRecvError::Empty) => {},
@@ -117,7 +125,9 @@ fn client_writes(write_rx: Receiver<()>, mediator: Arc<Mediator>) {
             printlnu(format!("End write {}", write_number));
         }
 
-        mediator.run_result().write_ops = write_number;
+        if SETTINGS.record_evaluation_info() {
+            mediator.run_result().write_ops = write_number;
+        }
 
         match write_rx.try_recv() {
             Err(TryRecvError::Empty) => {},
