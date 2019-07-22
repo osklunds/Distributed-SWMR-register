@@ -22,6 +22,12 @@ pub fn execute_scp_copy_of_path_relative_to_remote_starter_directory(path: &str,
     execute_local_command(&scp_command)
 }
 
+pub fn execute_scp_download_of_path(path: &str, node_info: &NodeInfo) -> Child {
+    let scp_command = format!("scp -i {} -r {}@{}:distributed_swmr_registers_remote_directory/{} {}", node_info.key_path, node_info.username, node_info.ip_addr_string(), path, path);
+
+    execute_local_command(&scp_command)
+}
+
 pub fn execute_local_command(command: &str) -> Child {
     Command::new("/bin/bash")
         .arg("-c")

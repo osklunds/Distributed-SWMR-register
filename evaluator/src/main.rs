@@ -21,13 +21,20 @@ fn main() {
     let hosts_file = "hosts.txt";
     let optimize_string = "";
 
-    let command = format!("cargo run --manifest-path ../remote_starter/Cargo.toml -- {} -r {} -w {} -e {} -l 10", 
+    let command = format!("cargo run --manifest-path ../remote_starter/Cargo.toml -- {} -r {} -w {} -e {} -l 3", 
         hosts_file, 
         my_run_scenario.number_of_readers, 
         my_run_scenario.number_of_writers,
         optimize_string);
 
-    execution::execute_local_command(&command);
+    execution::execute_local_command(&command).wait().unwrap();
+
+    println!("Klar");
+
+    for node_info in &ARGUMENTS.node_infos {
+        let file_name = format!("node{:0>3}.eval", node_info.node_id);
+        execution::execute_scp_download_of_path(&file_name, &node_info).wait().unwrap();
+    }
 
 
 
