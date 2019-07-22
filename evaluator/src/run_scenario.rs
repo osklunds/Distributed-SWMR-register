@@ -17,11 +17,11 @@ pub struct RunScenario {
 }
 
 impl RunScenario {
-    pub fn new() -> RunScenario {
+    pub fn new(number_of_nodes: usize, number_of_readers: usize, number_of_writers: usize) -> RunScenario {
         RunScenario {
-            number_of_nodes: 0,
-            number_of_readers: 0,
-            number_of_writers: 0
+            number_of_nodes: number_of_nodes,
+            number_of_readers: number_of_readers,
+            number_of_writers: number_of_writers
         }
     }
 }
