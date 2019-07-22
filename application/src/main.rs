@@ -57,6 +57,10 @@ fn main() {
             run_result.write_latency = Some(SETTINGS.run_length().as_secs() as f32 / run_result.write_ops as f32);
         }
 
+        run_result.metadata.node_id = SETTINGS.node_id();
+        run_result.metadata.is_reader = SETTINGS.should_read();
+        run_result.metadata.is_writer = SETTINGS.should_write();
+
         printlnu(format!("{:?}", run_result));
     }
 }
