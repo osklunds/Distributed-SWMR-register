@@ -1,5 +1,5 @@
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 //use crate::terminal_output::printlnu;
 use crate::settings::{SETTINGS, NodeId};
@@ -73,5 +73,9 @@ impl Mediator {
     #[allow(dead_code)]
     pub fn read_all(&self) -> Register<String> {
         self.abd_node().read_all()
+    }
+
+    pub fn run_result(&self) -> MutexGuard<RunResult> {
+        self.run_result.lock().unwrap()
     }
 }

@@ -8,17 +8,17 @@ use crate::settings::NodeId;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RunResult {
-    write_ops: i32,
-    write_quorum_accesses: i32,
-    write_latency: f32,
-    read_ops: i32,
-    read_quorum_accesses: i32,
-    read_latency: f32,
+    pub write_ops: i32,
+    pub write_quorum_accesses: i32,
+    pub write_latency: f32,
+    pub read_ops: i32,
+    pub read_quorum_accesses: i32,
+    pub read_latency: f32,
 
-    write_message: MessageTypeResult,
-    write_ack_message: MessageTypeResult,
-    read_message: MessageTypeResult,
-    read_ack_message: MessageTypeResult
+    pub write_message: MessageTypeResult,
+    pub write_ack_message: MessageTypeResult,
+    pub read_message: MessageTypeResult,
+    pub read_ack_message: MessageTypeResult
 }
 
 impl RunResult {
@@ -41,9 +41,9 @@ impl RunResult {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MessageTypeResult {
-    sent: i32,
-    received: i32,
-    nodes_received_from: HashSet<NodeId>
+    pub sent: i32,
+    pub received: i32,
+    pub nodes_received_from: HashSet<NodeId>
 }
 
 impl MessageTypeResult {

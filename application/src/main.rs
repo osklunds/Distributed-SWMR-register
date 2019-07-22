@@ -18,7 +18,7 @@ mod run_result;
 
 use std::time::Duration;
 use std::sync::Arc;
-use std::thread;
+use std::thread::{self, JoinHandle};
 use std::sync::mpsc::{self, TryRecvError, Receiver, Sender};
 
 
@@ -45,6 +45,14 @@ fn main() {
 
     let _ = read_tx.send(());
     let _ = write_tx.send(());
+
+    {
+        let mut run_result = mediator.run_result();
+        run_result.read_latency =  SETTINGS.run_length().as_secs() as f32 / run_result.read_ops as f32;
+        run_result.write_latency = SETTINGS.run_length().as_secs() as f32 / run_result.write_ops as f32;
+    }
+
+    printlnu(format!("{:?}", mediator.run_result()));
 }
 
 fn start_client_threads_and_get_channel_send_ends(mediator: &Arc<Mediator>) -> (Sender<()>, Sender<()>) {
@@ -52,14 +60,14 @@ fn start_client_threads_and_get_channel_send_ends(mediator: &Arc<Mediator>) -> (
     let (write_tx, write_rx) = mpsc::channel();
 
     let read_thread_mediator = Arc::clone(mediator);
-    thread::spawn(move || {
+    let read_thread_handle = thread::spawn(move || {
         if SETTINGS.should_read() {
             client_reads(read_rx, read_thread_mediator);
         }
     });
     
     let write_thread_mediator = Arc::clone(mediator);
-    thread::spawn(move || {
+    let write_thread_handle = thread::spawn(move || {
         if SETTINGS.should_write() {
             client_writes(write_rx, write_thread_mediator);
         }
@@ -82,7 +90,9 @@ fn client_reads(read_rx: Receiver<()>, mediator: Arc<Mediator>) {
             
             if SETTINGS.print_client_operations() {
                 printlnu(format!("Stop read {}\n{}", read_number, res));
-            }               
+            }              
+
+            mediator.run_result().read_ops = read_number;
 
             match read_rx.try_recv() {
                 Err(TryRecvError::Empty) => {},
@@ -106,6 +116,8 @@ fn client_writes(write_rx: Receiver<()>, mediator: Arc<Mediator>) {
         if SETTINGS.print_client_operations() {
             printlnu(format!("End write {}", write_number));
         }
+
+        mediator.run_result().write_ops = write_number;
 
         match write_rx.try_recv() {
             Err(TryRecvError::Empty) => {},
