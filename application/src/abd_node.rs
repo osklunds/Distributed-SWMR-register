@@ -112,6 +112,9 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
     fn broadcast_json_write_message_until_majority_has_acked(&self, json_write_message: &str) {
         self.broadcast_json_message(&json_write_message);
+        if SETTINGS.record_evaluation_info() {
+            self.mediator().run_result().write_quorum_accesses += 1;
+        }
         let mut register_being_written = self.register_being_written.lock().unwrap();
 
         while register_being_written.is_some() {
@@ -120,13 +123,43 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             register_being_written = result.0;
             if result.1.timed_out() {
                 self.broadcast_json_message(&json_write_message);
-                //printlnu(format!("Timed out"));
+                if SETTINGS.record_evaluation_info() {
+                   self.mediator().run_result().write_quorum_accesses += 1;
+                }
+            }
+        }
+    }
+
+    fn send_json_message_to(&self, json: &str, receiver_id: NodeId) {
+        self.mediator().send_json_to(json, receiver_id);
+
+        if SETTINGS.record_evaluation_info() {
+            if messages::json_is_write_message(json) {
+                self.mediator().run_result().write_message.sent += 1;
+            } else if messages::json_is_write_ack_message(json) {
+                self.mediator().run_result().write_ack_message.sent += 1;
+            } else if messages::json_is_read_message(json) {
+                self.mediator().run_result().read_message.sent += 1;
+            } else if messages::json_is_read_ack_message(json) {
+                self.mediator().run_result().read_ack_message.sent += 1;
             }
         }
     }
 
     fn broadcast_json_message(&self, json: &str) {
         self.mediator().broadcast_json(json);
+
+        if SETTINGS.record_evaluation_info() {
+            if messages::json_is_write_message(json) {
+                self.mediator().run_result().write_message.sent += SETTINGS.number_of_nodes();
+            } else if messages::json_is_write_ack_message(json) {
+                self.mediator().run_result().write_ack_message.sent += SETTINGS.number_of_nodes();
+            } else if messages::json_is_read_message(json) {
+                self.mediator().run_result().read_message.sent += SETTINGS.number_of_nodes();
+            } else if messages::json_is_read_ack_message(json) {
+                self.mediator().run_result().read_ack_message.sent += SETTINGS.number_of_nodes();
+            }
+        }
     }
 
     fn mediator(&self) -> Arc<Mediator> {
@@ -198,6 +231,18 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
     #[allow(dead_code)]
     pub fn json_received(&self, json: &str) {
+        if SETTINGS.record_evaluation_info() {
+            if messages::json_is_write_message(json) {
+                self.mediator().run_result().write_message.received += 1;
+            } else if messages::json_is_write_ack_message(json) {
+                self.mediator().run_result().write_ack_message.received += 1;
+            } else if messages::json_is_read_message(json) {
+                self.mediator().run_result().read_message.received += 1;
+            } else if messages::json_is_read_ack_message(json) {
+                self.mediator().run_result().read_ack_message.received += 1;
+            }
+        }
+
         if messages::json_is_write_message(json) {
             if let Ok(write_message) = serde_json::from_str(&json) {
                 return self.receive_write_message(write_message);
@@ -234,7 +279,8 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             register: Cow::Borrowed(&reg)
         };
 
-        self.send_message_to(&write_ack_message, write_message.sender);
+        let json = self.jsonify_message(&write_ack_message);
+        self.send_json_message_to(&json, write_message.sender);
 
         // Here we have a compromise. Either we lock reg for
         // a long time, or we clone reg so we can have more
@@ -242,11 +288,6 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         // better. For large entries, longer locking
         // might be better.
     }
-
-    fn send_message_to(&self, message: &impl Message, receiver_id: NodeId) {
-        let json = serde_json::to_string(message).expect("Error serializing a message");
-        self.mediator().send_json_to(&json, receiver_id);
-    }  
 
     fn receive_write_ack_message(&self, write_ack_message: WriteAckMessage<V>) {
         let received_register: &Register<V> = &write_ack_message.register;        
@@ -295,7 +336,8 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             register: Cow::Borrowed(&reg)
         };
 
-        self.send_message_to(&read_ack_message, read_message.sender);
+        let json = self.jsonify_message(&read_ack_message);
+        self.send_json_message_to(&json, read_message.sender);
     }
 
     fn receive_read_ack_message(&self, read_ack_message: ReadAckMessage<V>) {
