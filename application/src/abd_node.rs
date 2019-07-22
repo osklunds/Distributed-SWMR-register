@@ -216,6 +216,9 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
     fn broadcast_json_read_message_until_majority_has_acked(&self, json_read_message: &str) {
         self.broadcast_json_message(&json_read_message);
+        if SETTINGS.record_evaluation_info() {
+            self.mediator().run_result().read_quorum_accesses += 1;
+        }
 
         let mut register_being_read = self.register_being_read.lock().unwrap();
 
@@ -225,6 +228,9 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             register_being_read = result.0;
             if result.1.timed_out() {
                 self.broadcast_json_message(&json_read_message);
+                if SETTINGS.record_evaluation_info() {
+                    self.mediator().run_result().read_quorum_accesses += 1;
+                }
             }
         }
     }
