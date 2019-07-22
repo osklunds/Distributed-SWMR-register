@@ -10,15 +10,8 @@ use crate::settings::NodeId;
 pub struct RunResult {
     pub write_ops: usize,
     pub write_quorum_accesses: usize,
-    pub write_latency: Option<f32>,
     pub read_ops: usize,
     pub read_quorum_accesses: usize,
-    pub read_latency: Option<f32>,
-
-    // The latencies are Option, because if a node doesn't write,
-    // it makes no sense to say that it has a write latency.
-    // But even if a node doesn't write, it still makes sense to say
-    // that it hasn't done any write quorum accesses.
 
     pub write_message: MessageTypeResult,
     pub write_ack_message: MessageTypeResult,
@@ -33,10 +26,8 @@ impl RunResult {
         RunResult {
             write_ops: 0,
             write_quorum_accesses: 0,
-            write_latency: None,
             read_ops: 0,
             read_quorum_accesses: 0,
-            read_latency: None,
 
             write_message: MessageTypeResult::new(),
             write_ack_message: MessageTypeResult::new(),
@@ -69,7 +60,8 @@ impl MessageTypeResult {
 pub struct Metadata {
     pub node_id: NodeId,
     pub is_reader: bool,
-    pub is_writer: bool
+    pub is_writer: bool,
+    pub run_length: usize,
 }
 
 impl Metadata {
@@ -77,7 +69,8 @@ impl Metadata {
         Metadata {
             node_id: 0,
             is_reader: false,
-            is_writer: false
+            is_writer: false,
+            run_length: 0
         }
     }
 }

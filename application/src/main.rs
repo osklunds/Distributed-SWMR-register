@@ -49,17 +49,10 @@ fn main() {
     if SETTINGS.record_evaluation_info() {
         let mut run_result = mediator.run_result();
 
-        if run_result.read_ops > 0 {
-            run_result.read_latency = Some(SETTINGS.run_length().as_secs() as f32 / run_result.read_ops as f32);
-        }
-
-        if run_result.write_ops > 0 {
-            run_result.write_latency = Some(SETTINGS.run_length().as_secs() as f32 / run_result.write_ops as f32);
-        }
-
         run_result.metadata.node_id = SETTINGS.node_id();
         run_result.metadata.is_reader = SETTINGS.should_read();
         run_result.metadata.is_writer = SETTINGS.should_write();
+        run_result.metadata.run_length = SETTINGS.run_length().as_secs() as usize;
 
         printlnu(format!("{}", serde_json::to_string(&*run_result).unwrap()));
     }
