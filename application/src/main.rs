@@ -16,6 +16,7 @@ mod mediator;
 mod responsible_cell;
 mod run_result;
 
+use std::fs;
 use std::time::Duration;
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
@@ -54,7 +55,9 @@ fn main() {
         run_result.metadata.is_writer = SETTINGS.should_write();
         run_result.metadata.run_length = SETTINGS.run_length().as_secs() as usize;
 
-        printlnu(format!("{}", serde_json::to_string(&*run_result).unwrap()));
+        let json = serde_json::to_string(&*run_result).unwrap();
+        printlnu(format!("{}", &json));
+        fs::write(format!("node{:0>3}.eval", SETTINGS.node_id()), json).expect("Could not write the json result file");
     }
 }
 
