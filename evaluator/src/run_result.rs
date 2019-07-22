@@ -1,5 +1,6 @@
 
 use std::collections::HashSet;
+use std::iter::FromIterator;
 
 use serde::{Serialize, Deserialize};
 
@@ -41,6 +42,28 @@ impl RunResult {
 
             metadata: Metadata::new()
         }
+    }
+
+    pub fn is_valid(&self, number_of_nodes: usize) -> bool {
+        let mut valid = true;
+        
+        valid &= Self::implies(self.metadata.is_writer, self.write_ack_message.nodes_received_from == Self::all_nodes_set(number_of_nodes));
+
+        valid &= Self::implies(self.metadata.is_reader, self.read_ack_message.nodes_received_from == Self::all_nodes_set(number_of_nodes));
+
+        valid
+    }
+
+    fn implies(a: bool, b: bool) -> bool {
+        if a {
+            b
+        } else {
+            true
+        }
+    }
+
+    fn all_nodes_set(number_of_nodes: usize) -> HashSet<NodeId> {
+        HashSet::from_iter(1..number_of_nodes as NodeId)
     }
 }
 
