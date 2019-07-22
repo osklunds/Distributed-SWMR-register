@@ -100,10 +100,6 @@ fn client_reads(read_rx: Receiver<()>, mediator: Arc<Mediator>) {
             
             if SETTINGS.print_client_operations() {
                 printlnu(format!("Stop read {}\n{}", read_number, res));
-            }              
-
-            if SETTINGS.record_evaluation_info() {
-                mediator.run_result().read_ops = read_number;
             }
 
             match read_rx.try_recv() {
@@ -127,10 +123,6 @@ fn client_writes(write_rx: Receiver<()>, mediator: Arc<Mediator>) {
 
         if SETTINGS.print_client_operations() {
             printlnu(format!("End write {}", write_number));
-        }
-
-        if SETTINGS.record_evaluation_info() {
-            mediator.run_result().write_ops = write_number;
         }
 
         match write_rx.try_recv() {

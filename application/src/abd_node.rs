@@ -60,6 +60,10 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
             assert!(acking_processors_for_write.is_empty());
             assert!(register_being_written.is_none());
         }
+
+        if SETTINGS.record_evaluation_info() {
+            self.mediator().run_result().write_ops += 1;
+        }
     }
 
     fn inner_write(&self, value: V) {
@@ -146,6 +150,17 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         let json_read_message = self.construct_json_read_message_and_release_register(register);
 
         self.broadcast_json_read_message_until_majority_has_acked(&json_read_message);
+
+        if cfg!(debug_assertions) {
+            let acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
+            let register_being_read = self.register_being_read.lock().unwrap();
+            assert!(acking_processors_for_read.is_empty());
+            assert!(register_being_read.is_none());
+        }
+
+        if SETTINGS.record_evaluation_info() {
+            self.mediator().run_result().read_ops += 1;
+        }
 
         self.reg.lock().unwrap()
     }
