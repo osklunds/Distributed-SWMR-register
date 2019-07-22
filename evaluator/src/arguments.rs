@@ -34,12 +34,9 @@ impl NodeInfo {
 #[derive(Debug)]
 pub struct Arguments {
     pub node_infos: HashSet<NodeInfo>,
-    pub number_of_writers: i32,
-    pub number_of_readers: i32,
-    pub release_mode_string: String,
+    pub optimize_string: String,
     pub print_client_operations_string: String,
     pub run_length_string: String,
-    pub record_evaluation_info_string: String,
     pub install: bool
 }
 
@@ -48,53 +45,31 @@ impl Arguments {
         let matches = get_matches();
 
         let node_infos = node_infos_from_matches(&matches);
-        let number_of_writers = number_of_writers_from_matches(&matches);
-        let number_of_readers = number_of_readers_from_matches(&matches);
-        let release_mode_string = release_mode_string_from_matches(&matches);
+        let optimize_string = optimize_string_from_matches(&matches);
         let print_client_operations_string = print_client_operations_string_from_matches(&matches);
         let run_length_string = run_length_string_from_matches(&matches);
-        let record_evaluation_info_string = record_evaluation_info_string_from_matches(&matches);
         let install = install_from_matches(&matches);
 
         Arguments {
             node_infos: node_infos,
-            number_of_writers: number_of_writers,
-            number_of_readers: number_of_readers,
-            release_mode_string: release_mode_string,
+            optimize_string: optimize_string,
             print_client_operations_string: print_client_operations_string,
             run_length_string: run_length_string,
-            record_evaluation_info_string: record_evaluation_info_string,
             install: install
         }
     }
 }
 
 fn get_matches() -> ArgMatches<'static> {
-    App::new("Distributed SWMR registers: Remote starter")
+    App::new("Distributed SWMR registers: Evaluator")
         .version("0.1")
         .author("Oskar Lundström")
-        .about("A helper utility that starts multiple nodes on remote machines via SSH.")
+        .about("A helper utility that runs the application on, and gathers and aggregates evaluation info from, remote machines.")
 
         .arg(Arg::with_name("hosts-file")
             .required(true)
             .takes_value(true)
             .help("The file with node ids, addresses, ports, ssh key paths and usernames."))
-
-        .arg(Arg::with_name("number-of-writers")
-            .required(false)
-            .takes_value(true)
-            .default_value("0")
-            .short("w")
-            .long("number-of-writers")
-            .help("The number of nodes that should write."))
-
-        .arg(Arg::with_name("number-of-readers")
-            .required(false)
-            .takes_value(true)
-            .default_value("0")
-            .short("r")
-            .long("number-of-readers")
-            .help("The number of nodes that should read."))
 
         .arg(Arg::with_name("run-length")
             .required(false)
@@ -103,12 +78,6 @@ fn get_matches() -> ArgMatches<'static> {
             .short("l")
             .long("run-length")
             .help("The number of seconds the program should run for. If 0 is given, the program will until aborted with Ctrl-C."))
-
-        .arg(Arg::with_name("record-evaluation-info")
-            .short("e")
-            .long("record-evaluation-info")
-            .takes_value(false)
-            .help("Record information used for the evaluation, such as latency and number of messages sent. If not done, the performance might be slightly higher."))
 
         .arg(Arg::with_name("optimize")
             .takes_value(false)
@@ -161,15 +130,7 @@ fn node_infos_from_string(string: String) -> HashSet<NodeInfo> {
     node_infos
 }
 
-fn number_of_writers_from_matches(matches: &ArgMatches<'static>) -> i32 {
-    matches.value_of("number-of-writers").unwrap().parse().unwrap()
-}
-
-fn number_of_readers_from_matches(matches: &ArgMatches<'static>) -> i32 {
-    matches.value_of("number-of-readers").unwrap().parse().unwrap()
-}
-
-fn release_mode_string_from_matches(matches: &ArgMatches<'static>) -> String {
+fn optimize_string_from_matches(matches: &ArgMatches<'static>) -> String {
     match matches.is_present("optimize") {
         true  => "--release".to_string(),
         false => "".to_string()
@@ -185,13 +146,6 @@ fn print_client_operations_string_from_matches(matches: &ArgMatches<'static>) ->
 
 fn run_length_string_from_matches(matches: &ArgMatches<'static>) -> String {
     matches.value_of("run-length").unwrap().to_string()
-}
-
-fn record_evaluation_info_string_from_matches(matches: &ArgMatches<'static>) -> String {
-    match matches.is_present("record-evaluation-info") {
-        true  => "--record-evaluation-info".to_string(),
-        false => "".to_string()
-    }
 }
 
 fn install_from_matches(matches: &ArgMatches<'static>) -> bool {
