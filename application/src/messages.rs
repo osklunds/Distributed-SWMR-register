@@ -47,3 +47,20 @@ pub struct ReadAckMessage<'a, V: Clone> {
 }
 
 impl<'a, V: Serialize + Clone> Message for ReadAckMessage<'a, V> {}
+
+
+pub fn json_is_write_message(json: &str) -> bool {
+    json.starts_with("{\"WriteMessage\":")
+}
+
+pub fn json_is_write_ack_message(json: &str) -> bool {
+    json.starts_with("{\"WriteAckMessage\":")
+}
+
+pub fn json_is_read_message(json: &str) -> bool {
+    json.starts_with("{\"ReadMessage\":")
+}
+
+pub fn json_is_read_ack_message(json: &str) -> bool {
+    json.starts_with("{\"ReadAckMessage\":")
+}

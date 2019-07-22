@@ -12,7 +12,7 @@ use serde::de::DeserializeOwned;
 use crate::settings::{SETTINGS, NodeId};
 use crate::register::*;
 use crate::entry::{self, Entry, Timestamp};
-use crate::messages::*;
+use crate::messages::{self, Message, WriteMessage, WriteAckMessage, ReadMessage, ReadAckMessage};
 use crate::terminal_output::printlnu;
 use crate::mediator::Mediator;
 
@@ -198,47 +198,31 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
     #[allow(dead_code)]
     pub fn json_received(&self, json: &str) {
-        if self.json_is_write_message(json) {
+        if messages::json_is_write_message(json) {
             if let Ok(write_message) = serde_json::from_str(&json) {
                 return self.receive_write_message(write_message);
             }
         }
 
-        if self.json_is_write_ack_message(json) {
+        if messages::json_is_write_ack_message(json) {
             if let Ok(write_ack_message) = serde_json::from_str(&json) {
                 return self.receive_write_ack_message(write_ack_message);
             }
         }
 
-        if self.json_is_read_message(json) {
+        if messages::json_is_read_message(json) {
             if let Ok(read_message) = serde_json::from_str(&json) {
                 return self.receive_read_message(read_message);
             }
         }
 
-        if self.json_is_read_ack_message(json) {
+        if messages::json_is_read_ack_message(json) {
             if let Ok(read_ack_message) = serde_json::from_str(&json) {
                 return self.receive_read_ack_message(read_ack_message);
             }
         }
 
         printlnu(format!("Could not parse the json: {}", json));
-    }
-
-    fn json_is_write_message(&self, json: &str) -> bool {
-        json.starts_with("{\"WriteMessage\":")
-    }
-
-    fn json_is_write_ack_message(&self, json: &str) -> bool {
-        json.starts_with("{\"WriteAckMessage\":")
-    }
-
-    fn json_is_read_message(&self, json: &str) -> bool {
-        json.starts_with("{\"ReadMessage\":")
-    }
-
-    fn json_is_read_ack_message(&self, json: &str) -> bool {
-        json.starts_with("{\"ReadAckMessage\":")
     }
 
     fn receive_write_message(&self, write_message: WriteMessage<V>) {
