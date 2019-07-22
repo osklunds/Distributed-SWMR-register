@@ -287,6 +287,10 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         // concurrency. For small entries, cloning might be
         // better. For large entries, longer locking
         // might be better.
+
+        if SETTINGS.record_evaluation_info() {
+            self.mediator().run_result().write_message.nodes_received_from.insert(write_message.sender);
+        }
     }
 
     fn receive_write_ack_message(&self, write_ack_message: WriteAckMessage<V>) {
@@ -315,6 +319,10 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
             self.write_ack_majority_reached.notify_one();
         }
+
+        if SETTINGS.record_evaluation_info() {
+            self.mediator().run_result().write_ack_message.nodes_received_from.insert(write_ack_message.sender);
+        }
     }
 
     fn write_ack_from_majority(&self) -> bool {
@@ -338,6 +346,10 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
         let json = self.jsonify_message(&read_ack_message);
         self.send_json_message_to(&json, read_message.sender);
+
+        if SETTINGS.record_evaluation_info() {
+            self.mediator().run_result().read_message.nodes_received_from.insert(read_message.sender);
+        }
     }
 
     fn receive_read_ack_message(&self, read_ack_message: ReadAckMessage<V>) {
@@ -365,6 +377,10 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
 
             *register_being_read = None;
             self.read_ack_majority_reached.notify_one();
+        }
+
+        if SETTINGS.record_evaluation_info() {
+            self.mediator().run_result().read_ack_message.nodes_received_from.insert(read_ack_message.sender);
         }
     }
 
