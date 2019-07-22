@@ -1,5 +1,10 @@
 
+use std::collections::HashSet;
+
 use serde::{Serialize, Deserialize};
+
+use crate::settings::NodeId;
+
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RunResult {
@@ -37,14 +42,16 @@ impl RunResult {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MessageTypeResult {
     sent: i32,
-    received: i32
+    received: i32,
+    nodes_received_from: HashSet<NodeId>
 }
 
 impl MessageTypeResult {
     pub fn new() -> MessageTypeResult {
         MessageTypeResult {
             sent: 0,
-            received: 0
+            received: 0,
+            nodes_received_from: HashSet::new()
         }
     }
 }
