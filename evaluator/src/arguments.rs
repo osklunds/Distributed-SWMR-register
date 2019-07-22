@@ -8,6 +8,8 @@ use std::time::Duration;
 
 use clap::{Arg, App, ArgMatches};
 
+use crate::run_scenario::Scenario;
+
 
 lazy_static! {
     pub static ref ARGUMENTS: Arguments = Arguments::new();
@@ -45,6 +47,7 @@ impl Arguments {
         let matches = get_matches();
 
         let node_infos = node_infos_from_matches(&matches);
+        let scenarios = scenarios_from_matches(&matches);
         let optimize_string = optimize_string_from_matches(&matches);
         let print_client_operations_string = print_client_operations_string_from_matches(&matches);
         let run_length_string = run_length_string_from_matches(&matches);
@@ -70,6 +73,11 @@ fn get_matches() -> ArgMatches<'static> {
             .required(true)
             .takes_value(true)
             .help("The file with node ids, addresses, ports, ssh key paths and usernames."))
+
+        .arg(Arg::with_name("scenario-file")
+            .required(true)
+            .takes_value(true)
+            .help("The file with scenarios to run."))
 
         .arg(Arg::with_name("run-length")
             .required(false)
@@ -128,6 +136,29 @@ fn node_infos_from_string(string: String) -> HashSet<NodeInfo> {
     }
 
     node_infos
+}
+
+fn scenarios_from_matches(matches: &ArgMatches<'static>) -> HashSet<Scenario> {
+    let scenarios_file_path = matches.value_of("scenario-file").unwrap();
+    let string = fs::read_to_string(scenarios_file_path).expect("Unable to read the scenarios file.");
+    scenarios_from_string(string)
+}
+
+fn scenarios_from_string(string: String) -> HashSet<Scenario> {
+    let mut scenarios = HashSet::new();
+
+    for line in string.lines() {
+        let components: Vec<&str> = line.split(",").collect();
+        let number_of_nodes = components[0].parse().unwrap();
+        let number_of_readers = components[1].parse().unwrap();
+        let number_of_writers = components[2].parse().unwrap();
+
+        let scenario = Scenario::new(number_of_nodes, number_of_readers, number_of_writers);
+
+        scenarios.insert(scenario);
+    }
+
+    scenarios
 }
 
 fn optimize_string_from_matches(matches: &ArgMatches<'static>) -> String {
