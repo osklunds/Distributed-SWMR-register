@@ -6,7 +6,7 @@ use std::fs;
 use std::collections::HashSet;
 use std::time::Duration;
 
-use clap::{Arg, App, ArgMatches};
+use clap::{Arg, App, ArgMatches, SubCommand};
 
 use crate::run_scenario::Scenario;
 
@@ -69,41 +69,52 @@ fn get_matches() -> ArgMatches<'static> {
         .author("Oskar Lundström")
         .about("A helper utility that runs the application on, and gathers and aggregates evaluation info from, remote machines.")
 
-        .arg(Arg::with_name("hosts-file")
-            .required(true)
-            .takes_value(true)
-            .help("The file with node ids, addresses, ports, ssh key paths and usernames."))
+        .subcommand(SubCommand::with_name("install")
+            .about("Will install Rust and the source code on the hosts.")
+            
+            .arg(Arg::with_name("hosts-file")
+                .required(true)
+                .takes_value(true)
+                .help("The file with node ids, addresses, ports, ssh key paths and usernames."))
 
-        .arg(Arg::with_name("scenario-file")
-            .required(true)
-            .takes_value(true)
-            .help("The file with scenarios to run."))
+            .arg(Arg::with_name("optimize")
+                .takes_value(false)
+                .short("o")
+                .long("optimize")
+                .help("With this option, cargo will build/run in release mode. This uses optimizations and yields higher performance.")))
 
-        .arg(Arg::with_name("run-length")
-            .required(false)
-            .takes_value(true)
-            .default_value("0")
-            .short("l")
-            .long("run-length")
-            .help("The number of seconds the program should run for. If 0 is given, the program will until aborted with Ctrl-C."))
+        .subcommand(SubCommand::with_name("gather")
+            .about("Will run each scenario ones and gather the results in a file. The results-file will be built upon, and if a scenario already exists there, it will not be run again.")
+            
+            .arg(Arg::with_name("hosts-file")
+                .required(true)
+                .takes_value(true)
+                .help("The file with node ids, addresses, ports, ssh key paths and usernames."))
 
-        .arg(Arg::with_name("optimize")
-            .takes_value(false)
-            .short("o")
-            .long("optimize")
-            .help("With this option, cargo will build/run in release mode. This uses optimizations and yields higher performance."))
+            .arg(Arg::with_name("scenario-file")
+                .required(true)
+                .takes_value(true)
+                .help("The file with scenarios to run."))
 
-        .arg(Arg::with_name("install")
-            .takes_value(false)
-            .short("i")
-            .long("install")
-            .help("With this option, Rust will be installed, the source code and configuration files will be uploaded and the application will be built. Without this option, the application will be launched."))
+            .arg(Arg::with_name("optimize")
+                .takes_value(false)
+                .short("o")
+                .long("optimize")
+                .help("With this option, cargo will build/run in release mode. This uses optimizations and yields higher performance.")))
 
-        .arg(Arg::with_name("print-client-operations")
+            .arg(Arg::with_name("print-client-operations")
             .short("p")
             .long("print-client-operations")
             .takes_value(false)
             .help("Print when a read/write operation starts/ends. If not included, the performance might be slightly higher."))
+
+        .subcommand(SubCommand::with_name("aggregate")
+            .about("Will aggregate multiple result-files to generate aggregated results, according to what you have programatically defined.")
+
+            .arg(Arg::with_name("result-files")
+                .required(true)
+                .takes_value(true)
+                .help("The files with results. Each file should have the same scenarios as the other files.")))
 
         .get_matches()
 }
