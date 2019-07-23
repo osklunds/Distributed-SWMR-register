@@ -12,7 +12,7 @@ pub type ScenarioResults = HashSet<ScenarioResult>;
 pub type NodeId = i32;
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RunResult {
     pub write_ops: usize,
     pub write_quorum_accesses: usize,
@@ -67,7 +67,7 @@ impl RunResult {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MessageTypeResult {
     pub sent: usize,
     pub received: usize,
@@ -84,7 +84,7 @@ impl MessageTypeResult {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Metadata {
     pub node_id: NodeId,
     pub is_reader: bool,

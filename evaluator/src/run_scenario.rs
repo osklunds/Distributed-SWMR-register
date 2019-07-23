@@ -9,7 +9,7 @@ use crate::run_result::*;
 pub type EvaluationResults = HashMap<Scenario, ScenarioResults>;
 
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub struct Scenario {
     pub number_of_nodes: usize,
     pub number_of_readers: usize,

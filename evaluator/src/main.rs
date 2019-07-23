@@ -14,6 +14,7 @@ use run_scenario::*;
 use arguments::ARGUMENTS;
 
 fn main() {
+    /*
     &ARGUMENTS.node_infos;
 
     let my_scenario = Scenario::new(3, 3, 3);
@@ -34,6 +35,7 @@ fn main() {
         execution::execute_scp_download_of_path(&file_name, &node_info).wait().unwrap();
     }
 
+    */
 
 
 }
