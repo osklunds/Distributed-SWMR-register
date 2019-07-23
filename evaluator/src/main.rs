@@ -11,9 +11,17 @@ mod arguments;
 mod execution;
 
 use run_scenario::*;
-use arguments::ARGUMENTS;
+use arguments::{Arguments, ARGUMENTS};
 
 fn main() {
+    let x: &Arguments = &ARGUMENTS;
+
+    if let Arguments::Install(arguments) = x {
+        
+    }
+
+    
+
     /*
     &ARGUMENTS.node_infos;
 
