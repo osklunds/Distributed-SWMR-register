@@ -14,10 +14,10 @@ use run_scenario::*;
 use arguments::{Arguments, ARGUMENTS};
 
 fn main() {
-    let x: &Arguments = &ARGUMENTS;
+    let arguments: &Arguments = &ARGUMENTS;
 
-    if let Arguments::Install(arguments) = x {
-        
+    if let Arguments::Install(arguments) = arguments {
+        let command = format!("cargo run --manifest-path" );
     }
 
     

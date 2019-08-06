@@ -41,17 +41,17 @@ impl Arguments {
 
 
 pub struct InstallArguments {
-    pub node_infos: HashSet<NodeInfo>,
+    pub hosts_file_path: String,
     pub optimize_string: String,
 }
 
 impl InstallArguments {
     fn from_matches(matches: &ArgMatches<'static>) -> InstallArguments {
-        let node_infos = node_infos_from_matches(matches);
+        let hosts_file_path = hosts_file_path_from_matches(matches);
         let optimize_string = optimize_string_from_matches(matches);
 
         InstallArguments {
-            node_infos: node_infos,
+            hosts_file_path: hosts_file_path,
             optimize_string: optimize_string
         }
     }
@@ -59,7 +59,7 @@ impl InstallArguments {
 
 
 pub struct GatherArguments {
-    pub node_infos: HashSet<NodeInfo>,
+    pub hosts_file_path: String,
     pub scenarios: HashSet<Scenario>,
     pub result_file_path: String,
     pub optimize_string: String,
@@ -68,14 +68,14 @@ pub struct GatherArguments {
 
 impl GatherArguments {
     fn from_matches(matches: &ArgMatches<'static>) -> GatherArguments {
-        let node_infos = node_infos_from_matches(matches);
+        let hosts_file_path = hosts_file_path_from_matches(matches);
         let scenarios = scenarios_from_matches(matches);
         let result_file_path = result_file_path_from_matches(matches);
         let optimize_string = optimize_string_from_matches(matches);
         let print_client_operations_string = print_client_operations_string_from_matches(matches);
 
         GatherArguments {
-            node_infos: node_infos,
+            hosts_file_path: hosts_file_path,
             scenarios: scenarios,
             result_file_path: result_file_path,
             optimize_string: optimize_string,
@@ -180,33 +180,8 @@ fn get_matches() -> ArgMatches<'static> {
 }
 
 
-fn node_infos_from_matches(matches: &ArgMatches<'static>) -> HashSet<NodeInfo> {
-    let hosts_file_path = matches.value_of("hosts-file").unwrap();
-    let string = fs::read_to_string(hosts_file_path).expect("Unable to read file");
-    node_infos_from_string(string)
-}
-
-fn node_infos_from_string(string: String) -> HashSet<NodeInfo> {
-    let mut node_infos = HashSet::new();
-
-    for line in string.lines() {
-        let components: Vec<&str> = line.split(",").collect();
-        let node_id = components[0].parse().unwrap();
-        let socket_addr = components[1].to_socket_addrs().unwrap().next().unwrap();
-        let key_path = components[2].to_string();
-        let username = components[3].to_string();
-
-        let node_info = NodeInfo {
-            node_id: node_id,
-            socket_addr: socket_addr,
-            key_path: key_path,
-            username: username
-        };
-
-        node_infos.insert(node_info);
-    }
-
-    node_infos
+fn hosts_file_path_from_matches(matches: &ArgMatches<'static>) -> String {
+    matches.value_of("hosts-file").unwrap().to_string()
 }
 
 fn scenarios_from_matches(matches: &ArgMatches<'static>) -> HashSet<Scenario> {
