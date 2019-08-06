@@ -40,6 +40,8 @@ ARGS:
     <result-files>    The files with results. Each file should have the same scenarios as the other files.
 ```
 
+**The aggregate subcommand is not finished yet.**
+
 `cargo run -- gather --help`:
 
 ```
@@ -98,7 +100,7 @@ The indented workflow is as follows:
 
 Todo: have an example implementation for step 7 and 8.
 
-## Note for usage
+## Notes for usage
 
 Check the notes for usage of `remote_starter`. Those notes apply here as well. In addition there are the notes below:
 
