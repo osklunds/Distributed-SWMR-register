@@ -31,6 +31,7 @@ fn main() {
         let hosts_file = &arguments.hosts_file;
         let optimize_string = &arguments.optimize_string;
         let print_client_operations_string = &arguments.print_client_operations_string;
+        let result_file_path = &arguments.result_file_path;
 
         create_result_file_if_not_existing(&arguments.result_file_path);
         let mut results = read_result_file(&arguments.result_file_path);
@@ -45,12 +46,22 @@ fn main() {
                     print_client_operations_string);
                 execution::execute_local_command(&command).wait().expect("Could not wait for the gather command for remote_starter.");
 
+                let mut run_results = HashMap::new();
                 for node_info in &arguments.node_infos {
                     let file_name = format!("node{:0>3}.eval", node_info.node_id);
                     execution::execute_scp_download_of_path(&file_name, &node_info).wait().unwrap();
-                    
+                    let json = fs::read_to_string(&file_name).expect("Could not read a run result.");
+                    let run_result: RunResult = serde_json::from_str(&json).expect("Could not parse a run result.");
+
+                    run_results.insert(node_info.node_id, run_result);
                 }
+
+                // TODO: Check if the result is sound
+                results.insert(*scenario, run_results);
             }
+
+            let json = serde_json::to_string(&results).expect("Could not serialize the result.");
+            fs::write(result_file_path, &json).expect("Could not write the result file.");
         }
     }
 
