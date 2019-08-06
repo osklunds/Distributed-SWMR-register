@@ -79,6 +79,8 @@ fn main() {
     }
 }
 
+
+
 fn create_result_file_if_not_existing(result_file_path: &Path) {
     if result_file_path.is_dir() {
         fs::remove_dir(result_file_path).expect("Could not remove a result file directory.");

@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::collections::{HashSet, HashMap};
 use std::time::Duration;
 
-use clap::{Arg, App, ArgMatches, SubCommand};
+use clap::{Arg, App, ArgMatches, SubCommand, AppSettings};
 
 use crate::run_scenario::Scenario;
 use crate::run_result::{RunResult, ScenarioResults, ScenarioResult};
@@ -124,12 +124,12 @@ impl NodeInfo {
 
 fn get_matches() -> ArgMatches<'static> {
     App::new("Distributed SWMR registers: Evaluator")
-        .version("0.1")
-        .author("Oskar Lundström")
-        .about("A helper utility that runs the application on, and gathers and aggregates evaluation info from, remote machines.")
+        .about("A helper utilty that gathers evaluation results and aggregates them")
+        .setting(AppSettings::DisableVersion)
+        .setting(AppSettings::VersionlessSubcommands)
 
         .subcommand(SubCommand::with_name("install")
-            .about("Will install Rust and the source code on the hosts.")
+            .about("Will install Rust and the source code on the (remote) hosts.")
             
             .arg(Arg::with_name("hosts-file")
                 .required(true)
