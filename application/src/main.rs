@@ -23,9 +23,9 @@ use std::thread::{self, JoinHandle};
 use std::sync::mpsc::{self, TryRecvError, Receiver, Sender};
 
 
-use settings::SETTINGS;
-use terminal_output::printlnu;
-use mediator::Mediator;
+use crate::settings::SETTINGS;
+use crate::terminal_output::printlnu;
+use crate::mediator::Mediator;
 
 
 fn main() {
