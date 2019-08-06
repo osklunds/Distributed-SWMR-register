@@ -27,11 +27,17 @@ The `local_starter` directory contains the code for a helper tool. `local_starte
 
 The `remote_starter` directory contains the code for another helper tool. `remote_starter` automatically starts ABD nodes on remote machines via SSH. More details are in `remote_starter/README.md`.
 
+The `evaluator` directory contains the code for another helper tool. `evaluator` utilizes `remote_starter` to run different scenarios you define and aggregates the evaluation results.
+
 ## Platform compatibility
 
 |                                 | Linux | Mac | Windows |
 |---------------------------------|-------|-----|---------|
-| application                     | Yes   | Yes | Yes     |
+| application                     | Yes   | Yes | Yes*    |
 | local_starter                   | Yes   | Yes | No      |
 | remote_starter: local computer  | Yes   | Yes | No      |
 | remote_starter: remote computer | Yes   | Yes | No      |
+| evaluator: local computer       | Yes   | Yes | No      |
+| evaluator: remote computer      | Yes   | Yes | No      |
+
+*Todo: test this. But nothing unix-specific is used in the application itself.
