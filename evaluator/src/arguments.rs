@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use clap::{Arg, App, ArgMatches, SubCommand, AppSettings};
 
-use crate::run_scenario::Scenario;
+use crate::scenario::Scenario;
 use crate::run_result::{RunResult, ScenarioResults, ScenarioResult};
 
 
