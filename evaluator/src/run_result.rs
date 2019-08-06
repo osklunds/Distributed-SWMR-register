@@ -51,6 +51,10 @@ impl RunResult {
 
         valid &= Self::implies(self.metadata.is_reader, self.read_ack_message.nodes_received_from == Self::all_nodes_set(number_of_nodes));
 
+        valid &= Self::implies(!self.metadata.is_writer, self.write_ack_message.nodes_received_from.is_empty());
+
+        valid &= Self::implies(!self.metadata.is_reader, self.read_ack_message.nodes_received_from.is_empty());
+
         valid
     }
 
@@ -63,7 +67,7 @@ impl RunResult {
     }
 
     fn all_nodes_set(number_of_nodes: usize) -> HashSet<NodeId> {
-        HashSet::from_iter(1..number_of_nodes as NodeId)
+        HashSet::from_iter(1..(number_of_nodes+1) as NodeId)
     }
 }
 
