@@ -1,5 +1,5 @@
 
-#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
+//#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
 
 #[macro_use]
 extern crate lazy_static;
@@ -7,24 +7,14 @@ extern crate lazy_static;
 mod arguments;
 mod execution;
 
-use std::collections::{HashMap, HashSet};
-//use std::iter::FromIterator;
-use std::net::SocketAddr;
-use std::net::IpAddr::V4;
-use std::net::ToSocketAddrs;
-use std::time::Duration;
-use std::process::{Command, Child};
-use std::fs;
-use std::path::Path;
-use std::path::PathBuf;
+use std::collections::HashSet;
 use std::vec::Vec;
-use std::thread;
 
 use colored::Color;
 use colored::Color::*;
 use ctrlc;
 
-use crate::arguments::{ARGUMENTS, Arguments, NodeInfo, NodeId};
+use crate::arguments::{ARGUMENTS, NodeId};
 
 
 fn main() {

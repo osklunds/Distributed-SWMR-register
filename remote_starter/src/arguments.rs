@@ -1,10 +1,8 @@
 
 use std::net::SocketAddr;
-use std::net::IpAddr::V4;
 use std::net::ToSocketAddrs;
 use std::fs;
 use std::collections::HashSet;
-use std::time::Duration;
 
 use clap::{Arg, App, ArgMatches};
 
