@@ -1,5 +1,5 @@
 
-#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
+//#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
 
 #[macro_use]
 extern crate lazy_static;
@@ -7,7 +7,7 @@ extern crate serde;
 
 use std::path::Path;
 use std::fs;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 mod run_result;
 mod scenario;
@@ -17,6 +17,7 @@ mod execution;
 use scenario::*;
 use run_result::{RunResult, NodeId};
 use arguments::*;
+
 
 fn main() {
     let arguments: &Arguments = &ARGUMENTS;

@@ -1,14 +1,7 @@
 
-use std::collections::HashMap;
-use std::fmt::{self, Display, Formatter};
-use std::convert::TryFrom;
-
-use serde::{Serialize, Deserialize, Serializer};
+use serde::{Serialize, Deserialize};
 
 use crate::run_result::*;
-
-
-pub type EvaluationResults = HashMap<Scenario, ScenarioResults>;
 
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Copy, Clone)]

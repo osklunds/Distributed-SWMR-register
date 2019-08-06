@@ -1,16 +1,15 @@
 
 use std::net::SocketAddr;
-use std::net::IpAddr::V4;
 use std::net::ToSocketAddrs;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::collections::{HashSet, HashMap};
 use std::time::Duration;
 
 use clap::{Arg, App, ArgMatches, SubCommand, AppSettings};
 
 use crate::scenario::Scenario;
-use crate::run_result::{RunResult, ScenarioResults, ScenarioResult};
+use crate::run_result::RunResult;
 
 
 lazy_static! {
@@ -90,7 +89,7 @@ impl GatherArguments {
 
 
 pub struct AggregateArguments {
-    pub run_results: HashMap<Scenario, Vec<ScenarioResult>>
+    pub run_results: HashMap<Scenario, Vec<HashMap<NodeId, RunResult>>>
 }
 
 impl AggregateArguments {
@@ -259,7 +258,9 @@ fn print_client_operations_string_from_matches(matches: &ArgMatches<'static>) ->
     }
 }
 
-fn run_results_from_matches(matches: &ArgMatches<'static>) -> HashMap<Scenario, Vec<ScenarioResult>> {
+fn run_results_from_matches(matches: &ArgMatches<'static>) -> HashMap<Scenario, Vec<HashMap<NodeId, RunResult>>> {
+    HashMap::new()
+    /*
     let result_strings = matches.values_of("result-file").unwrap().map(|result_file| fs::read_to_string(result_file).unwrap());
     let mut aggregated_scenario_results: HashMap<Scenario, Vec<ScenarioResult>> = HashMap::new();
 
@@ -283,4 +284,5 @@ fn run_results_from_matches(matches: &ArgMatches<'static>) -> HashMap<Scenario, 
     }
 
     aggregated_scenario_results
+    */
 }

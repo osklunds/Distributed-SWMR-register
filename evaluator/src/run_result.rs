@@ -5,10 +5,6 @@ use std::iter::FromIterator;
 use serde::{Serialize, Deserialize};
 
 
-pub type ScenarioResult = Vec<RunResult>;
-pub type ScenarioResults = HashSet<ScenarioResult>;
-
-
 pub type NodeId = i32;
 
 
@@ -28,6 +24,7 @@ pub struct RunResult {
 }
 
 impl RunResult {
+    #[allow(dead_code)]
     pub fn new() -> RunResult {
         RunResult {
             write_ops: 0,
@@ -79,6 +76,7 @@ pub struct MessageTypeResult {
 }
 
 impl MessageTypeResult {
+    #[allow(dead_code)]
     pub fn new() -> MessageTypeResult {
         MessageTypeResult {
             sent: 0,
@@ -97,6 +95,7 @@ pub struct Metadata {
 }
 
 impl Metadata {
+    #[allow(dead_code)]
     pub fn new() -> Metadata {
         Metadata {
             node_id: 0,
