@@ -5,19 +5,36 @@
 extern crate lazy_static;
 extern crate serde;
 
+use std::path::PathBuf;
+use std::fs;
+use std::collections::HashMap;
+
 mod run_result;
 mod run_scenario;
 mod arguments;
 mod execution;
 
 use run_scenario::*;
+use run_result::RunResult;
 use arguments::{Arguments, ARGUMENTS};
 
 fn main() {
     let arguments: &Arguments = &ARGUMENTS;
 
     if let Arguments::Install(arguments) = arguments {
-        let command = format!("cargo run --manifest-path" );
+        let hosts_file = &arguments.hosts_file;
+        let optimize_string = &arguments.optimize_string;
+        let command = format!("cargo run --manifest-path ../remote_starter/Cargo.toml -- {} -i {}", hosts_file, optimize_string);
+
+        execution::execute_local_command(&command).wait().expect("Error waiting for the execution of the install command.");
+    } else if let Arguments::Gather(arguments) = arguments {
+        let hosts_file = &arguments.hosts_file;
+        let optimize_string = &arguments.optimize_string;
+        let print_client_operations_string = &arguments.print_client_operations_string;
+
+        create_result_file_if_not_existing(&arguments.result_file_path);
+
+
     }
 
     
@@ -46,4 +63,17 @@ fn main() {
     */
 
 
+}
+
+fn create_result_file_if_not_existing(result_file_path: &str) {
+    let result_file_path = PathBuf::from(result_file_path);
+    if result_file_path.is_dir() {
+        fs::remove_dir(&result_file_path).expect("Could not remove a result file directory.");
+    }
+    if !result_file_path.is_file() {
+        let empty_result: HashMap<Scenario, RunResult> = HashMap::new();
+        let json = serde_json::to_string(&empty_result).expect("Could not serialize the empty result set.");
+        fs::write(&result_file_path, json).expect("Could not write the empty result file.");
+
+    }
 }

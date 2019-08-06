@@ -41,17 +41,17 @@ impl Arguments {
 
 
 pub struct InstallArguments {
-    pub hosts_file_path: String,
+    pub hosts_file: String,
     pub optimize_string: String,
 }
 
 impl InstallArguments {
     fn from_matches(matches: &ArgMatches<'static>) -> InstallArguments {
-        let hosts_file_path = hosts_file_path_from_matches(matches);
+        let hosts_file = hosts_file_from_matches(matches);
         let optimize_string = optimize_string_from_matches(matches);
 
         InstallArguments {
-            hosts_file_path: hosts_file_path,
+            hosts_file: hosts_file,
             optimize_string: optimize_string
         }
     }
@@ -59,7 +59,7 @@ impl InstallArguments {
 
 
 pub struct GatherArguments {
-    pub hosts_file_path: String,
+    pub hosts_file: String,
     pub scenarios: HashSet<Scenario>,
     pub result_file_path: String,
     pub optimize_string: String,
@@ -68,14 +68,14 @@ pub struct GatherArguments {
 
 impl GatherArguments {
     fn from_matches(matches: &ArgMatches<'static>) -> GatherArguments {
-        let hosts_file_path = hosts_file_path_from_matches(matches);
+        let hosts_file = hosts_file_from_matches(matches);
         let scenarios = scenarios_from_matches(matches);
         let result_file_path = result_file_path_from_matches(matches);
         let optimize_string = optimize_string_from_matches(matches);
         let print_client_operations_string = print_client_operations_string_from_matches(matches);
 
         GatherArguments {
-            hosts_file_path: hosts_file_path,
+            hosts_file: hosts_file,
             scenarios: scenarios,
             result_file_path: result_file_path,
             optimize_string: optimize_string,
@@ -180,7 +180,7 @@ fn get_matches() -> ArgMatches<'static> {
 }
 
 
-fn hosts_file_path_from_matches(matches: &ArgMatches<'static>) -> String {
+fn hosts_file_from_matches(matches: &ArgMatches<'static>) -> String {
     matches.value_of("hosts-file").unwrap().to_string()
 }
 
