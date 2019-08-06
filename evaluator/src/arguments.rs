@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use std::net::IpAddr::V4;
 use std::net::ToSocketAddrs;
 use std::fs;
+use std::path::{Path, PathBuf};
 use std::collections::{HashSet, HashMap};
 use std::time::Duration;
 
@@ -60,8 +61,9 @@ impl InstallArguments {
 
 pub struct GatherArguments {
     pub hosts_file: String,
+    pub node_infos: HashSet<NodeInfo>,
     pub scenarios: HashSet<Scenario>,
-    pub result_file_path: String,
+    pub result_file_path: PathBuf,
     pub optimize_string: String,
     pub print_client_operations_string: String,
 }
@@ -69,6 +71,7 @@ pub struct GatherArguments {
 impl GatherArguments {
     fn from_matches(matches: &ArgMatches<'static>) -> GatherArguments {
         let hosts_file = hosts_file_from_matches(matches);
+        let node_infos = node_infos_from_matches(matches);
         let scenarios = scenarios_from_matches(matches);
         let result_file_path = result_file_path_from_matches(matches);
         let optimize_string = optimize_string_from_matches(matches);
@@ -76,6 +79,7 @@ impl GatherArguments {
 
         GatherArguments {
             hosts_file: hosts_file,
+            node_infos: node_infos,
             scenarios: scenarios,
             result_file_path: result_file_path,
             optimize_string: optimize_string,
@@ -184,6 +188,35 @@ fn hosts_file_from_matches(matches: &ArgMatches<'static>) -> String {
     matches.value_of("hosts-file").unwrap().to_string()
 }
 
+fn node_infos_from_matches(matches: &ArgMatches<'static>) -> HashSet<NodeInfo> {
+    let hosts_file_path = matches.value_of("hosts-file").unwrap();
+    let string = fs::read_to_string(hosts_file_path).expect("Unable to read file");
+    node_infos_from_string(string)
+}
+
+fn node_infos_from_string(string: String) -> HashSet<NodeInfo> {
+    let mut node_infos = HashSet::new();
+
+    for line in string.lines() {
+        let components: Vec<&str> = line.split(",").collect();
+        let node_id = components[0].parse().unwrap();
+        let socket_addr = components[1].to_socket_addrs().unwrap().next().unwrap();
+        let key_path = components[2].to_string();
+        let username = components[3].to_string();
+
+        let node_info = NodeInfo {
+            node_id: node_id,
+            socket_addr: socket_addr,
+            key_path: key_path,
+            username: username
+        };
+
+        node_infos.insert(node_info);
+    }
+
+    node_infos
+}
+
 fn scenarios_from_matches(matches: &ArgMatches<'static>) -> HashSet<Scenario> {
     let scenarios_file_path = matches.value_of("scenario-file").unwrap();
     let string = fs::read_to_string(scenarios_file_path).expect("Unable to read the scenarios file.");
@@ -207,8 +240,9 @@ fn scenarios_from_string(string: String) -> HashSet<Scenario> {
     scenarios
 }
 
-fn result_file_path_from_matches(matches: &ArgMatches<'static>) -> String {
-    matches.value_of("result-file").unwrap().to_string()
+fn result_file_path_from_matches(matches: &ArgMatches<'static>) -> PathBuf {
+    let as_str = matches.value_of("result-file").unwrap();
+    PathBuf::from(as_str)
 }
 
 fn optimize_string_from_matches(matches: &ArgMatches<'static>) -> String {
