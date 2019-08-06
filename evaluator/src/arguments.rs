@@ -140,7 +140,7 @@ fn get_matches() -> ArgMatches<'static> {
                 .takes_value(false)
                 .short("o")
                 .long("optimize")
-                .help("With this option, cargo will build/run in release mode. This uses optimizations and yields higher performance.")))
+                .help("With this option, cargo will build the application in release mode. This uses optimizations and yields higher performance.")))
 
         .subcommand(SubCommand::with_name("gather")
             .about("Will run each scenario ones and gather the results in a file. The results-file will be built upon, and if a scenario already exists there, it will not be run again.")
@@ -158,19 +158,19 @@ fn get_matches() -> ArgMatches<'static> {
             .arg(Arg::with_name("result-file")
                 .required(true)
                 .takes_value(true)
-                .help("The file to which the results are stored."))
+                .help("The file in which the results are stored."))
 
             .arg(Arg::with_name("optimize")
                 .takes_value(false)
                 .short("o")
                 .long("optimize")
-                .help("With this option, cargo will build/run in release mode. This uses optimizations and yields higher performance.")))
+                .help("With this option, cargo will run in release mode. This uses optimizations and yields higher performance."))
 
             .arg(Arg::with_name("print-client-operations")
             .short("p")
             .long("print-client-operations")
             .takes_value(false)
-            .help("Print when a read/write operation starts/ends. If not included, the performance might be slightly higher."))
+            .help("Print when a read/write operation starts/ends. If not included, the performance might be slightly higher.")))
 
         .subcommand(SubCommand::with_name("aggregate")
             .about("Will aggregate multiple result-files to generate aggregated results, according to what you have programatically defined.")
