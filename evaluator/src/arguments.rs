@@ -65,6 +65,7 @@ pub struct GatherArguments {
     pub result_file_path: PathBuf,
     pub optimize_string: String,
     pub print_client_operations_string: String,
+    pub run_length_string: String
 }
 
 impl GatherArguments {
@@ -75,6 +76,7 @@ impl GatherArguments {
         let result_file_path = result_file_path_from_matches(matches);
         let optimize_string = optimize_string_from_matches(matches);
         let print_client_operations_string = print_client_operations_string_from_matches(matches);
+        let run_length_string = run_length_string_from_matches(&matches);
 
         GatherArguments {
             hosts_file: hosts_file,
@@ -82,7 +84,8 @@ impl GatherArguments {
             scenarios: scenarios,
             result_file_path: result_file_path,
             optimize_string: optimize_string,
-            print_client_operations_string: print_client_operations_string
+            print_client_operations_string: print_client_operations_string,
+            run_length_string: run_length_string
         }
     }
 }
@@ -164,6 +167,14 @@ fn get_matches() -> ArgMatches<'static> {
                 .short("o")
                 .long("optimize")
                 .help("With this option, cargo will run in release mode. This uses optimizations and yields higher performance."))
+
+            .arg(Arg::with_name("run-length")
+                .required(false)
+                .takes_value(true)
+                .default_value("30")
+                .short("l")
+                .long("run-length")
+                .help("The number of seconds the program should run for. If 0 is given, the program will run forever. Avoid this value."))
 
             .arg(Arg::with_name("print-client-operations")
             .short("p")
@@ -256,6 +267,10 @@ fn print_client_operations_string_from_matches(matches: &ArgMatches<'static>) ->
         true  => "--print-client-operations".to_string(),
         false => "".to_string()
     }
+}
+
+fn run_length_string_from_matches(matches: &ArgMatches<'static>) -> String {
+    matches.value_of("run-length").unwrap().to_string()
 }
 
 fn run_results_from_matches(matches: &ArgMatches<'static>) -> HashMap<Scenario, Vec<HashMap<NodeId, RunResult>>> {

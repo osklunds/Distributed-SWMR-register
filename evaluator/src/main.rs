@@ -1,5 +1,5 @@
 
-//#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
+#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
 
 #[macro_use]
 extern crate lazy_static;
@@ -96,11 +96,12 @@ fn run_scenario_once(scenario: &Scenario, arguments: &GatherArguments) -> Option
 }
 
 fn execute_command_for_scenario_and_arguments(scenario: &Scenario, arguments: &GatherArguments) {
-    let command = format!("cargo run --manifest-path ../remote_starter/Cargo.toml -- {} -r {} -w {} -e {} -l 3 {}",
+    let command = format!("cargo run --manifest-path ../remote_starter/Cargo.toml -- {} -r {} -w {} -e {} -l {} {}",
             arguments.hosts_file,
             scenario.number_of_readers,
             scenario.number_of_writers,
             arguments.optimize_string,
+            arguments.run_length_string,
             arguments.print_client_operations_string);
     execution::execute_local_command(&command).wait().expect("Could not wait for the gather command for remote_starter.");
 }

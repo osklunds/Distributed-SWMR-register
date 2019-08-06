@@ -48,7 +48,7 @@ Will run each scenario ones and gather the results in a file. The results-file w
 already exists there, it will not be run again.
 
 USAGE:
-    evaluator gather [FLAGS] <hosts-file> <scenario-file> <result-file>
+    evaluator gather [FLAGS] [OPTIONS] <hosts-file> <scenario-file> <result-file>
 
 FLAGS:
     -h, --help                       Prints help information
@@ -56,6 +56,10 @@ FLAGS:
                                      yields higher performance.
     -p, --print-client-operations    Print when a read/write operation starts/ends. If not included, the performance
                                      might be slightly higher.
+
+OPTIONS:
+    -l, --run-length <run-length>    The number of seconds the program should run for. If 0 is given, the program will
+                                     run forever. Avoid this value. [default: 30]
 
 ARGS:
     <hosts-file>       The file with node ids, addresses, ports, ssh key paths and usernames.
