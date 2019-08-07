@@ -1,31 +1,14 @@
 
-use std::net::SocketAddr;
 use std::net::ToSocketAddrs;
 use std::fs;
 use std::collections::HashSet;
 
 use clap::{Arg, App, ArgMatches, AppSettings};
 
+use commons::node_info::NodeInfo;
 
 lazy_static! {
     pub static ref ARGUMENTS: Arguments = Arguments::new();
-}
-
-
-pub type NodeId = i32;
-
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub struct NodeInfo {
-    pub node_id: NodeId,
-    pub socket_addr: SocketAddr,
-    pub key_path: String,
-    pub username: String
-}
-
-impl NodeInfo {
-    pub fn ip_addr_string(&self) -> String {
-        format!("{}", self.socket_addr.ip())
-    }
 }
 
 

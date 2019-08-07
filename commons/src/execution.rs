@@ -1,7 +1,8 @@
 
 use std::process::{Command, Child};
 
-use crate::arguments::NodeInfo;
+
+use crate::node_info::NodeInfo;
 
 
 pub fn execute_remote_command(command: &str, node_info: &NodeInfo) -> Child {

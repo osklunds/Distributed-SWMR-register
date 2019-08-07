@@ -5,7 +5,6 @@
 extern crate lazy_static;
 
 mod arguments;
-mod execution;
 
 use std::collections::HashSet;
 use std::vec::Vec;
@@ -14,7 +13,10 @@ use colored::Color;
 use colored::Color::*;
 use ctrlc;
 
-use crate::arguments::{ARGUMENTS, NodeId};
+use commons::execution;
+use commons::node_info::NodeId;
+
+use crate::arguments::{ARGUMENTS};
 
 
 const REMOTE_DIRECTORY_NAME: &str = "distributed_swmr_registers_remote_directory";
