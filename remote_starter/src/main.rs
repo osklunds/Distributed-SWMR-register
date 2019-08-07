@@ -76,7 +76,7 @@ fn upload_source_code_and_hosts_file() {
     for node_info in ARGUMENTS.node_infos.iter() {
         let ip_addr = node_info.ip_addr_string();
         if handled_ip_addrs.insert(ip_addr) {
-            execution::execute_remote_command(&format!("rm -r {}/", REMOTE_DIRECTORY_NAME), &node_info).wait().unwrap();
+            execution::execute_remote_command(&format!("rm -r {}/src/", REMOTE_DIRECTORY_NAME), &node_info).wait().unwrap();
             execution::execute_remote_command(&format!("mkdir {}/", REMOTE_DIRECTORY_NAME), &node_info).wait().unwrap();
 
             execution::scp_copy_of_local_source_path_to_remote_destination_path("../application/src/", "src/", &node_info).wait().unwrap();
