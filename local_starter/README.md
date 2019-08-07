@@ -4,8 +4,7 @@
 This directory contains the code for a helper utility for starting multiple nodes on your local computer. Make sure to change your current directory to the `local_starter` directory. If you type `cargo run -- --help` you will see the following:
 
 ```
-Distributed-SWMR-registers: Local starter 0.1
-Oskar Lundström
+Distributed-SWMR-registers: Local starter 
 A helper utility that starts multiple nodes on your local computer.
 
 USAGE:
@@ -19,7 +18,6 @@ FLAGS:
                                      might be slightly higher.
     -e, --record-evaluation-info     Record information used for the evaluation, such as latency and number of messages
                                      sent. If not included, the performance might be slightly higher.
-    -V, --version                    Prints version information
 
 OPTIONS:
     -n, --number-of-nodes <number-of-nodes>        The number of local nodes to run.

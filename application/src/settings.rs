@@ -7,7 +7,7 @@ use std::time::Duration;
 
 
 use colored::*;
-use clap::{Arg, App, ArgMatches};
+use clap::{Arg, App, ArgMatches, AppSettings};
 
 
 pub type NodeId = i32;
@@ -96,8 +96,8 @@ impl Settings {
 fn get_matches() -> ArgMatches<'static> {
     let colors = &["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan"];
     App::new("Distributed-SWMR-registers: Application")
-        .version("0.1")
-        .author("Oskar Lundström")
+        .setting(AppSettings::DisableVersion)
+        .setting(AppSettings::VersionlessSubcommands)
         .about("The application code, that is an instance of an ABD node.")
 
         .arg(Arg::with_name("node-id")

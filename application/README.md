@@ -4,8 +4,7 @@
 This directory contains the code for an instance of an ABD node. Make sure to change your current directory to the `application` directory. If you type `cargo run -- --help` you will see the following:
 
 ```
-Distributed-SWMR-registers: Application 0.1
-Oskar Lundström
+Distributed-SWMR-registers: Application 
 The application code, that is an instance of an ABD node.
 
 USAGE:
@@ -18,7 +17,6 @@ FLAGS:
     -r, --read                       Makes this node perform read operations.
     -e, --record-evaluation-info     Record information used for the evaluation, such as latency and number of messages
                                      sent. If not included, the performance might be slightly higher.
-    -V, --version                    Prints version information
     -w, --write                      Makes this node perform write operations.
 
 ARGS:

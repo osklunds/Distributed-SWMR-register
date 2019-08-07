@@ -4,7 +4,7 @@ use std::net::ToSocketAddrs;
 use std::fs;
 use std::collections::HashSet;
 
-use clap::{Arg, App, ArgMatches};
+use clap::{Arg, App, ArgMatches, AppSettings};
 
 
 lazy_static! {
@@ -72,8 +72,8 @@ impl Arguments {
 
 fn get_matches() -> ArgMatches<'static> {
     App::new("Distributed SWMR registers: Remote starter")
-        .version("0.1")
-        .author("Oskar Lundström")
+        .setting(AppSettings::DisableVersion)
+        .setting(AppSettings::VersionlessSubcommands)
         .about("A helper utility that starts multiple nodes on remote machines via SSH.")
 
         .arg(Arg::with_name("hosts-file")

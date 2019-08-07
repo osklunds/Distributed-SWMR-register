@@ -4,8 +4,7 @@
 This directory contains the code for a helper utility for starting multiple nodes on remote computers via SSH. Make sure to change your current directory to the `remote_starter` directory. If you type `cargo run -- --help` you will see the following:
 
 ```
-Distributed SWMR registers: Remote starter 0.1
-Oskar Lundström
+Distributed SWMR registers: Remote starter 
 A helper utility that starts multiple nodes on remote machines via SSH.
 
 USAGE:
@@ -22,7 +21,6 @@ FLAGS:
                                      might be slightly higher.
     -e, --record-evaluation-info     Record information used for the evaluation, such as latency and number of messages
                                      sent. If not done, the performance might be slightly higher.
-    -V, --version                    Prints version information
 
 OPTIONS:
     -r, --number-of-readers <number-of-readers>    The number of nodes that should read. [default: 0]
@@ -32,7 +30,7 @@ OPTIONS:
             [default: 0]
 
 ARGS:
-    <hosts-file>    The file with node ids, addresses, ports, ssh key paths and usernames
+    <hosts-file>    The file with node ids, addresses, ports, ssh key paths and usernames.
 ```
 
 The idea is that you use this utility when you want to run the application on multiple networked machines.
