@@ -15,12 +15,9 @@ use ctrlc;
 
 use commons::execution;
 use commons::node_info::NodeId;
+use commons::remote_machine::*;
 
 use crate::arguments::{ARGUMENTS};
-
-
-const REMOTE_DIRECTORY_NAME: &str = "distributed_swmr_registers_remote_directory";
-const REMOTE_HOSTS_FILE_NAME: &str = "hosts.txt";
 
 
 fn main() {
