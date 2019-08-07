@@ -31,6 +31,7 @@ impl NodeInfo {
 
 #[derive(Debug)]
 pub struct Arguments {
+    pub hosts_file: String,
     pub node_infos: HashSet<NodeInfo>,
     pub number_of_writers: i32,
     pub number_of_readers: i32,
@@ -45,6 +46,7 @@ impl Arguments {
     fn new() -> Arguments {
         let matches = get_matches();
 
+        let hosts_file = hosts_file_from_matches(&matches);
         let node_infos = node_infos_from_matches(&matches);
         let number_of_writers = number_of_writers_from_matches(&matches);
         let number_of_readers = number_of_readers_from_matches(&matches);
@@ -55,6 +57,7 @@ impl Arguments {
         let install = install_from_matches(&matches);
 
         Arguments {
+            hosts_file: hosts_file,
             node_infos: node_infos,
             number_of_writers: number_of_writers,
             number_of_readers: number_of_readers,
@@ -129,6 +132,9 @@ fn get_matches() -> ArgMatches<'static> {
         .get_matches()
 }
 
+fn hosts_file_from_matches(matches: &ArgMatches<'static>) -> String {
+    matches.value_of("hosts-file").unwrap().to_string()
+}
 
 fn node_infos_from_matches(matches: &ArgMatches<'static>) -> HashSet<NodeInfo> {
     let hosts_file_path = matches.value_of("hosts-file").unwrap();

@@ -17,6 +17,10 @@ use ctrlc;
 use crate::arguments::{ARGUMENTS, NodeId};
 
 
+const REMOTE_DIRECTORY_NAME: &str = "distributed_swmr_registers_remote_directory";
+const REMOTE_HOSTS_FILE_NAME: &str = "hosts.txt";
+
+
 fn main() {
     stop_all_remote_processes();
     
@@ -72,13 +76,13 @@ fn upload_source_code_and_hosts_file() {
     for node_info in ARGUMENTS.node_infos.iter() {
         let ip_addr = node_info.ip_addr_string();
         if handled_ip_addrs.insert(ip_addr) {
-            execution::execute_remote_command("rm -r distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
-            execution::execute_remote_command("mkdir distributed_swmr_registers_remote_directory/", &node_info).wait().unwrap();
+            execution::execute_remote_command(&format!("rm -r {}/", REMOTE_DIRECTORY_NAME), &node_info).wait().unwrap();
+            execution::execute_remote_command(&format!("mkdir {}/", REMOTE_DIRECTORY_NAME), &node_info).wait().unwrap();
 
-            execution::execute_scp_copy_of_path_relative_to_application_directory("src/", &node_info).wait().unwrap();
-            execution::execute_scp_copy_of_path_relative_to_application_directory("Cargo.toml", &node_info).wait().unwrap();
-            execution::execute_scp_copy_of_path_relative_to_application_directory("Cargo.lock", &node_info).wait().unwrap();
-            execution::execute_scp_copy_of_path_relative_to_remote_starter_directory("hosts.txt", &node_info).wait().unwrap();
+            execution::scp_copy_of_local_source_path_to_remote_destination_path("../application/src/", "src/", &node_info).wait().unwrap();
+            execution::scp_copy_of_local_source_path_to_remote_destination_path("../application/Cargo.toml", "Cargo.toml", &node_info).wait().unwrap();
+            execution::scp_copy_of_local_source_path_to_remote_destination_path("../application/Cargo.lock", "Cargo.lock", &node_info).wait().unwrap();
+            execution::scp_copy_of_local_source_path_to_remote_destination_path(&ARGUMENTS.hosts_file, REMOTE_HOSTS_FILE_NAME, &node_info).wait().unwrap();
         }
     }
 }
@@ -90,7 +94,9 @@ fn build_source_code() {
     for node_info in ARGUMENTS.node_infos.iter() {
         let ip_addr = node_info.ip_addr_string();
         if handled_ip_addrs.insert(ip_addr) {
-            let command = format!("\"cd distributed_swmr_registers_remote_directory/;../.cargo/bin/cargo build {};cd ..\"", ARGUMENTS.release_mode_string);
+            let command = format!("\"cd {}/;../.cargo/bin/cargo build {};cd ..\"", 
+                REMOTE_DIRECTORY_NAME, 
+                ARGUMENTS.release_mode_string);
             let build_process = execution::execute_remote_command(&command, &node_info);
             build_processes.push(build_process);
         }
@@ -114,9 +120,11 @@ fn run_application_on_remote_computers() {
             false => ""
         };
 
-        let command_string = format!("\"cd distributed_swmr_registers_remote_directory/;../.cargo/bin/cargo run {} -- {} hosts.txt {} {:?} {} {} {} {};cd ..\"", 
+        let command_string = format!("\"cd {}/;../.cargo/bin/cargo run {} -- {} {} {} {:?} {} {} {} {};cd ..\"",
+            REMOTE_DIRECTORY_NAME,
             ARGUMENTS.release_mode_string,
             node_info.node_id,
+            REMOTE_HOSTS_FILE_NAME,
             ARGUMENTS.run_length_string,
             color_from_node_id(node_info.node_id),
             ARGUMENTS.record_evaluation_info_string,
