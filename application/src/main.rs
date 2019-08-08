@@ -14,7 +14,6 @@ mod terminal_output;
 mod communicator;
 mod mediator;
 mod responsible_cell;
-mod run_result;
 
 use std::fs;
 use std::time::Duration;
