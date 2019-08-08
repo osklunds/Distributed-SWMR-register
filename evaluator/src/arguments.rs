@@ -8,7 +8,8 @@ use std::time::Duration;
 
 use clap::{Arg, App, ArgMatches, SubCommand, AppSettings};
 
-use commons::node_info::{NodeInfo, NodeId};
+use commons::node_info::NodeInfo;
+use commons::types::NodeId;
 use commons::run_result::RunResult;
 use commons::arguments;
 
@@ -110,13 +111,13 @@ fn get_matches() -> ArgMatches<'static> {
         .subcommand(SubCommand::with_name("install")
             .about("Will install Rust and the source code on the (remote) hosts.")
             
-            .arg(arguments::hosts_file())
+            .arg(arguments::hosts_file("The file with node ids, addresses, ports, ssh key paths and usernames."))
             .arg(arguments::optimize()))
 
         .subcommand(SubCommand::with_name("gather")
             .about("Will run each scenario ones and gather the results in a file. The results-file will be built upon, and if a scenario already exists there, it will not be run again.")
             
-            .arg(arguments::hosts_file())
+            .arg(arguments::hosts_file("The file with node ids, addresses, ports, ssh key paths and usernames."))
             .arg(scenario_file_argument())
             .arg(result_file_argument())
             .arg(arguments::optimize())

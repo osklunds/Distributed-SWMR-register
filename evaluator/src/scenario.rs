@@ -2,19 +2,20 @@
 use serde::{Serialize, Deserialize};
 
 use commons::run_result::RunResult;
+use commons::types::Int;
 
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Copy, Clone)]
 #[serde(into = "String")]
 #[serde(from = "String")]
 pub struct Scenario {
-    pub number_of_nodes: usize,
-    pub number_of_readers: usize,
-    pub number_of_writers: usize
+    pub number_of_nodes: Int,
+    pub number_of_readers: Int,
+    pub number_of_writers: Int
 }
 
 impl Scenario {
-    pub fn new(number_of_nodes: usize, number_of_readers: usize, number_of_writers: usize) -> Scenario {
+    pub fn new(number_of_nodes: Int, number_of_readers: Int, number_of_writers: Int) -> Scenario {
         Scenario {
             number_of_nodes: number_of_nodes,
             number_of_readers: number_of_readers,

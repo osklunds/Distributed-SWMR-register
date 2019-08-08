@@ -10,8 +10,9 @@ use std::fs;
 use std::collections::HashMap;
 
 use commons::execution;
-use commons::node_info::{NodeInfo, NodeId};
+use commons::node_info::NodeInfo;
 use commons::run_result::RunResult;
+use commons::types::NodeId;
 
 mod scenario;
 mod arguments;

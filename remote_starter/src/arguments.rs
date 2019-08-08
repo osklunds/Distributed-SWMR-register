@@ -4,6 +4,7 @@ use std::collections::HashSet;
 use clap::{Arg, App, ArgMatches, AppSettings};
 
 use commons::node_info::NodeInfo;
+use commons::types::Int;
 use commons::arguments;
 
 lazy_static! {
@@ -15,8 +16,8 @@ lazy_static! {
 pub struct Arguments {
     pub hosts_file: String,
     pub node_infos: HashSet<NodeInfo>,
-    pub number_of_writers: i32,
-    pub number_of_readers: i32,
+    pub number_of_writers: Int,
+    pub number_of_readers: Int,
     pub release_mode_string: String,
     pub print_client_operations_string: String,
     pub run_length_string: String,
