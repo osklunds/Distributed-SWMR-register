@@ -9,10 +9,12 @@ use std::path::Path;
 use std::fs;
 use std::collections::HashMap;
 
+use commons::execution;
+use commons::node_info::NodeInfo;
+
 mod run_result;
 mod scenario;
 mod arguments;
-mod execution;
 
 use scenario::*;
 use run_result::{RunResult, NodeId};
@@ -129,7 +131,7 @@ enum CollectResult {
 
 fn collect_result_for_node_info(node_info: &NodeInfo) -> RunResult {
     let file_name = format!("node{:0>3}.eval", node_info.node_id);
-    execution::execute_scp_download_of_path(&file_name, &node_info).wait().unwrap();
+    execution::scp_copy_of_remote_source_path_to_local_destination_path(&file_name, &file_name, &node_info).wait().unwrap();
     
     let json = fs::read_to_string(&file_name).expect("Could not read a run result.");
     serde_json::from_str(&json).expect("Could not parse a run result.")
