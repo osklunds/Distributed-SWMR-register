@@ -14,7 +14,11 @@ pub fn execute_local_command(command: &str) -> Child {
 }
 
 pub fn execute_remote_command(command: &str, node_info: &NodeInfo) -> Child {
-    let ssh_command = format!("ssh -i {} {}@{} {}", node_info.key_path, node_info.username, node_info.ip_addr_string(), command);
+    let ssh_command = format!("ssh -i {} {}@{} {}", 
+        node_info.key_path, 
+        node_info.username, 
+        node_info.ip_addr_string(), 
+        command);
 
     execute_local_command(&ssh_command)
 }
