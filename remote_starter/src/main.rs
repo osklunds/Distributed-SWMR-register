@@ -14,7 +14,7 @@ use colored::Color::*;
 use ctrlc;
 
 use commons::execution;
-use commons::node_info::NodeId;
+use commons::node_info::{NodeId, NodeInfo};
 use commons::remote_machine::*;
 
 use crate::arguments::{ARGUMENTS};
@@ -75,15 +75,25 @@ fn upload_source_code_and_hosts_file() {
     for node_info in ARGUMENTS.node_infos.iter() {
         let ip_addr = node_info.ip_addr_string();
         if handled_ip_addrs.insert(ip_addr) {
-            execution::execute_remote_command(&format!("rm -r {}/src/", REMOTE_DIRECTORY_NAME), &node_info).wait().unwrap();
             execution::execute_remote_command(&format!("mkdir {}/", REMOTE_DIRECTORY_NAME), &node_info).wait().unwrap();
-
-            execution::scp_copy_of_local_source_path_to_remote_destination_path("../application/src/", "src/", &node_info).wait().unwrap();
-            execution::scp_copy_of_local_source_path_to_remote_destination_path("../application/Cargo.toml", "Cargo.toml", &node_info).wait().unwrap();
-            execution::scp_copy_of_local_source_path_to_remote_destination_path("../application/Cargo.lock", "Cargo.lock", &node_info).wait().unwrap();
-            execution::scp_copy_of_local_source_path_to_remote_destination_path(&ARGUMENTS.hosts_file, REMOTE_HOSTS_FILE_NAME, &node_info).wait().unwrap();
+            update_crate_source_on_remote("application", &node_info);
+            update_crate_source_on_remote("commons", &node_info);
+            execution::scp_copy_of_local_source_path_to_remote_destination_path(&ARGUMENTS.hosts_file, &format!("application/{}", REMOTE_HOSTS_FILE_NAME), &node_info).wait().unwrap();
         }
     }
+}
+
+fn update_crate_source_on_remote(crate_name: &str, node_info: &NodeInfo) {
+    execution::execute_remote_command(&format!("rm -r {}/{}/src/", REMOTE_DIRECTORY_NAME, crate_name), &node_info).wait().unwrap();
+    execution::execute_remote_command(&format!("mkdir {}/{}", REMOTE_DIRECTORY_NAME, crate_name), &node_info).wait().unwrap();
+
+    copy_path_from_local_crate_to_remote_crate("src/", crate_name, node_info);
+    copy_path_from_local_crate_to_remote_crate("Cargo.toml", crate_name, node_info);
+    copy_path_from_local_crate_to_remote_crate("Cargo.lock", crate_name, node_info);
+}
+
+fn copy_path_from_local_crate_to_remote_crate(path: &str, crate_name: &str, node_info: &NodeInfo) {
+    execution::scp_copy_of_local_source_path_to_remote_destination_path(&format!("../{}/{}", crate_name, path), &format!("{}/{}", crate_name, path), &node_info).wait().unwrap();
 }
 
 fn build_source_code() {
@@ -93,7 +103,7 @@ fn build_source_code() {
     for node_info in ARGUMENTS.node_infos.iter() {
         let ip_addr = node_info.ip_addr_string();
         if handled_ip_addrs.insert(ip_addr) {
-            let command = format!("\"cd {}/;../.cargo/bin/cargo build {};cd ..\"", 
+            let command = format!("\"cd {}/application/;../../.cargo/bin/cargo build {};cd ../../\"", 
                 REMOTE_DIRECTORY_NAME, 
                 ARGUMENTS.release_mode_string);
             let build_process = execution::execute_remote_command(&command, &node_info);
@@ -119,7 +129,7 @@ fn run_application_on_remote_computers() {
             false => ""
         };
 
-        let command_string = format!("\"cd {}/;../.cargo/bin/cargo run {} -- {} {} {} {:?} {} {} {} {};cd ..\"",
+        let command_string = format!("\"cd {}/application/;../../.cargo/bin/cargo run {} -- {} {} {} {:?} {} {} {} {};cd ../../\"",
             REMOTE_DIRECTORY_NAME,
             ARGUMENTS.release_mode_string,
             node_info.node_id,
