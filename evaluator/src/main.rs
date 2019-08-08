@@ -8,6 +8,9 @@ extern crate serde;
 use std::path::Path;
 use std::fs;
 use std::collections::HashMap;
+use std::process;
+
+use ctrlc;
 
 use commons::execution;
 use commons::node_info::NodeInfo;
@@ -23,6 +26,10 @@ use arguments::*;
 
 fn main() {
     let arguments: &Arguments = &ARGUMENTS;
+
+    ctrlc::set_handler(move || {
+            process::exit(0);
+    }).unwrap();
 
     if let Arguments::Install(arguments) = arguments {
         run_install_subcommand(arguments);
