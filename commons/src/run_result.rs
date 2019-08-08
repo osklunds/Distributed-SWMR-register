@@ -23,7 +23,6 @@ pub struct RunResult {
 }
 
 impl RunResult {
-    #[allow(dead_code)]
     pub fn new() -> RunResult {
         RunResult {
             write_ops: 0,
@@ -40,18 +39,18 @@ impl RunResult {
         }
     }
 
-    pub fn is_valid(&self, number_of_nodes: Int) -> bool {
-        let mut valid = true;
+    pub fn is_sound(&self, number_of_nodes: Int) -> bool {
+        let mut sound = true;
         
-        valid &= Self::implies(self.metadata.is_writer, self.write_ack_message.nodes_received_from == Self::all_nodes_set(number_of_nodes));
+        sound &= Self::implies(self.metadata.is_writer, self.write_ack_message.nodes_received_from == Self::all_nodes_set(number_of_nodes));
 
-        valid &= Self::implies(self.metadata.is_reader, self.read_ack_message.nodes_received_from == Self::all_nodes_set(number_of_nodes));
+        sound &= Self::implies(self.metadata.is_reader, self.read_ack_message.nodes_received_from == Self::all_nodes_set(number_of_nodes));
 
-        valid &= Self::implies(!self.metadata.is_writer, self.write_ack_message.nodes_received_from.is_empty());
+        sound &= Self::implies(!self.metadata.is_writer, self.write_ack_message.nodes_received_from.is_empty());
 
-        valid &= Self::implies(!self.metadata.is_reader, self.read_ack_message.nodes_received_from.is_empty());
+        sound &= Self::implies(!self.metadata.is_reader, self.read_ack_message.nodes_received_from.is_empty());
 
-        valid
+        sound
     }
 
     fn implies(a: bool, b: bool) -> bool {
@@ -75,7 +74,6 @@ pub struct MessageTypeResult {
 }
 
 impl MessageTypeResult {
-    #[allow(dead_code)]
     pub fn new() -> MessageTypeResult {
         MessageTypeResult {
             sent: 0,
@@ -94,7 +92,6 @@ pub struct Metadata {
 }
 
 impl Metadata {
-    #[allow(dead_code)]
     pub fn new() -> Metadata {
         Metadata {
             node_id: 0,
