@@ -9,7 +9,9 @@ use std::time::Duration;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
-use crate::settings::{SETTINGS, NodeId};
+use commons::types::NodeId;
+
+use crate::settings::SETTINGS;
 use crate::register::*;
 use crate::entry::{self, Entry, Timestamp};
 use crate::messages::{self, Message, WriteMessage, WriteAckMessage, ReadMessage, ReadAckMessage};

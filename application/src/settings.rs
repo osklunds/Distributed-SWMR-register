@@ -5,12 +5,11 @@ use std::net::SocketAddr;
 use std::fs;
 use std::time::Duration;
 
-
 use colored::*;
 use clap::{Arg, App, ArgMatches, AppSettings};
 
-
-pub type NodeId = i32;
+use commons::types::NodeId;
+use commons::arguments;
 
 
 lazy_static! {

@@ -5,8 +5,9 @@ use std::cmp::Ordering;
 
 use serde::{Serialize, Deserialize};
 
+use commons::types::NodeId;
+
 use crate::entry::{self, Entry};
-use crate::settings::NodeId;
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

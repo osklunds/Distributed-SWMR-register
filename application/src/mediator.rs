@@ -2,9 +2,10 @@
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use commons::run_result::RunResult;
+use commons::types::NodeId;
 
 //use crate::terminal_output::printlnu;
-use crate::settings::{SETTINGS, NodeId};
+use crate::settings::SETTINGS;
 use crate::responsible_cell::ResponsibleCell;
 use crate::abd_node::AbdNode;
 use crate::communicator::Communicator;

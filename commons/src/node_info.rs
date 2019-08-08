@@ -1,8 +1,8 @@
 
 use std::net::SocketAddr;
 
+use crate::types::NodeId;
 
-pub type NodeId = i32;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct NodeInfo {

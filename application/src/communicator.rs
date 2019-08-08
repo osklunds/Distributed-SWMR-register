@@ -6,7 +6,8 @@ use std::sync::{Arc, Weak};
 use std::thread;
 use std::collections::HashMap;
 
-use crate::settings::NodeId;
+use commons::types::NodeId;
+
 use crate::mediator::Mediator;
 
 
