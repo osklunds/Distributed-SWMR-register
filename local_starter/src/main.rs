@@ -4,7 +4,7 @@ extern crate lazy_static;
 
 mod arguments;
 
-use std::process::{Command, Child};
+use std::process::Child;
 use std::fs;
 use std::path::Path;
 use std::vec::Vec;
@@ -12,10 +12,10 @@ use std::vec::Vec;
 use colored::Color;
 use colored::Color::*;
 
+use commons::execution;
+use commons::node_info::NodeId;
+
 use crate::arguments::ARGUMENTS;
-
-
-type NodeId = i32;
 
 
 fn main() {
@@ -53,16 +53,8 @@ fn hosts_file_string() -> String {
 
 fn build_application() {
     let command = format!("cargo build {} --manifest-path ../application/Cargo.toml", ARGUMENTS.release_mode_string);
-    let mut build_process = execute_local_command(&command);
+    let mut build_process = execution::execute_local_command(&command);
     build_process.wait().unwrap();
-}
-
-fn execute_local_command(command: &str) -> Child {
-    Command::new("/bin/bash")
-        .arg("-c")
-        .arg(command)
-        .spawn()
-        .expect(&format!("Failed to execute the command: {}", command))
 }
 
 fn run_application() {
@@ -96,10 +88,10 @@ fn run_single_application_instance(node_id: NodeId) -> Child {
         write_string, 
         read_string);
 
-    execute_local_command(&command)
+    execution::execute_local_command(&command)
 }
 
-fn color_from_node_id(node_id: i32) -> Color {
+fn color_from_node_id(node_id: NodeId) -> Color {
     let colors = vec![Black, Red, Green, Yellow, Blue, Magenta, Cyan];
     colors[(node_id as usize) % 7]
 }
