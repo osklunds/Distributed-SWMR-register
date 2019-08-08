@@ -6,6 +6,7 @@ use std::collections::HashSet;
 use clap::{Arg, App, ArgMatches, AppSettings};
 
 use commons::node_info::NodeInfo;
+use commons::arguments;
 
 lazy_static! {
     pub static ref ARGUMENTS: Arguments = Arguments::new();
@@ -28,27 +29,17 @@ pub struct Arguments {
 impl Arguments {
     fn new() -> Arguments {
         let matches = get_matches();
-
-        let hosts_file = hosts_file_from_matches(&matches);
-        let node_infos = node_infos_from_matches(&matches);
-        let number_of_writers = number_of_writers_from_matches(&matches);
-        let number_of_readers = number_of_readers_from_matches(&matches);
-        let release_mode_string = release_mode_string_from_matches(&matches);
-        let print_client_operations_string = print_client_operations_string_from_matches(&matches);
-        let run_length_string = run_length_string_from_matches(&matches);
-        let record_evaluation_info_string = record_evaluation_info_string_from_matches(&matches);
-        let install = install_from_matches(&matches);
-
+        
         Arguments {
-            hosts_file: hosts_file,
-            node_infos: node_infos,
-            number_of_writers: number_of_writers,
-            number_of_readers: number_of_readers,
-            release_mode_string: release_mode_string,
-            print_client_operations_string: print_client_operations_string,
-            run_length_string: run_length_string,
-            record_evaluation_info_string: record_evaluation_info_string,
-            install: install
+            hosts_file: arguments::hosts_file_from_matches(&matches),
+            node_infos: node_infos_from_matches(&matches),
+            number_of_writers: arguments::number_of_writers_from_matches(&matches),
+            number_of_readers: arguments::number_of_readers_from_matches(&matches),
+            release_mode_string: arguments::release_mode_string_from_matches(&matches),
+            print_client_operations_string: arguments::print_client_operations_string_from_matches(&matches),
+            run_length_string: arguments::run_length_string_from_matches(&matches),
+            record_evaluation_info_string: arguments::record_evaluation_info_string_from_matches(&matches),
+            install: install_from_matches(&matches)
         }
     }
 }
@@ -59,64 +50,16 @@ fn get_matches() -> ArgMatches<'static> {
         .setting(AppSettings::VersionlessSubcommands)
         .about("A helper utility that starts multiple nodes on remote machines via SSH.")
 
-        .arg(Arg::with_name("hosts-file")
-            .required(true)
-            .takes_value(true)
-            .help("The file with node ids, addresses, ports, ssh key paths and usernames."))
-
-        .arg(Arg::with_name("number-of-writers")
-            .required(false)
-            .takes_value(true)
-            .default_value("0")
-            .short("w")
-            .long("number-of-writers")
-            .help("The number of nodes that should write."))
-
-        .arg(Arg::with_name("number-of-readers")
-            .required(false)
-            .takes_value(true)
-            .default_value("0")
-            .short("r")
-            .long("number-of-readers")
-            .help("The number of nodes that should read."))
-
-        .arg(Arg::with_name("run-length")
-            .required(false)
-            .takes_value(true)
-            .default_value("0")
-            .short("l")
-            .long("run-length")
-            .help("The number of seconds the program should run for. If 0 is given, the program will until aborted with Ctrl-C."))
-
-        .arg(Arg::with_name("record-evaluation-info")
-            .short("e")
-            .long("record-evaluation-info")
-            .takes_value(false)
-            .help("Record information used for the evaluation, such as latency and number of messages sent. If not done, the performance might be slightly higher."))
-
-        .arg(Arg::with_name("optimize")
-            .takes_value(false)
-            .short("o")
-            .long("optimize")
-            .help("With this option, cargo will build/run in release mode. This uses optimizations and yields higher performance."))
-
-        .arg(Arg::with_name("install")
-            .takes_value(false)
-            .short("i")
-            .long("install")
-            .help("With this option, Rust will be installed, the source code and configuration files will be uploaded and the application will be built. Without this option, the application will be launched."))
-
-        .arg(Arg::with_name("print-client-operations")
-            .short("p")
-            .long("print-client-operations")
-            .takes_value(false)
-            .help("Print when a read/write operation starts/ends. If not included, the performance might be slightly higher."))
+        .arg(arguments::hosts_file())
+        .arg(arguments::number_of_writers())
+        .arg(arguments::number_of_readers())
+        .arg(arguments::run_length())
+        .arg(arguments::record_evaluation_info())
+        .arg(arguments::optimize())
+        .arg(install_argument())
+        .arg(arguments::print_client_operations())
 
         .get_matches()
-}
-
-fn hosts_file_from_matches(matches: &ArgMatches<'static>) -> String {
-    matches.value_of("hosts-file").unwrap().to_string()
 }
 
 fn node_infos_from_matches(matches: &ArgMatches<'static>) -> HashSet<NodeInfo> {
@@ -148,37 +91,12 @@ fn node_infos_from_string(string: String) -> HashSet<NodeInfo> {
     node_infos
 }
 
-fn number_of_writers_from_matches(matches: &ArgMatches<'static>) -> i32 {
-    matches.value_of("number-of-writers").unwrap().parse().unwrap()
-}
-
-fn number_of_readers_from_matches(matches: &ArgMatches<'static>) -> i32 {
-    matches.value_of("number-of-readers").unwrap().parse().unwrap()
-}
-
-fn release_mode_string_from_matches(matches: &ArgMatches<'static>) -> String {
-    match matches.is_present("optimize") {
-        true  => "--release".to_string(),
-        false => "".to_string()
-    }
-}
-
-fn print_client_operations_string_from_matches(matches: &ArgMatches<'static>) -> String {
-    match matches.is_present("print-client-operations") {
-        true  => "--print-client-operations".to_string(),
-        false => "".to_string()
-    }
-}
-
-fn run_length_string_from_matches(matches: &ArgMatches<'static>) -> String {
-    matches.value_of("run-length").unwrap().to_string()
-}
-
-fn record_evaluation_info_string_from_matches(matches: &ArgMatches<'static>) -> String {
-    match matches.is_present("record-evaluation-info") {
-        true  => "--record-evaluation-info".to_string(),
-        false => "".to_string()
-    }
+fn install_argument() -> Arg<'static, 'static> {
+    Arg::with_name("install")
+        .takes_value(false)
+        .short("i")
+        .long("install")
+        .help("With this option, Rust will be installed, the source code and configuration files will be uploaded and the application will be built. Without this option, the application will be launched.")
 }
 
 fn install_from_matches(matches: &ArgMatches<'static>) -> bool {
