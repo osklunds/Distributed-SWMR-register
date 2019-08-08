@@ -139,6 +139,8 @@ fn socket_addrs_from_string(string: String) -> HashMap<NodeId, SocketAddr> {
 fn color_argument() -> Arg<'static, 'static> {
     let colors = &["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan"];
     Arg::with_name("color")
+        .short("c")
+        .long("color")
         .takes_value(true)
         .possible_values(colors)
         .default_value("Black")
