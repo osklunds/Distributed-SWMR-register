@@ -1,5 +1,11 @@
 
+use std::collections::HashSet;
+use std::fs;
+use std::net::ToSocketAddrs;
+
 use clap::{Arg, App, ArgMatches, AppSettings};
+
+use crate::node_info::NodeInfo;
 
 
 pub fn hosts_file() -> Arg<'static, 'static> {
@@ -11,6 +17,35 @@ pub fn hosts_file() -> Arg<'static, 'static> {
 
 pub fn hosts_file_from_matches(matches: &ArgMatches<'static>) -> String {
     matches.value_of("hosts-file").unwrap().to_string()
+}
+
+pub fn node_infos_from_matches(matches: &ArgMatches<'static>) -> HashSet<NodeInfo> {
+    let hosts_file_path = matches.value_of("hosts-file").unwrap();
+    let string = fs::read_to_string(hosts_file_path).expect("Unable to read file");
+    node_infos_from_string(string)
+}
+
+pub fn node_infos_from_string(string: String) -> HashSet<NodeInfo> {
+    let mut node_infos = HashSet::new();
+
+    for line in string.lines() {
+        let components: Vec<&str> = line.split(",").collect();
+        let node_id = components[0].parse().unwrap();
+        let socket_addr = components[1].to_socket_addrs().unwrap().next().unwrap();
+        let key_path = components[2].to_string();
+        let username = components[3].to_string();
+
+        let node_info = NodeInfo {
+            node_id: node_id,
+            socket_addr: socket_addr,
+            key_path: key_path,
+            username: username
+        };
+
+        node_infos.insert(node_info);
+    }
+
+    node_infos
 }
 
 pub fn number_of_writers() -> Arg<'static, 'static> {
