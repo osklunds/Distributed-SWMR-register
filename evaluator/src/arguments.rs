@@ -194,7 +194,7 @@ fn result_file_path_from_matches(matches: &ArgMatches<'static>) -> PathBuf {
 
 fn optimize_string_from_matches(matches: &ArgMatches<'static>) -> String {
     match matches.is_present("optimize") {
-        true  => "--release".to_string(), // TODO: --optimize instead?
+        true  => "--optimize".to_string(),
         false => "".to_string()
     }
 }
