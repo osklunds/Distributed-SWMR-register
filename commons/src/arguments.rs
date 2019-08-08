@@ -8,11 +8,11 @@ use clap::{Arg, App, ArgMatches, AppSettings};
 use crate::node_info::NodeInfo;
 
 
-pub fn hosts_file() -> Arg<'static, 'static> {
+pub fn hosts_file(help_text: &'static str) -> Arg<'static, 'static> {
     Arg::with_name("hosts-file")
         .required(true)
         .takes_value(true)
-        .help("The file with node ids, addresses, ports, ssh key paths and usernames.")
+        .help(help_text) // "The file with node ids, addresses, ports, ssh key paths and usernames."
 }
 
 pub fn hosts_file_from_matches(matches: &ArgMatches<'static>) -> String {
