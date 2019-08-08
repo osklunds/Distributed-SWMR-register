@@ -1,7 +1,7 @@
 
 use serde::{Serialize, Deserialize};
 
-use crate::run_result::*;
+use commons::run_result::RunResult;
 
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Copy, Clone)]

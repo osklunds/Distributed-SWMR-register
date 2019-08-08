@@ -9,9 +9,9 @@ use std::time::Duration;
 use clap::{Arg, App, ArgMatches, SubCommand, AppSettings};
 
 use commons::node_info::{NodeInfo, NodeId};
+use commons::run_result::RunResult;
 
 use crate::scenario::Scenario;
-use crate::run_result::RunResult;
 
 
 lazy_static! {
