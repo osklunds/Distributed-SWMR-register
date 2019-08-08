@@ -80,7 +80,7 @@ fn run_single_application_instance(node_id: NodeId) -> Child {
         false => ""
     };
 
-    let command = format!("cargo run {} --manifest-path ../application/Cargo.toml -- {} hosts.txt {:?} -l {} {} {} {} {}", 
+    let command = format!("cargo run {} --manifest-path ../application/Cargo.toml -- {} hosts.txt -c {:?} -l {} {} {} {} {}", 
         ARGUMENTS.release_mode_string, 
         node_id, 
         color,
