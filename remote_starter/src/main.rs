@@ -14,7 +14,8 @@ use colored::Color::*;
 use ctrlc;
 
 use commons::execution;
-use commons::node_info::{NodeId, NodeInfo};
+use commons::types::NodeId;
+use commons::node_info::NodeInfo;
 use commons::remote_machine::*;
 
 use crate::arguments::{ARGUMENTS};

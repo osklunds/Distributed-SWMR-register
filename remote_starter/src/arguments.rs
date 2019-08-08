@@ -48,7 +48,7 @@ fn get_matches() -> ArgMatches<'static> {
         .setting(AppSettings::VersionlessSubcommands)
         .about("A helper utility that starts multiple nodes on remote machines via SSH.")
 
-        .arg(arguments::hosts_file())
+        .arg(arguments::hosts_file("The file with node ids, addresses, ports, ssh key paths and usernames."))
         .arg(arguments::number_of_writers())
         .arg(arguments::number_of_readers())
         .arg(arguments::run_length())
