@@ -2,6 +2,7 @@
 use clap::{Arg, App, ArgMatches, AppSettings};
 
 use commons::arguments;
+use commons::types::Int;
 
 
 lazy_static! {
@@ -10,9 +11,9 @@ lazy_static! {
 
 
 pub struct Arguments {
-    pub number_of_nodes: i32,
-    pub number_of_writers: i32,
-    pub number_of_readers: i32,
+    pub number_of_nodes: Int,
+    pub number_of_writers: Int,
+    pub number_of_readers: Int,
     pub release_mode_string: String,
     pub print_client_operations_string: String,
     pub run_length_string: String,
@@ -62,6 +63,6 @@ pub fn number_of_nodes_argument() -> Arg<'static, 'static> {
         .help("The number of local nodes to run.")
 }
 
-fn number_of_nodes_from_matches(matches: &ArgMatches<'static>) -> i32 {
+fn number_of_nodes_from_matches(matches: &ArgMatches<'static>) -> Int {
     matches.value_of("number-of-nodes").unwrap().parse().unwrap()
 }
