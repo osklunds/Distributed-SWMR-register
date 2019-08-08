@@ -11,13 +11,13 @@ use std::collections::HashMap;
 
 use commons::execution;
 use commons::node_info::NodeInfo;
+use commons::run_result::RunResult;
 
 mod run_result;
 mod scenario;
 mod arguments;
 
 use scenario::*;
-use run_result::{RunResult, NodeId};
 use arguments::*;
 
 

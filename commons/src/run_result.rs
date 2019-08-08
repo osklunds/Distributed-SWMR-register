@@ -4,8 +4,7 @@ use std::iter::FromIterator;
 
 use serde::{Serialize, Deserialize};
 
-
-pub type NodeId = i32;
+use crate::node_info::NodeId;
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
