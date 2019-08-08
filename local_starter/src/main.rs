@@ -13,7 +13,7 @@ use colored::Color;
 use colored::Color::*;
 
 use commons::execution;
-use commons::node_info::NodeId;
+use commons::types::NodeId;
 
 use crate::arguments::ARGUMENTS;
 
@@ -80,9 +80,11 @@ fn run_single_application_instance(node_id: NodeId) -> Child {
         false => ""
     };
 
-    let command = format!("cargo run {} --manifest-path ../application/Cargo.toml -- {} hosts.txt {} {:?} {} {} {} {}", 
-        ARGUMENTS.release_mode_string, node_id, 
-        ARGUMENTS.run_length_string, color, 
+    let command = format!("cargo run {} --manifest-path ../application/Cargo.toml -- {} hosts.txt {:?} -l {} {} {} {} {}", 
+        ARGUMENTS.release_mode_string, 
+        node_id, 
+        color,
+        ARGUMENTS.run_length_string, 
         ARGUMENTS.print_client_operations_string, 
         ARGUMENTS.record_evaluation_info_string, 
         write_string, 
