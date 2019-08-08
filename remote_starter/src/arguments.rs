@@ -1,6 +1,4 @@
 
-use std::net::ToSocketAddrs;
-use std::fs;
 use std::collections::HashSet;
 
 use clap::{Arg, App, ArgMatches, AppSettings};
@@ -29,10 +27,10 @@ pub struct Arguments {
 impl Arguments {
     fn new() -> Arguments {
         let matches = get_matches();
-        
+
         Arguments {
             hosts_file: arguments::hosts_file_from_matches(&matches),
-            node_infos: node_infos_from_matches(&matches),
+            node_infos: arguments::node_infos_from_matches(&matches),
             number_of_writers: arguments::number_of_writers_from_matches(&matches),
             number_of_readers: arguments::number_of_readers_from_matches(&matches),
             release_mode_string: arguments::release_mode_string_from_matches(&matches),
@@ -60,35 +58,6 @@ fn get_matches() -> ArgMatches<'static> {
         .arg(arguments::print_client_operations())
 
         .get_matches()
-}
-
-fn node_infos_from_matches(matches: &ArgMatches<'static>) -> HashSet<NodeInfo> {
-    let hosts_file_path = matches.value_of("hosts-file").unwrap();
-    let string = fs::read_to_string(hosts_file_path).expect("Unable to read file");
-    node_infos_from_string(string)
-}
-
-fn node_infos_from_string(string: String) -> HashSet<NodeInfo> {
-    let mut node_infos = HashSet::new();
-
-    for line in string.lines() {
-        let components: Vec<&str> = line.split(",").collect();
-        let node_id = components[0].parse().unwrap();
-        let socket_addr = components[1].to_socket_addrs().unwrap().next().unwrap();
-        let key_path = components[2].to_string();
-        let username = components[3].to_string();
-
-        let node_info = NodeInfo {
-            node_id: node_id,
-            socket_addr: socket_addr,
-            key_path: key_path,
-            username: username
-        };
-
-        node_infos.insert(node_info);
-    }
-
-    node_infos
 }
 
 fn install_argument() -> Arg<'static, 'static> {
