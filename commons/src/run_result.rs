@@ -4,15 +4,15 @@ use std::iter::FromIterator;
 
 use serde::{Serialize, Deserialize};
 
-use crate::types::NodeId;
+use crate::types::{NodeId, Int};
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RunResult {
-    pub write_ops: usize,
-    pub write_quorum_accesses: usize,
-    pub read_ops: usize,
-    pub read_quorum_accesses: usize,
+    pub write_ops: Int,
+    pub write_quorum_accesses: Int,
+    pub read_ops: Int,
+    pub read_quorum_accesses: Int,
 
     pub write_message: MessageTypeResult,
     pub write_ack_message: MessageTypeResult,
@@ -40,7 +40,7 @@ impl RunResult {
         }
     }
 
-    pub fn is_valid(&self, number_of_nodes: usize) -> bool {
+    pub fn is_valid(&self, number_of_nodes: Int) -> bool {
         let mut valid = true;
         
         valid &= Self::implies(self.metadata.is_writer, self.write_ack_message.nodes_received_from == Self::all_nodes_set(number_of_nodes));
@@ -62,15 +62,15 @@ impl RunResult {
         }
     }
 
-    fn all_nodes_set(number_of_nodes: usize) -> HashSet<NodeId> {
+    fn all_nodes_set(number_of_nodes: Int) -> HashSet<NodeId> {
         HashSet::from_iter(1..(number_of_nodes+1) as NodeId)
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MessageTypeResult {
-    pub sent: usize,
-    pub received: usize,
+    pub sent: Int,
+    pub received: Int,
     pub nodes_received_from: HashSet<NodeId>
 }
 
@@ -90,7 +90,7 @@ pub struct Metadata {
     pub node_id: NodeId,
     pub is_reader: bool,
     pub is_writer: bool,
-    pub run_length: usize,
+    pub run_length: Int,
 }
 
 impl Metadata {

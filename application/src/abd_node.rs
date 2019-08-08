@@ -9,7 +9,7 @@ use std::time::Duration;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 
-use commons::types::NodeId;
+use commons::types::{NodeId, Int};
 
 use crate::settings::SETTINGS;
 use crate::register::*;
@@ -336,10 +336,10 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     fn write_ack_from_majority(&self) -> bool {
         let acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
 
-        acking_processors_for_write.len() >= self.number_of_nodes_in_a_majority()
+        acking_processors_for_write.len() as Int >= self.number_of_nodes_in_a_majority()
     }
 
-    fn number_of_nodes_in_a_majority(&self) -> usize {
+    fn number_of_nodes_in_a_majority(&self) -> Int {
         SETTINGS.number_of_nodes() / 2 + 1
     }
 
@@ -395,6 +395,6 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     fn read_ack_from_majority(&self) -> bool {
         let acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
 
-        acking_processors_for_read.len() >= self.number_of_nodes_in_a_majority()
+        acking_processors_for_read.len() as Int >= self.number_of_nodes_in_a_majority()
     }
 }

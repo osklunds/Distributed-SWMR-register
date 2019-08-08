@@ -3,11 +3,12 @@ use std::fmt;
 use std::fmt::Display;
 use std::cmp::Ordering;
 
-
 use serde::{Serialize, Deserialize};
 
+use commons::types::Int;
 
-pub type Timestamp = i32;
+
+pub type Timestamp = Int;
 
 pub fn default_timestamp() -> Timestamp {
     -1

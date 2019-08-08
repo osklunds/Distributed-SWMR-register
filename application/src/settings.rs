@@ -8,7 +8,7 @@ use std::time::Duration;
 use colored::*;
 use clap::{Arg, App, ArgMatches, AppSettings};
 
-use commons::types::NodeId;
+use commons::types::{NodeId, Int};
 use commons::arguments;
 
 
@@ -66,8 +66,8 @@ impl Settings {
         self.print_client_operations
     }
 
-    pub fn number_of_nodes(&self) -> usize {
-        self.socket_addrs.len()
+    pub fn number_of_nodes(&self) -> Int {
+        self.socket_addrs.len() as Int
     }
 
     pub fn node_ids(&self) -> HashSet<NodeId> {

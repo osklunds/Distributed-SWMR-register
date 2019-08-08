@@ -21,6 +21,7 @@ use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 use std::sync::mpsc::{self, TryRecvError, Receiver, Sender};
 
+use commons::types::Int;
 
 use crate::settings::SETTINGS;
 use crate::terminal_output::printlnu;
@@ -52,7 +53,7 @@ fn main() {
         run_result.metadata.node_id = SETTINGS.node_id();
         run_result.metadata.is_reader = SETTINGS.should_read();
         run_result.metadata.is_writer = SETTINGS.should_write();
-        run_result.metadata.run_length = SETTINGS.run_length().as_secs() as usize;
+        run_result.metadata.run_length = SETTINGS.run_length().as_secs() as Int;
 
         let json = serde_json::to_string(&*run_result).unwrap();
         printlnu(format!("{}", &json));
