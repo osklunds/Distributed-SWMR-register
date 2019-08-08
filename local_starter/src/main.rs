@@ -37,7 +37,7 @@ fn create_hosts_file() {
         fs::remove_file(file_path).expect("Could not remove existing hosts.txt file");
     }
 
-    fs::write(file_path, hosts_file_string).expect("Could not write new hosts.txt file.");
+    fs::write(file_path, hosts_file_string).expect("Could not write the new hosts.txt file.");
 }
 
 fn hosts_file_string() -> String {
@@ -52,9 +52,10 @@ fn hosts_file_string() -> String {
 }
 
 fn build_application() {
-    let command = format!("cargo build {} --manifest-path ../application/Cargo.toml", ARGUMENTS.release_mode_string);
+    let command = format!("cargo build {} --manifest-path ../application/Cargo.toml", 
+        ARGUMENTS.release_mode_string);
     let mut build_process = execution::execute_local_command(&command);
-    build_process.wait().unwrap();
+    build_process.wait().expect("Could not wait for the build process.");
 }
 
 fn run_application() {
@@ -65,7 +66,7 @@ fn run_application() {
     }
  
     for run_process in run_processes.iter_mut() {
-        run_process.wait().unwrap();
+        run_process.wait().expect("Could not wait for the run process.");
     }
 }
 

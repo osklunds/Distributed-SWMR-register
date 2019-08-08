@@ -64,5 +64,5 @@ pub fn number_of_nodes_argument() -> Arg<'static, 'static> {
 }
 
 fn number_of_nodes_from_matches(matches: &ArgMatches<'static>) -> Int {
-    matches.value_of("number-of-nodes").unwrap().parse().unwrap()
+    matches.value_of("number-of-nodes").expect("Number of nodes arg not existing.").parse().expect("Could not parse number of nodes.")
 }
