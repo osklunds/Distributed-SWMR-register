@@ -84,15 +84,15 @@ mod tests {
 
         reg_array
     } 
-    /*
+
     #[test]
     fn test_that_from_new_timestamps_are_default() {
         let reg_array: RegisterArray<String> = RegisterArray::new(&node_ids_for_tests());
 
-        for (_, register) in reg_array.map.iter() {
-            assert_eq!(register.ts, register::default_timestamp());
+        for node_id in node_ids_for_tests().iter() {
+            assert_eq!(reg_array.get(*node_id).ts, register::default_timestamp());
         }
-    }*/
+    }
 
     #[test]
     fn test_that_get_works_for_existing_node_id() {
@@ -122,7 +122,13 @@ mod tests {
         let mut reg_array= register_array_for_tests();
         reg_array.set(2, Register::new(7, String::from("Hi")));
         let string = format!("{}", reg_array);
-        let correct = String::from(format!("1: [ts = {}, val = {}]\n2: [ts = 7, val = Hi]\n3: [ts = {}, val = {}]\n4: [ts = {}, val = {}]", timestamp_for_tests(), value_for_tests(), timestamp_for_tests(), value_for_tests(), timestamp_for_tests(), value_for_tests()));
+        let correct = format!("1: [ts = {}, val = {}]\n2: [ts = 7, val = Hi]\n3: [ts = {}, val = {}]\n4: [ts = {}, val = {}]",
+            timestamp_for_tests(), 
+            value_for_tests(), 
+            timestamp_for_tests(),
+            value_for_tests(), 
+            timestamp_for_tests(),
+            value_for_tests());
 
         assert_eq!(string, correct);
     }
