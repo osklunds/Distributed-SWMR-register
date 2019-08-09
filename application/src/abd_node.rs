@@ -13,7 +13,7 @@ use commons::types::{NodeId, Int};
 
 use crate::settings::SETTINGS;
 use crate::register_array::*;
-use crate::entry::{self, Entry, Timestamp};
+use crate::register::{self, Register, Timestamp};
 use crate::messages::{self, Message, WriteMessage, WriteAckMessage, ReadMessage, ReadAckMessage};
 use crate::terminal_output::printlnu;
 use crate::mediator::Mediator;
@@ -39,7 +39,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     pub fn new(mediator: Weak<Mediator>) -> AbdNode<V> {
         AbdNode {
             mediator: mediator,
-            ts: Mutex::new(entry::default_timestamp()),
+            ts: Mutex::new(register::default_timestamp()),
             reg: Mutex::new(RegisterArray::new(&SETTINGS.node_ids())),
             
             register_array_being_written: Mutex::new(None),
@@ -85,7 +85,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         let mut reg = self.reg.lock().unwrap();
 
         *ts += 1;
-        reg.set(SETTINGS.node_id(), Entry::new(*ts, value));
+        reg.set(SETTINGS.node_id(), Register::new(*ts, value));
         reg
     }
 

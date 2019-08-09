@@ -5,7 +5,7 @@
 extern crate lazy_static;
 extern crate serde;
 
-mod entry;
+mod register;
 mod register_array;
 mod abd_node;
 mod messages;

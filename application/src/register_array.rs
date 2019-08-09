@@ -7,12 +7,12 @@ use serde::{Serialize, Deserialize};
 
 use commons::types::NodeId;
 
-use crate::entry::{self, Entry};
+use crate::register::{self, Register};
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RegisterArray<V> {
-    map: HashMap<NodeId, Entry<V>>
+    map: HashMap<NodeId, Register<V>>
 }
 
 impl<V: Default + Clone> RegisterArray<V> {
@@ -20,7 +20,7 @@ impl<V: Default + Clone> RegisterArray<V> {
     pub fn new(node_ids: &HashSet<NodeId>) -> RegisterArray<V> {
         let mut map = HashMap::new();
         for &node_id in node_ids {
-            map.insert(node_id, Entry::new(entry::default_timestamp(), V::default()));
+            map.insert(node_id, Register::new(register::default_timestamp(), V::default()));
         }
 
         RegisterArray {
@@ -29,24 +29,24 @@ impl<V: Default + Clone> RegisterArray<V> {
     }
 
     #[allow(dead_code)]
-    pub fn get(&self, node_id: NodeId) -> &Entry<V> {
-        self.map.get(&node_id).expect("Trying to get entry in RegisterArray, but that node id does not exist.")
+    pub fn get(&self, node_id: NodeId) -> &Register<V> {
+        self.map.get(&node_id).expect("Trying to get register in RegisterArray, but that node id does not exist.")
     }
 
     #[allow(dead_code)]
-    pub fn set(&mut self, node_id: NodeId, entry: Entry<V>) {
-        if self.map.insert(node_id, entry) == None {
-            panic!("Trying to set entry in RegisterArray, but that node id does not exist.");
+    pub fn set(&mut self, node_id: NodeId, register: Register<V>) {
+        if self.map.insert(node_id, register) == None {
+            panic!("Trying to set register in RegisterArray, but that node id does not exist.");
         } 
     }
 
     #[allow(dead_code)]
     pub fn merge_to_max_from_register_array(&mut self, other: &RegisterArray<V>) {
-        for (node_id, entry) in self.map.iter_mut() {
-            let other_entry = other.map.get(node_id).unwrap();
-            if other_entry > entry {
-                entry.ts = other_entry.ts;
-                entry.val = other_entry.val.clone();
+        for (node_id, register) in self.map.iter_mut() {
+            let other_register = other.map.get(node_id).unwrap();
+            if other_register > register {
+                register.ts = other_register.ts;
+                register.val = other_register.val.clone();
             }
         }
     }
@@ -67,12 +67,12 @@ impl<V> RegisterArray<V> {
 impl<V: Display> Display for RegisterArray<V> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         let mut sorted_map = BTreeMap::new();
-        for (node_id, entry) in self.map.iter() {
-            sorted_map.insert(node_id, entry);
+        for (node_id, register) in self.map.iter() {
+            sorted_map.insert(node_id, register);
         }
         let mut string = String::new();
-        for (node_id, entry) in sorted_map.iter() {
-            string.push_str(&format!("{}: {}\n", node_id, entry));
+        for (node_id, register) in sorted_map.iter() {
+            string.push_str(&format!("{}: {}\n", node_id, register));
         }
 
         write!(f, "{}", string.trim_end())
@@ -129,7 +129,7 @@ impl<V> PartialOrd for RegisterArray<V> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::entry::Timestamp;
+    use crate::register::Timestamp;
 
     fn node_ids_for_tests() -> HashSet<NodeId> {
         let mut node_ids = HashSet::new();
@@ -151,7 +151,7 @@ mod tests {
     fn register_array_for_tests() -> RegisterArray<String> {
         let mut reg = RegisterArray::new(&node_ids_for_tests());
         for &node_id in node_ids_for_tests().iter() {
-            reg.set(node_id, Entry::new(timestamp_for_tests(), value_for_tests()));
+            reg.set(node_id, Register::new(timestamp_for_tests(), value_for_tests()));
         }
 
         reg
@@ -179,8 +179,8 @@ mod tests {
     fn test_that_from_new_timestamps_are_default() {
         let reg: RegisterArray<String> = RegisterArray::new(&node_ids_for_tests());
 
-        for (_, entry) in reg.map.iter() {
-            assert_eq!(entry.ts, entry::default_timestamp());
+        for (_, register) in reg.map.iter() {
+            assert_eq!(register.ts, register::default_timestamp());
         }
     }
 
@@ -188,7 +188,7 @@ mod tests {
     fn test_that_get_works_for_existing_node_id() {
         let reg = register_array_for_tests();
 
-        assert_eq!(*reg.get(1), Entry::new(timestamp_for_tests(), value_for_tests()));
+        assert_eq!(*reg.get(1), Register::new(timestamp_for_tests(), value_for_tests()));
     }
 
     #[test]
@@ -201,16 +201,16 @@ mod tests {
     #[test]
     fn test_that_set_works_for_existing_node_id() {
         let mut reg = register_array_for_tests();
-        let entry = Entry::new(timestamp_for_tests(), String::from("Hi"));
-        reg.set(1, entry.clone());
+        let register = Register::new(timestamp_for_tests(), String::from("Hi"));
+        reg.set(1, register.clone());
 
-        assert_eq!(*reg.get(1), entry);
+        assert_eq!(*reg.get(1), register);
     }
 
     #[test]
     fn test_display_register_array() {
         let mut reg = register_array_for_tests();
-        reg.set(2, Entry::new(7, String::from("Hi")));
+        reg.set(2, Register::new(7, String::from("Hi")));
         let string = format!("{}", reg);
         let correct = String::from(format!("1: [ts = {}, val = {}]\n2: [ts = 7, val = Hi]\n3: [ts = {}, val = {}]\n4: [ts = {}, val = {}]", timestamp_for_tests(), value_for_tests(), timestamp_for_tests(), value_for_tests(), timestamp_for_tests(), value_for_tests()));
 
@@ -229,7 +229,7 @@ mod tests {
     fn test_register_arrays_inequal_entries() {
         let reg1 = register_array_for_tests();
         let mut reg2 = register_array_for_tests();
-        reg2.set(1, Entry::new(7, value_for_tests()));
+        reg2.set(1, Register::new(7, value_for_tests()));
 
         assert_ne!(reg1, reg2);
     }
@@ -265,20 +265,20 @@ mod tests {
     }
 
     #[test]
-    fn test_register_arrays_leq_for_one_less_entry() {
+    fn test_register_arrays_leq_for_one_less_register() {
         let reg1 = register_array_for_tests();
         let mut reg2 = register_array_for_tests();
-        reg2.set(1, Entry::new(timestamp_for_tests() - 1, value_for_tests()));
+        reg2.set(1, Register::new(timestamp_for_tests() - 1, value_for_tests()));
 
         assert!(reg2 <= reg1);
     }
 
     #[test]
-    fn test_register_arrays_leq_for_one_less_and_one_greater_entry() {
+    fn test_register_arrays_leq_for_one_less_and_one_greater_register() {
         let reg1 = register_array_for_tests();
         let mut reg2 = register_array_for_tests();
-        reg2.set(1, Entry::new(timestamp_for_tests() - 1, value_for_tests()));
-        reg2.set(2, Entry::new(timestamp_for_tests() + 1, value_for_tests()));
+        reg2.set(1, Register::new(timestamp_for_tests() - 1, value_for_tests()));
+        reg2.set(2, Register::new(timestamp_for_tests() + 1, value_for_tests()));
 
         assert!(!(reg2 <= reg1));
     }
@@ -292,10 +292,10 @@ mod tests {
     }
 
     #[test]
-    fn test_register_arrays_le_for_one_less_entry() {
+    fn test_register_arrays_le_for_one_less_register() {
         let reg1 = register_array_for_tests();
         let mut reg2 = register_array_for_tests();
-        reg2.set(1, Entry::new(timestamp_for_tests() - 1, value_for_tests()));
+        reg2.set(1, Register::new(timestamp_for_tests() - 1, value_for_tests()));
 
         assert!(reg2 < reg1);
     }
@@ -305,12 +305,12 @@ mod tests {
         let mut reg1 = register_array_for_tests();
         let mut reg2 = register_array_for_tests();
 
-        reg1.set(1, Entry::new(timestamp_for_tests() - 1, value_for_tests()));
-        reg2.set(2, Entry::new(timestamp_for_tests() + 1, value_for_tests()));
+        reg1.set(1, Register::new(timestamp_for_tests() - 1, value_for_tests()));
+        reg2.set(2, Register::new(timestamp_for_tests() + 1, value_for_tests()));
 
         reg1.merge_to_max_from_register_array(&reg2);
 
-        assert_eq!(*reg1.get(1), Entry::new(timestamp_for_tests(), value_for_tests()));
+        assert_eq!(*reg1.get(1), Register::new(timestamp_for_tests(), value_for_tests()));
     }
 
     #[test]
@@ -318,12 +318,12 @@ mod tests {
         let mut reg1 = register_array_for_tests();
         let mut reg2 = register_array_for_tests();
 
-        reg1.set(1, Entry::new(timestamp_for_tests() - 1, value_for_tests()));
-        reg2.set(2, Entry::new(timestamp_for_tests() + 1, value_for_tests()));
+        reg1.set(1, Register::new(timestamp_for_tests() - 1, value_for_tests()));
+        reg2.set(2, Register::new(timestamp_for_tests() + 1, value_for_tests()));
 
         reg1.merge_to_max_from_register_array(&reg2);
 
-        assert_eq!(*reg1.get(2), Entry::new(timestamp_for_tests() + 1, value_for_tests()));
+        assert_eq!(*reg1.get(2), Register::new(timestamp_for_tests() + 1, value_for_tests()));
     }
 
     #[test]
@@ -331,11 +331,11 @@ mod tests {
         let mut reg1 = register_array_for_tests();
         let mut reg2 = register_array_for_tests();
 
-        reg1.set(1, Entry::new(timestamp_for_tests() - 1, value_for_tests()));
-        reg2.set(2, Entry::new(timestamp_for_tests() + 1, value_for_tests()));
+        reg1.set(1, Register::new(timestamp_for_tests() - 1, value_for_tests()));
+        reg2.set(2, Register::new(timestamp_for_tests() + 1, value_for_tests()));
 
         reg1.merge_to_max_from_register_array(&reg2);
 
-        assert_eq!(*reg1.get(3), Entry::new(timestamp_for_tests(), value_for_tests()));
+        assert_eq!(*reg1.get(3), Register::new(timestamp_for_tests(), value_for_tests()));
     }
 }

@@ -16,41 +16,41 @@ pub fn default_timestamp() -> Timestamp {
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Entry<V> {
+pub struct Register<V> {
     pub ts: Timestamp,
     pub val: V
 }
 
-impl<V> Entry<V> {
-    pub fn new(ts: Timestamp, val: V) -> Entry<V> {
-        Entry {
+impl<V> Register<V> {
+    pub fn new(ts: Timestamp, val: V) -> Register<V> {
+        Register {
             ts: ts,
             val: val
         }
     }
 }
 
-impl<V: Display> Display for Entry<V> {
+impl<V: Display> Display for Register<V> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[ts = {}, val = {}]", self.ts, self.val)
     }
 }
 
-impl<V> PartialEq for Entry<V> {
+impl<V> PartialEq for Register<V> {
     fn eq(&self, other: &Self) -> bool {
         self.ts == other.ts
     }
 }
 
-impl<V> Eq for Entry<V> {}
+impl<V> Eq for Register<V> {}
 
-impl<V> PartialOrd for Entry<V> {
+impl<V> PartialOrd for Register<V> {
     fn partial_cmp(&self, other:&Self) -> Option<Ordering> {
         self.ts.partial_cmp(&other.ts)
     }
 }
 
-impl<V> Ord for Entry<V> {
+impl<V> Ord for Register<V> {
     fn cmp(&self, other:&Self) -> Ordering {
         self.ts.cmp(&other.ts)
     }
@@ -64,42 +64,42 @@ mod tests {
     #[test]
     fn test_display() {
         let correct = "[ts = 2, val = Rust]";
-        let entry = Entry::new(2, "Rust");
+        let register = Register::new(2, "Rust");
 
-        assert_eq!(format!("{}", entry), correct);
+        assert_eq!(format!("{}", register), correct);
     }
 
     #[test]
     fn value_does_not_affect_eq() {
-        let entry1 = Entry::new(3, "Rust");
-        let entry2 = Entry::new(3, "Haskell");
+        let register1 = Register::new(3, "Rust");
+        let register2 = Register::new(3, "Haskell");
 
-        assert_eq!(entry1, entry2);
+        assert_eq!(register1, register2);
     }
 
     #[test]
-    fn entry_eq_is_same_as_timestamp_eq() {
+    fn register_eq_is_same_as_timestamp_eq() {
         for i in 0..100 {
             for j in 0..100 {
-                assert_eq!(Entry::new(i, "") == Entry::new(j, ""), i == j);
+                assert_eq!(Register::new(i, "") == Register::new(j, ""), i == j);
             }
         }
     }
 
     #[test]
-    fn entry_leq_is_same_as_timestamp_leq() {
+    fn register_leq_is_same_as_timestamp_leq() {
         for i in 0..100 {
             for j in 0..100 {
-                assert_eq!(Entry::new(i, "") <= Entry::new(j, ""), i <= j);
+                assert_eq!(Register::new(i, "") <= Register::new(j, ""), i <= j);
             }
         }
     }
 
     #[test]
-    fn entry_le_is_same_as_timestamp_le() {
+    fn register_le_is_same_as_timestamp_le() {
         for i in 0..100 {
             for j in 0..100 {
-                assert_eq!(Entry::new(i, "") < Entry::new(j, ""), i < j);
+                assert_eq!(Register::new(i, "") < Register::new(j, ""), i < j);
             }
         }
     }
