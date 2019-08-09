@@ -9,7 +9,7 @@ use crate::settings::SETTINGS;
 use crate::responsible_cell::ResponsibleCell;
 use crate::abd_node::AbdNode;
 use crate::communicator::Communicator;
-use crate::register::Register;
+use crate::register_array::RegisterArray;
 use crate::messages;
 
 
@@ -74,7 +74,7 @@ impl Mediator {
     }
 
     #[allow(dead_code)]
-    pub fn read_all(&self) -> Register<String> {
+    pub fn read_all(&self) -> RegisterArray<String> {
         self.abd_node().read_all()
     }
 

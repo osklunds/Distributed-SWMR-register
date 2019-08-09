@@ -4,7 +4,7 @@ use std::borrow::Cow;
 
 use commons::types::NodeId;
 
-use crate::register::Register;
+use crate::register_array::RegisterArray;
 
 
 pub trait Message : Serialize {}
@@ -14,7 +14,7 @@ pub trait Message : Serialize {}
 pub struct WriteMessage<'a, V: Clone> {
     #[serde(rename = "WriteMessage")]
     pub sender: NodeId,
-    pub register: Cow<'a, Register<V>>
+    pub register_array: Cow<'a, RegisterArray<V>>
 }
 
 impl<'a, V: Serialize + Clone> Message for WriteMessage<'a, V> {}
@@ -24,7 +24,7 @@ impl<'a, V: Serialize + Clone> Message for WriteMessage<'a, V> {}
 pub struct WriteAckMessage<'a, V: Clone> {
     #[serde(rename = "WriteAckMessage")]
     pub sender: NodeId,
-    pub register: Cow<'a, Register<V>>
+    pub register_array: Cow<'a, RegisterArray<V>>
 }
 
 impl<'a, V: Serialize + Clone> Message for WriteAckMessage<'a, V> {}
@@ -34,7 +34,7 @@ impl<'a, V: Serialize + Clone> Message for WriteAckMessage<'a, V> {}
 pub struct ReadMessage<'a, V: Clone> {
     #[serde(rename = "ReadMessage")]
     pub sender: NodeId,
-    pub register: Cow<'a, Register<V>>
+    pub register_array: Cow<'a, RegisterArray<V>>
 }
 
 impl<'a, V: Serialize + Clone> Message for ReadMessage<'a, V> {}
@@ -44,7 +44,7 @@ impl<'a, V: Serialize + Clone> Message for ReadMessage<'a, V> {}
 pub struct ReadAckMessage<'a, V: Clone> {
     #[serde(rename = "ReadAckMessage")]
     pub sender: NodeId,
-    pub register: Cow<'a, Register<V>>
+    pub register_array: Cow<'a, RegisterArray<V>>
 }
 
 impl<'a, V: Serialize + Clone> Message for ReadAckMessage<'a, V> {}
