@@ -7,8 +7,8 @@ use serde::{Serialize, Deserialize};
 
 use commons::types::NodeId;
 
-use crate::register::{self, Register};
-use crate::vector::Vector;
+use super::register::{self, Register};
+use super::vector::Vector;
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

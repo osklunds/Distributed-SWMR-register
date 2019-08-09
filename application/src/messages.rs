@@ -4,7 +4,7 @@ use std::borrow::Cow;
 
 use commons::types::NodeId;
 
-use crate::register_array::RegisterArray;
+use crate::data_types::register_array::RegisterArray;
 
 
 pub trait Message : Serialize {}

@@ -9,7 +9,7 @@ use crate::settings::SETTINGS;
 use crate::responsible_cell::ResponsibleCell;
 use crate::abd_node::AbdNode;
 use crate::communicator::Communicator;
-use crate::register_array::RegisterArray;
+use crate::data_types::register_array::RegisterArray;
 use crate::messages;
 
 

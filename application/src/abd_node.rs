@@ -12,8 +12,8 @@ use serde::de::DeserializeOwned;
 use commons::types::{NodeId, Int};
 
 use crate::settings::SETTINGS;
-use crate::register_array::*;
-use crate::register::{self, Register, Timestamp};
+use crate::data_types::register_array::*;
+use crate::data_types::register::{self, Register, Timestamp};
 use crate::messages::{self, Message, WriteMessage, WriteAckMessage, ReadMessage, ReadAckMessage};
 use crate::terminal_output::printlnu;
 use crate::mediator::Mediator;
