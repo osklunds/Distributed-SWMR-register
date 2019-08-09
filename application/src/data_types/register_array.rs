@@ -8,7 +8,9 @@ use serde::{Serialize, Deserialize};
 use commons::types::NodeId;
 
 use super::register::{self, Register};
+use super::timestamp::{self, Timestamp};
 use super::vector::Vector;
+use super::vector_clock::VectorClock;
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -34,6 +36,20 @@ impl<V: Default + Clone> RegisterArray<V> {
     pub fn merge_to_max_from_register_array(&mut self, other: &RegisterArray<V>) {
         self.vector.merge_to_max_from_vector(&other.vector);
     }
+
+    pub fn to_vector_clock(&self) -> VectorClock {
+        let mut vector_clock = VectorClock::new(self.vector.node_ids());
+
+        for &node_id in self.vector.node_ids() {
+            let mut ts = self.get(node_id).ts;
+            if ts == timestamp::default_timestamp() {
+                ts = 0;
+            }
+            vector_clock.set(node_id, ts);
+        }
+
+        vector_clock
+    }
 }
 
 impl<V: Display> Display for RegisterArray<V> {
@@ -57,7 +73,6 @@ impl<V> PartialOrd for RegisterArray<V> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::register::Timestamp;
 
     fn node_ids_for_tests() -> HashSet<NodeId> {
         let mut node_ids = HashSet::new();
@@ -90,7 +105,7 @@ mod tests {
         let reg_array: RegisterArray<String> = RegisterArray::new(&node_ids_for_tests());
 
         for node_id in node_ids_for_tests().iter() {
-            assert_eq!(reg_array.get(*node_id).ts, register::default_timestamp());
+            assert_eq!(reg_array.get(*node_id).ts, timestamp::default_timestamp());
         }
     }
 
@@ -253,5 +268,21 @@ mod tests {
         reg_array1.merge_to_max_from_register_array(&reg_array2);
 
         assert_eq!(*reg_array1.get(3), Register::new(timestamp_for_tests(), value_for_tests()));
+    }
+
+    #[test]
+    fn test_to_vector_clock() {
+        let mut reg_array = register_array_for_tests();
+        reg_array.set(1, Register::new(3, value_for_tests()));
+        reg_array.set(2, Register::new(7, value_for_tests()));
+        reg_array.set(3, Register::new(timestamp::default_timestamp(), value_for_tests()));
+        reg_array.set(4, Register::new(0, value_for_tests()));
+
+        let vector_clock = reg_array.to_vector_clock();
+
+        assert_eq!(*vector_clock.get(1), 3);
+        assert_eq!(*vector_clock.get(2), 7);
+        assert_eq!(*vector_clock.get(3), 0);
+        assert_eq!(*vector_clock.get(4), 0);
     }
 }
