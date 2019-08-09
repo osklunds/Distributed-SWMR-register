@@ -1,7 +1,6 @@
 
 use serde::{Serialize, Deserialize};
 
-use commons::run_result::RunResult;
 use commons::types::Int;
 
 
@@ -13,6 +12,7 @@ pub struct Scenario {
     pub number_of_readers: Int,
     pub number_of_writers: Int
 }
+// This struct is serialized in String because it's used as a key. And json only allows string keys.
 
 impl Scenario {
     pub fn new(number_of_nodes: Int, number_of_readers: Int, number_of_writers: Int) -> Scenario {
@@ -47,6 +47,5 @@ impl From<String> for Scenario {
             number_of_readers: number_of_readers,
             number_of_writers: number_of_writers
         }
-
     }
 }

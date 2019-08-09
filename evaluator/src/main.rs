@@ -1,5 +1,5 @@
 
-#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
+//#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
 
 #[macro_use]
 extern crate lazy_static;
@@ -16,6 +16,7 @@ use commons::execution;
 use commons::node_info::NodeInfo;
 use commons::run_result::RunResult;
 use commons::types::NodeId;
+use commons::misc;
 
 mod scenario;
 mod arguments;
@@ -28,20 +29,22 @@ fn main() {
     let arguments: &Arguments = &ARGUMENTS;
 
     ctrlc::set_handler(move || {
-            process::exit(0);
-    }).unwrap();
+        process::exit(0);
+    }).expect("Could not set the CTRL+C handler.");
 
-    if let Arguments::Install(arguments) = arguments {
-        run_install_subcommand(arguments);
-    } else if let Arguments::Gather(arguments) = arguments {
-        run_gather_subcommand(arguments);
-    }
+    match arguments {
+        Arguments::Install(arguments) => run_install_subcommand(arguments),
+        Arguments::Gather(arguments) => run_gather_subcommand(arguments),
+        Arguments::Aggregate(_arguments) => println!("Not implemented yet."),
+    };
 }
 
 fn run_install_subcommand(arguments: &InstallArguments) {
     let hosts_file = &arguments.hosts_file;
     let optimize_string = &arguments.optimize_string;
-    let command = format!("cargo run --manifest-path ../remote_starter/Cargo.toml -- {} -i {}", hosts_file, optimize_string);
+    let command = format!("cargo run --manifest-path ../remote_starter/Cargo.toml -- {} -i {}", 
+        hosts_file, 
+        optimize_string);
 
     execution::execute_local_command(&command).wait().expect("Error waiting for the execution of the install command.");
 }
@@ -121,7 +124,7 @@ fn collect_results_from_scenario_and_arguments(scenario: &Scenario, arguments: &
     for node_info in &arguments.node_infos {
         let run_result = collect_result_for_node_info(&node_info);
 
-        if run_result.is_valid(scenario.number_of_nodes) {
+        if run_result.is_sound(scenario.number_of_nodes) {
             results_for_this_scenario.insert(node_info.node_id, run_result);
         } else {
             return CollectResult::Failure(node_info.node_id);
@@ -137,8 +140,8 @@ enum CollectResult {
 }
 
 fn collect_result_for_node_info(node_info: &NodeInfo) -> RunResult {
-    let file_name = format!("node{:0>3}.eval", node_info.node_id);
-    execution::scp_copy_of_remote_source_path_to_local_destination_path(&format!("application/{}", file_name), &file_name, &node_info).wait().unwrap();
+    let file_name = misc::run_result_file_name_from_node_id(node_info.node_id);
+    execution::scp_copy_of_remote_source_path_to_local_destination_path(&format!("application/{}", file_name), &file_name, &node_info).wait().expect("Could not wait for the scp download of a result file.");
     
     let json = fs::read_to_string(&file_name).expect("Could not read a run result.");
     serde_json::from_str(&json).expect("Could not parse a run result.")

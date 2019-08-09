@@ -1,10 +1,7 @@
 
-use std::net::SocketAddr;
-use std::net::ToSocketAddrs;
 use std::fs;
 use std::path::PathBuf;
 use std::collections::{HashSet, HashMap};
-use std::time::Duration;
 
 use clap::{Arg, App, ArgMatches, SubCommand, AppSettings};
 
@@ -51,12 +48,9 @@ pub struct InstallArguments {
 
 impl InstallArguments {
     fn from_matches(matches: &ArgMatches<'static>) -> InstallArguments {
-        let hosts_file = arguments::hosts_file_from_matches(matches);
-        let optimize_string = optimize_string_from_matches(matches);
-
         InstallArguments {
-            hosts_file: hosts_file,
-            optimize_string: optimize_string
+            hosts_file: arguments::hosts_file_from_matches(matches),
+            optimize_string: optimize_string_from_matches(matches)
         }
     }
 }
@@ -93,10 +87,8 @@ pub struct AggregateArguments {
 
 impl AggregateArguments {
     fn from_matches(matches: &ArgMatches<'static>) -> AggregateArguments {
-        let run_results = run_results_from_matches(matches);
-
         AggregateArguments {
-            run_results: run_results
+            run_results: run_results_from_matches(matches)
         }
     }
 }
@@ -115,7 +107,7 @@ fn get_matches() -> ArgMatches<'static> {
             .arg(arguments::optimize()))
 
         .subcommand(SubCommand::with_name("gather")
-            .about("Will run each scenario ones and gather the results in a file. The results-file will be built upon, and if a scenario already exists there, it will not be run again.")
+            .about("Will run each scenario once and gather the results in a file. The results-file will be built upon, and if a scenario already exists there, it will not be run again.")
             
             .arg(arguments::hosts_file("The file with node ids, addresses, ports, ssh key paths and usernames."))
             .arg(scenario_file_argument())
@@ -166,7 +158,7 @@ fn result_files_argument() -> Arg<'static, 'static> {
 
 
 fn scenarios_from_matches(matches: &ArgMatches<'static>) -> HashSet<Scenario> {
-    let scenarios_file_path = matches.value_of("scenario-file").unwrap();
+    let scenarios_file_path = matches.value_of("scenario-file").expect("Scenario file argument not found.");
     let string = fs::read_to_string(scenarios_file_path).expect("Unable to read the scenarios file.");
     scenarios_from_string(string)
 }
@@ -176,9 +168,9 @@ fn scenarios_from_string(string: String) -> HashSet<Scenario> {
 
     for line in string.lines() {
         let components: Vec<&str> = line.split(",").collect();
-        let number_of_nodes = components[0].parse().unwrap();
-        let number_of_readers = components[1].parse().unwrap();
-        let number_of_writers = components[2].parse().unwrap();
+        let number_of_nodes = components[0].parse().expect("Could not parse the number of nodes.");
+        let number_of_readers = components[1].parse().expect("Could not parse the number of readers.");
+        let number_of_writers = components[2].parse().expect("Could not parse the number of writers.");
 
         let scenario = Scenario::new(number_of_nodes, number_of_readers, number_of_writers);
 
@@ -189,7 +181,7 @@ fn scenarios_from_string(string: String) -> HashSet<Scenario> {
 }
 
 fn result_file_path_from_matches(matches: &ArgMatches<'static>) -> PathBuf {
-    let as_str = matches.value_of("result-file").unwrap();
+    let as_str = matches.value_of("result-file").expect("result file not provided.");
     PathBuf::from(as_str)
 }
 
@@ -200,7 +192,7 @@ fn optimize_string_from_matches(matches: &ArgMatches<'static>) -> String {
     }
 }
 
-fn run_results_from_matches(matches: &ArgMatches<'static>) -> HashMap<Scenario, Vec<HashMap<NodeId, RunResult>>> {
+fn run_results_from_matches(_matches: &ArgMatches<'static>) -> HashMap<Scenario, Vec<HashMap<NodeId, RunResult>>> {
     HashMap::new()
     /*
     let result_strings = matches.values_of("result-file").unwrap().map(|result_file| fs::read_to_string(result_file).unwrap());
