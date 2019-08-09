@@ -2,6 +2,7 @@
 use std::fmt;
 use std::fmt::Display;
 use std::cmp::Ordering;
+use std::default::Default;
 
 use serde::{Serialize, Deserialize};
 
@@ -53,6 +54,12 @@ impl<V> PartialOrd for Register<V> {
 impl<V> Ord for Register<V> {
     fn cmp(&self, other:&Self) -> Ordering {
         self.ts.cmp(&other.ts)
+    }
+}
+
+impl<V: Default> Default for Register<V> {
+    fn default() -> Self {
+        Register::new(default_timestamp(), V::default())
     }
 }
 
