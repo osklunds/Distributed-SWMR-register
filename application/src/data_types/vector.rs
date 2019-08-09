@@ -1,5 +1,6 @@
 
 use std::collections::{HashMap, HashSet, BTreeMap};
+use std::collections::hash_map::IntoIter;
 use std::fmt::{Formatter, Display, Result};
 use std::cmp::Ordering;
 use std::iter::IntoIterator;
@@ -11,7 +12,8 @@ use commons::types::{NodeId, Int};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Vector<V> {
-    map: HashMap<NodeId, V>
+    map: HashMap<NodeId, V>,
+    node_ids: HashSet<NodeId>
 }
 
 impl<V: Default + Clone + PartialEq + Eq + PartialOrd> Vector<V> {
@@ -22,7 +24,8 @@ impl<V: Default + Clone + PartialEq + Eq + PartialOrd> Vector<V> {
         }
 
         Vector {
-            map: map
+            map: map,
+            node_ids: node_ids.clone()
         }
     }
 
@@ -43,6 +46,10 @@ impl<V: Default + Clone + PartialEq + Eq + PartialOrd> Vector<V> {
                 *value = other_value.clone(); // Potential future improvement: take ownership of other so that no cloning is needed
             }
         }
+    }
+
+    pub fn node_ids(&self) -> &HashSet<NodeId> {
+        &self.node_ids
     }
 }
 
@@ -117,6 +124,15 @@ impl<V: PartialEq + PartialOrd> PartialOrd for Vector<V> {
         } else {
             None
         }
+    }
+}
+
+impl<V> IntoIterator for Vector<V> {
+    type Item = (NodeId, V);
+    type IntoIter = IntoIter<NodeId, V>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.map.into_iter()
     }
 }
 
