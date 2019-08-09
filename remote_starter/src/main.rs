@@ -9,14 +9,12 @@ mod arguments;
 use std::collections::HashSet;
 use std::vec::Vec;
 
-use colored::Color;
-use colored::Color::*;
 use ctrlc;
 
 use commons::execution;
-use commons::types::NodeId;
 use commons::node_info::NodeInfo;
 use commons::remote_machine::*;
+use commons::misc;
 
 use crate::arguments::{ARGUMENTS};
 
@@ -28,7 +26,7 @@ fn main() {
         println!("I will now exit. But first I will stop all processes I have started on the remote computers.");
         stop_all_remote_processes();
 
-    }).unwrap();
+    }).expect("Could not set the CTRL+C handler.");
 
     if ARGUMENTS.install {
         install_rust_on_remote_computers();
@@ -49,7 +47,7 @@ fn stop_all_remote_processes() {
     }
 
     for stop_process in stop_processes.iter_mut() {
-        stop_process.wait().unwrap();
+        stop_process.wait().expect("Could not wait for a stop process.");
     }
 }
 
@@ -66,7 +64,7 @@ fn install_rust_on_remote_computers() {
     }
 
     for install_process in install_processes.iter_mut() {
-        install_process.wait().unwrap();
+        install_process.wait().expect("Could not wait for an install process.");
     }
 }
 
@@ -76,17 +74,18 @@ fn upload_source_code_and_hosts_file() {
     for node_info in ARGUMENTS.node_infos.iter() {
         let ip_addr = node_info.ip_addr_string();
         if handled_ip_addrs.insert(ip_addr) {
-            execution::execute_remote_command(&format!("mkdir {}/", REMOTE_DIRECTORY_NAME), &node_info).wait().unwrap();
+            execution::execute_remote_command(&format!("mkdir {}/",
+                REMOTE_DIRECTORY_NAME), &node_info).wait().expect("Could not wait for a folder creation command.");
             update_crate_source_on_remote("application", &node_info);
             update_crate_source_on_remote("commons", &node_info);
-            execution::scp_copy_of_local_source_path_to_remote_destination_path(&ARGUMENTS.hosts_file, &format!("application/{}", REMOTE_HOSTS_FILE_NAME), &node_info).wait().unwrap();
+            execution::scp_copy_of_local_source_path_to_remote_destination_path(&ARGUMENTS.hosts_file, &format!("application/{}", REMOTE_HOSTS_FILE_NAME), &node_info).wait().expect("Could not wait for the hosts file copy command.");
         }
     }
 }
 
 fn update_crate_source_on_remote(crate_name: &str, node_info: &NodeInfo) {
-    execution::execute_remote_command(&format!("rm -r {}/{}/src/", REMOTE_DIRECTORY_NAME, crate_name), &node_info).wait().unwrap();
-    execution::execute_remote_command(&format!("mkdir {}/{}", REMOTE_DIRECTORY_NAME, crate_name), &node_info).wait().unwrap();
+    execution::execute_remote_command(&format!("rm -r {}/{}/src/", REMOTE_DIRECTORY_NAME, crate_name), &node_info).wait().expect("Could not wait for a remote command.");
+    execution::execute_remote_command(&format!("mkdir {}/{}", REMOTE_DIRECTORY_NAME, crate_name), &node_info).wait().expect("Could not wait for a remote command.");
 
     copy_path_from_local_crate_to_remote_crate("src/", crate_name, node_info);
     copy_path_from_local_crate_to_remote_crate("Cargo.toml", crate_name, node_info);
@@ -94,7 +93,7 @@ fn update_crate_source_on_remote(crate_name: &str, node_info: &NodeInfo) {
 }
 
 fn copy_path_from_local_crate_to_remote_crate(path: &str, crate_name: &str, node_info: &NodeInfo) {
-    execution::scp_copy_of_local_source_path_to_remote_destination_path(&format!("../{}/{}", crate_name, path), &format!("{}/{}", crate_name, path), &node_info).wait().unwrap();
+    execution::scp_copy_of_local_source_path_to_remote_destination_path(&format!("../{}/{}", crate_name, path), &format!("{}/{}", crate_name, path), &node_info).wait().expect("Could not wait for a remote copy.");
 }
 
 fn build_source_code() {
@@ -113,7 +112,7 @@ fn build_source_code() {
     }
 
     for build_process in build_processes.iter_mut() {
-        build_process.wait().unwrap();
+        build_process.wait().expect("Could not wait for a build process.");
     }
 }
 
@@ -136,7 +135,7 @@ fn run_application_on_remote_computers() {
             node_info.node_id,
             REMOTE_HOSTS_FILE_NAME,
             ARGUMENTS.run_length_string,
-            color_from_node_id(node_info.node_id),
+            misc::color_from_node_id(node_info.node_id),
             ARGUMENTS.record_evaluation_info_string,
             ARGUMENTS.print_client_operations_string,
             write_string, 
@@ -148,11 +147,6 @@ fn run_application_on_remote_computers() {
     }
 
     for run_process in run_processes.iter_mut() {
-        run_process.wait().unwrap();
+        run_process.wait().expect("Could not wait for a run process.");
     }
-}
-
-fn color_from_node_id(node_id: NodeId) -> Color {
-    let colors = vec![Black, Red, Green, Yellow, Blue, Magenta, Cyan];
-    colors[(node_id as usize) % 7]
 }

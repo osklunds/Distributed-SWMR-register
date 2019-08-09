@@ -9,11 +9,9 @@ use std::fs;
 use std::path::Path;
 use std::vec::Vec;
 
-use colored::Color;
-use colored::Color::*;
-
 use commons::execution;
 use commons::types::NodeId;
+use commons::misc;
 
 use crate::arguments::ARGUMENTS;
 
@@ -71,7 +69,7 @@ fn run_application() {
 }
 
 fn run_single_application_instance(node_id: NodeId) -> Child {
-    let color = color_from_node_id(node_id);
+    let color = misc::color_from_node_id(node_id);
     let write_string = match node_id <= ARGUMENTS.number_of_writers {
         true  => "--write",
         false => ""
@@ -92,9 +90,4 @@ fn run_single_application_instance(node_id: NodeId) -> Child {
         read_string);
 
     execution::execute_local_command(&command)
-}
-
-fn color_from_node_id(node_id: NodeId) -> Color {
-    let colors = vec![Black, Red, Green, Yellow, Blue, Magenta, Cyan];
-    colors[(node_id as usize) % 7]
 }
