@@ -8,12 +8,7 @@ use serde::{Serialize, Deserialize};
 
 use commons::types::Int;
 
-
-pub type Timestamp = Int;
-
-pub fn default_timestamp() -> Timestamp {
-    -1
-}
+use super::timestamp::{self, Timestamp};
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -59,7 +54,7 @@ impl<V> Ord for Register<V> {
 
 impl<V: Default> Default for Register<V> {
     fn default() -> Self {
-        Register::new(default_timestamp(), V::default())
+        Register::new(timestamp::default_timestamp(), V::default())
     }
 }
 

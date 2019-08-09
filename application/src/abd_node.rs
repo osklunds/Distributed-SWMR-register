@@ -12,8 +12,9 @@ use serde::de::DeserializeOwned;
 use commons::types::{NodeId, Int};
 
 use crate::settings::SETTINGS;
+use crate::data_types::timestamp::{self, Timestamp};
 use crate::data_types::register_array::*;
-use crate::data_types::register::{self, Register, Timestamp};
+use crate::data_types::register::{self, Register};
 use crate::messages::{self, Message, WriteMessage, WriteAckMessage, ReadMessage, ReadAckMessage};
 use crate::terminal_output::printlnu;
 use crate::mediator::Mediator;
@@ -39,7 +40,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
     pub fn new(mediator: Weak<Mediator>) -> AbdNode<V> {
         AbdNode {
             mediator: mediator,
-            ts: Mutex::new(register::default_timestamp()),
+            ts: Mutex::new(timestamp::default_timestamp()),
             reg: Mutex::new(RegisterArray::new(&SETTINGS.node_ids())),
             
             register_array_being_written: Mutex::new(None),
