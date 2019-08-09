@@ -14,7 +14,6 @@ pub struct Vector<V> {
 }
 
 impl<V: Default + Clone + PartialEq + Eq + PartialOrd> Vector<V> {
-    #[allow(dead_code)]
     pub fn new(node_ids: &HashSet<NodeId>) -> Vector<V> {
         let mut map = HashMap::new();
         for &node_id in node_ids {
@@ -36,12 +35,11 @@ impl<V: Default + Clone + PartialEq + Eq + PartialOrd> Vector<V> {
         } 
     }
 
-    #[allow(dead_code)]
     pub fn merge_to_max_from_vector(&mut self, other: &Vector<V>) {
         for (node_id, value) in self.map.iter_mut() {
             let other_value = other.map.get(node_id).unwrap();
             if other_value > value {
-                *value = other_value.clone();
+                *value = other_value.clone(); // Potential future improvement: take ownership of other so that no cloning is needed
             }
         }
     }
@@ -188,7 +186,7 @@ mod tests {
     }
 
     #[test]
-    fn test_display_value_array() {
+    fn test_display() {
         let mut vec = vector_for_tests();
         vec.set(2, 7);
         let string = format!("{}", vec);
