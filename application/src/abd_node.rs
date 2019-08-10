@@ -12,7 +12,6 @@ use serde::de::DeserializeOwned;
 use commons::types::{NodeId, Int};
 
 use crate::terminal_output::printlnu;
-use crate::settings::SETTINGS;
 use crate::data_types::timestamp::{self, Timestamp};
 use crate::data_types::register_array::*;
 use crate::data_types::register::{self, Register};
@@ -68,16 +67,12 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
             assert!(register_array_being_written.is_none());
         }
 
-        if SETTINGS.record_evaluation_info() {
+        if self.mediator().record_evaluation_info() {
             self.mediator().run_result().write_ops += 1;
         }
     }
 
     fn inner_write(&self, value: V) {
-        // Enclose the three lines below in case the register_array
-        // lock isn't released immediately after the json
-        // message is created.
-
         let register_array = self.acquire_register_array_and_update_it_with_value(value);
         self.clone_register_array_to_register_array_being_written(&register_array);
         let json_write_message = self.construct_json_write_message_and_release_register_array(register_array);
@@ -119,7 +114,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
 
     fn broadcast_json_write_message_until_majority_has_acked(&self, json_write_message: &str) {
         self.broadcast_json_message(&json_write_message);
-        if SETTINGS.record_evaluation_info() {
+        if self.mediator().record_evaluation_info() {
             self.mediator().run_result().write_quorum_accesses += 1;
         }
         let mut register_array_being_written = self.register_array_being_written.lock().unwrap();
@@ -130,7 +125,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
             register_array_being_written = result.0;
             if result.1.timed_out() {
                 self.broadcast_json_message(&json_write_message);
-                if SETTINGS.record_evaluation_info() {
+                if self.mediator().record_evaluation_info() {
                    self.mediator().run_result().write_quorum_accesses += 1;
                 }
             }
@@ -140,7 +135,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
     fn send_json_message_to(&self, json: &str, receiver_id: NodeId) {
         self.mediator().send_json_to(json, receiver_id);
 
-        if SETTINGS.record_evaluation_info() {
+        if self.mediator().record_evaluation_info() {
             if messages::json_is_write_message(json) {
                 self.mediator().run_result().write_message.sent += 1;
             } else if messages::json_is_write_ack_message(json) {
@@ -156,7 +151,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
     fn broadcast_json_message(&self, json: &str) {
         self.mediator().broadcast_json(json);
 
-        if SETTINGS.record_evaluation_info() {
+        if self.mediator().record_evaluation_info() {
             if messages::json_is_write_message(json) {
                 self.mediator().run_result().write_message.sent += self.mediator().number_of_nodes();
             } else if messages::json_is_write_ack_message(json) {
@@ -198,7 +193,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
             assert!(register_array_being_read.is_none());
         }
 
-        if SETTINGS.record_evaluation_info() {
+        if self.mediator().record_evaluation_info() {
             self.mediator().run_result().read_ops += 1;
         }
 
@@ -223,7 +218,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
 
     fn broadcast_json_read_message_until_majority_has_acked(&self, json_read_message: &str) {
         self.broadcast_json_message(&json_read_message);
-        if SETTINGS.record_evaluation_info() {
+        if self.mediator().record_evaluation_info() {
             self.mediator().run_result().read_quorum_accesses += 1;
         }
 
@@ -235,7 +230,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
             register_array_being_read = result.0;
             if result.1.timed_out() {
                 self.broadcast_json_message(&json_read_message);
-                if SETTINGS.record_evaluation_info() {
+                if self.mediator().record_evaluation_info() {
                     self.mediator().run_result().read_quorum_accesses += 1;
                 }
             }
@@ -244,7 +239,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
 
     #[allow(dead_code)]
     pub fn json_received(&self, json: &str) {
-        if SETTINGS.record_evaluation_info() {
+        if self.mediator().record_evaluation_info() {
             if messages::json_is_write_message(json) {
                 self.mediator().run_result().write_message.received += 1;
             } else if messages::json_is_write_ack_message(json) {
@@ -301,7 +296,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
         // better. For large entries, longer locking
         // might be better.
 
-        if SETTINGS.record_evaluation_info() {
+        if self.mediator().record_evaluation_info() {
             self.mediator().run_result().write_message.nodes_received_from.insert(write_message.sender);
         }
     }
@@ -333,7 +328,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
             self.write_ack_majority_reached.notify_one();
         }
 
-        if SETTINGS.record_evaluation_info() {
+        if self.mediator().record_evaluation_info() {
             self.mediator().run_result().write_ack_message.nodes_received_from.insert(write_ack_message.sender);
         }
     }
@@ -360,7 +355,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
         let json = self.jsonify_message(&read_ack_message);
         self.send_json_message_to(&json, read_message.sender);
 
-        if SETTINGS.record_evaluation_info() {
+        if self.mediator().record_evaluation_info() {
             self.mediator().run_result().read_message.nodes_received_from.insert(read_message.sender);
         }
     }
@@ -392,7 +387,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
             self.read_ack_majority_reached.notify_one();
         }
 
-        if SETTINGS.record_evaluation_info() {
+        if self.mediator().record_evaluation_info() {
             self.mediator().run_result().read_ack_message.nodes_received_from.insert(read_ack_message.sender);
         }
     }

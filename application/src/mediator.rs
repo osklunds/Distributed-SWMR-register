@@ -40,6 +40,10 @@ pub trait Mediator {
     fn write(&self, message: String);
     fn read(&self, node_id: NodeId) -> String;
     fn read_all(&self) -> RegisterArray<String>;
+
+    // Settings
+
+    fn record_evaluation_info(&self) -> bool;
 }
 
 
@@ -149,5 +153,12 @@ impl Mediator for MediatorImpl {
     
     fn read_all(&self) -> RegisterArray<String> {
         self.abd_node().read_all()
+    }
+
+
+    // Settings
+
+    fn record_evaluation_info(&self) -> bool {
+        SETTINGS.record_evaluation_info()
     }
 }
