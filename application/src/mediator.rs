@@ -21,7 +21,6 @@ pub struct Mediator {
 }
 
 impl Mediator {
-    #[allow(dead_code)]
     pub fn new() -> Arc<Mediator> {
         let mediator = Mediator {
             communicator: ResponsibleCell::new(None),
@@ -43,6 +42,9 @@ impl Mediator {
         mediator
     }
     
+
+    // Modules
+
     fn abd_node(&self) -> &AbdNode<String> {
         self.abd_node.get().as_ref().expect("AbdNode not set on Mediator.")
     }
@@ -51,34 +53,44 @@ impl Mediator {
         self.communicator.get().as_ref().expect("Communicator not set on Mediator.")
     }
 
+
+    // Communicator
+
     pub fn send_json_to(&self, json: &str, receiver: NodeId) {
         self.communicator().send_json_to(json, receiver);
     }
 
     pub fn broadcast_json(&self, json: &str) {
-        self.communicator().broadcast_json(json);
+        for &node_id in SETTINGS.socket_addrs().keys() {
+            self.send_json_to(json, node_id);
+        }
     }
 
     pub fn json_received(&self, json: &str) {
         self.abd_node().json_received(json);
     }
 
-    #[allow(dead_code)]
+
+    // Evaluation
+
+    pub fn run_result(&self) -> MutexGuard<RunResult> {
+        self.run_result.lock().unwrap()
+    }
+
+
+    // Abd Node
+        
     pub fn write(&self, message: String) {
         self.abd_node().write(message);
     }
 
-    #[allow(dead_code)]
+    
     pub fn read(&self, node_id: NodeId) -> String {
         self.abd_node().read(node_id)
     }
 
-    #[allow(dead_code)]
+    
     pub fn read_all(&self) -> RegisterArray<String> {
         self.abd_node().read_all()
-    }
-
-    pub fn run_result(&self) -> MutexGuard<RunResult> {
-        self.run_result.lock().unwrap()
     }
 }

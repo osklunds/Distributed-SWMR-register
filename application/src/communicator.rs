@@ -55,11 +55,4 @@ impl Communicator {
         let dst_socket_addr = self.socket_addrs.get(&receiver_id).expect("Could not find receiver among the socket addresses");
         self.socket.send_to(bytes, dst_socket_addr).expect("Could not send on the socket");
     }
-
-    pub fn broadcast_json(&self, json: &str) {
-        let bytes = json.as_bytes();
-        for socket_addr in self.socket_addrs.values() {
-            self.socket.send_to(bytes, socket_addr).expect("Could not send on the socket");
-        }
-    }
 }
