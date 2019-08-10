@@ -11,12 +11,12 @@ use serde::de::DeserializeOwned;
 
 use commons::types::{NodeId, Int};
 
+use crate::terminal_output::printlnu;
 use crate::settings::SETTINGS;
 use crate::data_types::timestamp::{self, Timestamp};
 use crate::data_types::register_array::*;
 use crate::data_types::register::{self, Register};
 use crate::messages::{self, Message, WriteMessage, WriteAckMessage, ReadMessage, ReadAckMessage};
-use crate::terminal_output::printlnu;
 use crate::mediator::Med;
 
 
@@ -37,10 +37,13 @@ pub struct AbdNode<V, M> {
 
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<V, M> {
     pub fn new(mediator: Weak<M>) -> AbdNode<V, M> {
+        let mediator2 = mediator.upgrade().expect("Error upgrading mediator in AbdNode constructor");
+        let node_ids = mediator2.node_ids();
+
         AbdNode {
             mediator: mediator,
             ts: Mutex::new(timestamp::default_timestamp()),
-            reg: Mutex::new(RegisterArray::new(&SETTINGS.node_ids())),
+            reg: Mutex::new(RegisterArray::new(node_ids)),
             
             register_array_being_written: Mutex::new(None),
             acking_processors_for_write: Mutex::new(HashSet::new()),
@@ -85,7 +88,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
         let mut reg = self.reg.lock().unwrap();
 
         *ts += 1;
-        reg.set(SETTINGS.node_id(), Register::new(*ts, value));
+        reg.set(self.mediator().node_id(), Register::new(*ts, value));
         reg
     }
 
@@ -101,7 +104,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
 
     fn construct_json_write_message_and_release_register_array(&self, register_array: MutexGuard<RegisterArray<V>>) -> String {
         let write_message = WriteMessage {
-            sender: SETTINGS.node_id(),
+            sender: self.mediator().node_id(),
             register_array: Cow::Borrowed(&register_array)
         };
 
@@ -153,13 +156,13 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
 
         if SETTINGS.record_evaluation_info() {
             if messages::json_is_write_message(json) {
-                self.mediator().run_result().write_message.sent += SETTINGS.number_of_nodes();
+                self.mediator().run_result().write_message.sent += self.mediator().number_of_nodes();
             } else if messages::json_is_write_ack_message(json) {
-                self.mediator().run_result().write_ack_message.sent += SETTINGS.number_of_nodes();
+                self.mediator().run_result().write_ack_message.sent += self.mediator().number_of_nodes();
             } else if messages::json_is_read_message(json) {
-                self.mediator().run_result().read_message.sent += SETTINGS.number_of_nodes();
+                self.mediator().run_result().read_message.sent += self.mediator().number_of_nodes();
             } else if messages::json_is_read_ack_message(json) {
-                self.mediator().run_result().read_ack_message.sent += SETTINGS.number_of_nodes();
+                self.mediator().run_result().read_ack_message.sent += self.mediator().number_of_nodes();
             }
         }
     }
@@ -209,7 +212,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
 
     fn construct_json_read_message_and_release_register_array(&self, register_array: MutexGuard<RegisterArray<V>>) -> String {
         let read_message = ReadMessage {
-            sender: SETTINGS.node_id(),
+            sender: self.mediator().node_id(),
             register_array: Cow::Borrowed(&register_array)
         };
 
@@ -283,7 +286,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
         reg.merge_to_max_from_register_array(&write_message.register_array);
 
         let write_ack_message = WriteAckMessage {
-            sender: SETTINGS.node_id(),
+            sender: self.mediator().node_id(),
             register_array: Cow::Borrowed(&reg)
         };
 
@@ -340,7 +343,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
     }
 
     fn number_of_nodes_in_a_majority(&self) -> Int {
-        SETTINGS.number_of_nodes() / 2 + 1
+        self.mediator().number_of_nodes() / 2 + 1
     }
 
     fn receive_read_message(&self, read_message: ReadMessage<V>) {    
@@ -348,7 +351,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
         reg.merge_to_max_from_register_array(&read_message.register_array);
 
         let read_ack_message = ReadAckMessage {
-            sender: SETTINGS.node_id(),
+            sender: self.mediator().node_id(),
             register_array: Cow::Borrowed(&reg)
         };
 

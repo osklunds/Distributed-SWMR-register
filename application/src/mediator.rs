@@ -4,7 +4,7 @@ use std::marker::{Send, Sync};
 use std::collections::HashSet;
 
 use commons::run_result::RunResult;
-use commons::types::NodeId;
+use commons::types::{NodeId, Int};
 
 //use crate::terminal_output::printlnu;
 use crate::settings::SETTINGS;
@@ -27,6 +27,7 @@ pub trait Mediator {
 
     fn node_id(&self) -> NodeId;
     fn node_ids(&self) -> &HashSet<NodeId>;
+    fn number_of_nodes(&self) -> Int;
 
 
     // Evaluation
@@ -103,7 +104,7 @@ impl Mediator for MediatorImpl {
     }
 
     fn broadcast_json(&self, json: &str) {
-        for &node_id in SETTINGS.socket_addrs().keys() {
+        for &node_id in self.configuration_manager().node_ids() {
             self.send_json_to(json, node_id);
         }
     }
@@ -120,6 +121,10 @@ impl Mediator for MediatorImpl {
 
     fn node_ids(&self) -> &HashSet<NodeId> {
         self.configuration_manager().node_ids()
+    }
+
+    fn number_of_nodes(&self) -> Int {
+        self.configuration_manager().number_of_nodes()
     }
 
 

@@ -1,7 +1,7 @@
 
 use std::collections::HashSet;
 
-use commons::types::NodeId;
+use commons::types::{NodeId, Int};
 
 
 pub struct ConfigurationManager {
@@ -23,5 +23,9 @@ impl ConfigurationManager {
 
     pub fn node_ids(&self) -> &HashSet<NodeId> {
         &self.node_ids
+    }
+
+    pub fn number_of_nodes(&self) -> Int {
+        self.node_ids.len() as Int
     }
 }
