@@ -19,20 +19,21 @@ use std::time::Duration;
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 use std::sync::mpsc::{self, TryRecvError, Receiver, Sender};
+use std::marker::{Send, Sync};
 
 use commons::types::Int;
 use commons::misc;
 
 use crate::settings::SETTINGS;
 use crate::terminal_output::printlnu;
-use crate::mediator::Mediator;
+use crate::mediator::{Mediator, MediatorImpl, Med};
 
 
 fn main() {
     SETTINGS.node_id();
 
-    let mediator = Mediator::new();
-
+    let mediator = MediatorImpl::new();
+    
     // This is important when running locally. If some application
     // processes start before all have been built, they will
     // consume so much CPU time that the build processes
@@ -61,7 +62,7 @@ fn main() {
     }
 }
 
-fn start_client_threads_and_get_channel_send_ends(mediator: &Arc<Mediator>) -> (Sender<()>, Sender<()>) {
+fn start_client_threads_and_get_channel_send_ends<M: Med>(mediator: &Arc<M>) -> (Sender<()>, Sender<()>) {
     let (read_tx, read_rx) = mpsc::channel();
     let (write_tx, write_rx) = mpsc::channel();
 
@@ -82,7 +83,7 @@ fn start_client_threads_and_get_channel_send_ends(mediator: &Arc<Mediator>) -> (
     (read_tx, write_tx)
 }
 
-fn client_reads(read_rx: Receiver<()>, mediator: Arc<Mediator>) {
+fn client_reads<M: Med>(read_rx: Receiver<()>, mediator: Arc<M>) {
     if SETTINGS.should_read() {
         let mut read_number = 0;
         loop {
@@ -106,7 +107,7 @@ fn client_reads(read_rx: Receiver<()>, mediator: Arc<Mediator>) {
     }
 }
 
-fn client_writes(write_rx: Receiver<()>, mediator: Arc<Mediator>) {
+fn client_writes<M: Med>(write_rx: Receiver<()>, mediator: Arc<M>) {
     let mut write_number = 0;
     loop {
         write_number += 1;

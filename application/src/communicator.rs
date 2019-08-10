@@ -8,17 +8,17 @@ use std::collections::HashMap;
 
 use commons::types::NodeId;
 
-use crate::mediator::Mediator;
+use crate::mediator::Med;
 
 
-pub struct Communicator {
+pub struct Communicator<M> {
     socket: UdpSocket,
     socket_addrs: HashMap<NodeId, SocketAddr>,
-    mediator: Weak<Mediator>
+    mediator: Weak<M>
 }
 
-impl Communicator {
-    pub fn new(own_socket_addr: SocketAddr, socket_addrs: HashMap<NodeId, SocketAddr>, mediator: Weak<Mediator>) -> Arc<Communicator> {
+impl<M: Med> Communicator<M> {
+    pub fn new(own_socket_addr: SocketAddr, socket_addrs: HashMap<NodeId, SocketAddr>, mediator: Weak<M>) -> Arc<Communicator<M>> {
         let own_socket_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0,0,0,0)), own_socket_addr.port());
         let socket = UdpSocket::bind(own_socket_addr).expect("Could not create socket.");
 
@@ -46,7 +46,7 @@ impl Communicator {
         }
     }
 
-    fn mediator(&self) -> Arc<Mediator> {
+    fn mediator(&self) -> Arc<M> {
         self.mediator.upgrade().expect("Error upgrading mediator in Communicator")
     }
 

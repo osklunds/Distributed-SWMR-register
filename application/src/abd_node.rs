@@ -17,11 +17,11 @@ use crate::data_types::register_array::*;
 use crate::data_types::register::{self, Register};
 use crate::messages::{self, Message, WriteMessage, WriteAckMessage, ReadMessage, ReadAckMessage};
 use crate::terminal_output::printlnu;
-use crate::mediator::Mediator;
+use crate::mediator::Med;
 
 
-pub struct AbdNode<V> {
-    mediator: Weak<Mediator>,
+pub struct AbdNode<V, M> {
+    mediator: Weak<M>,
 
     ts: Mutex<Timestamp>,
     reg: Mutex<RegisterArray<V>>,
@@ -35,9 +35,8 @@ pub struct AbdNode<V> {
     read_ack_majority_reached: Condvar
 }
 
-impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
-    #[allow(dead_code)]
-    pub fn new(mediator: Weak<Mediator>) -> AbdNode<V> {
+impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<V, M> {
+    pub fn new(mediator: Weak<M>) -> AbdNode<V, M> {
         AbdNode {
             mediator: mediator,
             ts: Mutex::new(timestamp::default_timestamp()),
@@ -165,7 +164,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> AbdNode<V> {
         }
     }
 
-    fn mediator(&self) -> Arc<Mediator> {
+    fn mediator(&self) -> Arc<M> {
         self.mediator.upgrade().expect("Error upgrading mediator in AbdNode")
     }
 
