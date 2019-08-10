@@ -36,7 +36,7 @@ impl<V: Default + Clone> RegisterArray<V> {
     pub fn merge_to_max_from_register_array(&mut self, other: &RegisterArray<V>) {
         self.vector.merge_to_max_from_vector(&other.vector);
     }
-
+    // Todo: separate func that doesn't switch -1 to 0
     pub fn to_vector_clock(&self) -> VectorClock {
         let mut vector_clock = VectorClock::new(self.vector.node_ids());
 
@@ -49,6 +49,23 @@ impl<V: Default + Clone> RegisterArray<V> {
         }
 
         vector_clock
+    }
+
+    pub fn greater_than_or_equal_to_vector_clock(&self, vector_clock: &VectorClock) -> bool {
+        if cfg!(debug_assertions) {
+            // Todo: Check that same node ids
+        }
+
+        for &node_id in self.vector.node_ids() {
+            let my_ts = self.get(node_id).ts;
+            let vc_ts = vector_clock.get(node_id);
+
+            if vc_ts > &my_ts {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 
