@@ -52,7 +52,7 @@ pub struct MediatorImpl {
     configuration_manager: ConfigurationManager,
     run_result: Mutex<RunResult>,
 
-    abd_node: ResponsibleCell<Option<AbdNode<String, MediatorImpl>>>,
+    abd_node: ResponsibleCell<Option<AbdNode<MediatorImpl, String>>>,
 }
 
 impl MediatorImpl {
@@ -87,7 +87,7 @@ impl MediatorImpl {
         self.communicator.get().as_ref().expect("Communicator not set on MediatorImpl.")
     }
 
-    fn abd_node(&self) -> &AbdNode<String, MediatorImpl> {
+    fn abd_node(&self) -> &AbdNode<MediatorImpl, String> {
         self.abd_node.get().as_ref().expect("AbdNode not set on MediatorImpl.")
     }
 

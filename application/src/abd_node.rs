@@ -19,8 +19,10 @@ use crate::data_types::register::{self, Register};
 use crate::messages::{self, Message, WriteMessage, WriteAckMessage, ReadMessage, ReadAckMessage};
 use crate::mediator::Med;
 
+pub mod tests;
 
-pub struct AbdNode<V, M> {
+
+pub struct AbdNode<M, V> {
     mediator: Weak<M>,
 
     ts: Mutex<Timestamp>,
@@ -35,8 +37,8 @@ pub struct AbdNode<V, M> {
     read_ack_majority_reached: Condvar
 }
 
-impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<V, M> {
-    pub fn new(mediator: Weak<M>) -> AbdNode<V, M> {
+impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<M, V> {
+    pub fn new(mediator: Weak<M>) -> AbdNode<M, V> {
         let mediator2 = mediator.upgrade().expect("Error upgrading mediator in AbdNode constructor");
         let node_ids = mediator2.node_ids();
 
