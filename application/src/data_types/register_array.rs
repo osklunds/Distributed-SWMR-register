@@ -329,5 +329,64 @@ mod tests {
         assert_eq!(*vector_clock.get(2), 7);
         assert_eq!(*vector_clock.get(3), timestamp::default_timestamp());
         assert_eq!(*vector_clock.get(4), 0);
-    }    
+    }
+
+    #[test]
+    fn test_register_array_greater_than_or_to_vector_clock_for_itself() {
+        let mut reg_array = register_array_for_tests();
+        reg_array.set(1, Register::new(3, value_for_tests()));
+        reg_array.set(2, Register::new(7, value_for_tests()));
+        reg_array.set(3, Register::new(timestamp::default_timestamp(), value_for_tests()));
+        reg_array.set(4, Register::new(0, value_for_tests()));
+
+        let vc = reg_array.to_vector_clock_register_array_comparison();
+
+        assert!(reg_array.greater_than_or_equal_to_vector_clock(&vc));
+    }
+
+    #[test]
+    fn test_register_array_greater_than_or_to_vector_clock_for_larger_register_array() {
+        let mut reg_array = register_array_for_tests();
+        reg_array.set(1, Register::new(3, value_for_tests()));
+        reg_array.set(2, Register::new(7, value_for_tests()));
+        reg_array.set(3, Register::new(timestamp::default_timestamp(), value_for_tests()));
+        reg_array.set(4, Register::new(0, value_for_tests()));
+
+        let vc = reg_array.to_vector_clock_register_array_comparison();
+
+        reg_array.set(1, Register::new(99, value_for_tests()));
+
+        assert!(reg_array.greater_than_or_equal_to_vector_clock(&vc));
+    }
+
+    #[test]
+    fn test_register_array_greater_than_or_to_vector_clock_for_smaller_register_array() {
+        let mut reg_array = register_array_for_tests();
+        reg_array.set(1, Register::new(3, value_for_tests()));
+        reg_array.set(2, Register::new(7, value_for_tests()));
+        reg_array.set(3, Register::new(timestamp::default_timestamp(), value_for_tests()));
+        reg_array.set(4, Register::new(0, value_for_tests()));
+
+        let vc = reg_array.to_vector_clock_register_array_comparison();
+
+        reg_array.set(1, Register::new(2, value_for_tests()));
+
+        assert!(!reg_array.greater_than_or_equal_to_vector_clock(&vc));
+    }
+
+    #[test]
+    fn test_register_array_greater_than_or_to_vector_clock_for_incomparable_register_array() {
+        let mut reg_array = register_array_for_tests();
+        reg_array.set(1, Register::new(3, value_for_tests()));
+        reg_array.set(2, Register::new(7, value_for_tests()));
+        reg_array.set(3, Register::new(timestamp::default_timestamp(), value_for_tests()));
+        reg_array.set(4, Register::new(0, value_for_tests()));
+
+        let vc = reg_array.to_vector_clock_register_array_comparison();
+
+        reg_array.set(1, Register::new(99, value_for_tests()));
+        reg_array.set(2, Register::new(1, value_for_tests()));
+
+        assert!(!reg_array.greater_than_or_equal_to_vector_clock(&vc));
+    }
 }
