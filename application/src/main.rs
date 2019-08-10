@@ -13,6 +13,7 @@ mod terminal_output;
 mod communicator;
 mod mediator;
 mod responsible_cell;
+mod configuration_manager;
 
 use std::fs;
 use std::time::Duration;

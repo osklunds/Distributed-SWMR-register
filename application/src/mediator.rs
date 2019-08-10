@@ -1,6 +1,7 @@
 
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::marker::{Send, Sync};
+use std::collections::HashSet;
 
 use commons::run_result::RunResult;
 use commons::types::NodeId;
@@ -11,6 +12,7 @@ use crate::responsible_cell::ResponsibleCell;
 use crate::abd_node::AbdNode;
 use crate::communicator::Communicator;
 use crate::data_types::register_array::RegisterArray;
+use crate::configuration_manager::ConfigurationManager;
 use crate::messages;
 
 
@@ -20,6 +22,11 @@ pub trait Mediator {
     fn send_json_to(&self, json: &str, receiver: NodeId);
     fn broadcast_json(&self, json: &str);
     fn json_received(&self, json: &str);
+
+    // Configuration manager
+
+    fn node_id(&self) -> NodeId;
+    fn node_ids(&self) -> &HashSet<NodeId>;
 
 
     // Evaluation
@@ -41,22 +48,26 @@ impl<T: Mediator + Send + Sync + 'static> Med for T {}
 
 pub struct MediatorImpl {
     communicator: ResponsibleCell<Option<Arc<Communicator<MediatorImpl>>>>,
-    abd_node: ResponsibleCell<Option<AbdNode<String, MediatorImpl>>>,
+    configuration_manager: ConfigurationManager,
+    run_result: Mutex<RunResult>,
 
-    run_result: Mutex<RunResult>
+    abd_node: ResponsibleCell<Option<AbdNode<String, MediatorImpl>>>,
 }
 
 impl MediatorImpl {
     pub fn new() -> Arc<MediatorImpl> {
+        let node_id = SETTINGS.node_id();
+        let socket_addrs = SETTINGS.socket_addrs().clone();
+        let node_ids = socket_addrs.keys().map(|node_id| *node_id).collect();
+
         let mediator = MediatorImpl {
             communicator: ResponsibleCell::new(None),
-            abd_node: ResponsibleCell::new(None),
-            run_result: Mutex::new(RunResult::new())
+            configuration_manager: ConfigurationManager::new(node_id, node_ids),
+            run_result: Mutex::new(RunResult::new()),
+            abd_node: ResponsibleCell::new(None)
         };
         let mediator: Arc<MediatorImpl> = Arc::new(mediator);
 
-        let node_id = SETTINGS.node_id();
-        let socket_addrs = SETTINGS.socket_addrs().clone();
         let own_socket_addr = socket_addrs.get(&node_id).expect("Could not find own socket addres.");
 
         let communicator = Communicator::new(*own_socket_addr, socket_addrs, Arc::downgrade(&mediator));
@@ -71,12 +82,16 @@ impl MediatorImpl {
 
     // Modules
 
+    fn communicator(&self) -> &Communicator<MediatorImpl> {
+        self.communicator.get().as_ref().expect("Communicator not set on MediatorImpl.")
+    }
+
     fn abd_node(&self) -> &AbdNode<String, MediatorImpl> {
         self.abd_node.get().as_ref().expect("AbdNode not set on MediatorImpl.")
     }
-    
-    fn communicator(&self) -> &Communicator<MediatorImpl> {
-        self.communicator.get().as_ref().expect("Communicator not set on MediatorImpl.")
+
+    fn configuration_manager(&self) -> &ConfigurationManager {
+        &self.configuration_manager
     }
 }
 
@@ -95,6 +110,16 @@ impl Mediator for MediatorImpl {
 
     fn json_received(&self, json: &str) {
         self.abd_node().json_received(json);
+    }
+
+    // Configuration manager
+
+    fn node_id(&self) -> NodeId {
+        self.configuration_manager().node_id()
+    }
+
+    fn node_ids(&self) -> &HashSet<NodeId> {
+        self.configuration_manager().node_ids()
     }
 
 
