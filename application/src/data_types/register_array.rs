@@ -36,14 +36,26 @@ impl<V: Default + Clone> RegisterArray<V> {
     pub fn merge_to_max_from_register_array(&mut self, other: &RegisterArray<V>) {
         self.vector.merge_to_max_from_vector(&other.vector);
     }
-    // Todo: separate func that doesn't switch -1 to 0
-    pub fn to_vector_clock(&self) -> VectorClock {
+    
+    // Turns -1 timestamps into 0. Used for comparing the time
+    // difference between different points of the execution.
+    pub fn to_vector_clock_time_comparison(&self) -> VectorClock {
+        self.to_vector_clock_with_default_timestamp_replacement(0)
+    }
+
+    // Turns -1 timestamps into -1. Used for comparing two register arrays
+    // but one register array is just as its vector clock.
+    pub fn to_vector_clock_register_array_comparison(&self) -> VectorClock {
+        self.to_vector_clock_with_default_timestamp_replacement(timestamp::default_timestamp())
+    }
+
+    fn to_vector_clock_with_default_timestamp_replacement(&self, replacement: Timestamp) -> VectorClock {
         let mut vector_clock = VectorClock::new(self.vector.node_ids());
 
         for &node_id in self.vector.node_ids() {
             let mut ts = self.get(node_id).ts;
             if ts == timestamp::default_timestamp() {
-                ts = 0;
+                ts = replacement;
             }
             vector_clock.set(node_id, ts);
         }
@@ -288,18 +300,34 @@ mod tests {
     }
 
     #[test]
-    fn test_to_vector_clock() {
+    fn test_to_vector_clock_time_comparison() {
         let mut reg_array = register_array_for_tests();
         reg_array.set(1, Register::new(3, value_for_tests()));
         reg_array.set(2, Register::new(7, value_for_tests()));
         reg_array.set(3, Register::new(timestamp::default_timestamp(), value_for_tests()));
         reg_array.set(4, Register::new(0, value_for_tests()));
 
-        let vector_clock = reg_array.to_vector_clock();
+        let vector_clock = reg_array.to_vector_clock_time_comparison();
 
         assert_eq!(*vector_clock.get(1), 3);
         assert_eq!(*vector_clock.get(2), 7);
         assert_eq!(*vector_clock.get(3), 0);
         assert_eq!(*vector_clock.get(4), 0);
     }
+
+    #[test]
+    fn to_vector_clock_register_comparison() {
+        let mut reg_array = register_array_for_tests();
+        reg_array.set(1, Register::new(3, value_for_tests()));
+        reg_array.set(2, Register::new(7, value_for_tests()));
+        reg_array.set(3, Register::new(timestamp::default_timestamp(), value_for_tests()));
+        reg_array.set(4, Register::new(0, value_for_tests()));
+
+        let vector_clock = reg_array.to_vector_clock_register_array_comparison();
+
+        assert_eq!(*vector_clock.get(1), 3);
+        assert_eq!(*vector_clock.get(2), 7);
+        assert_eq!(*vector_clock.get(3), timestamp::default_timestamp());
+        assert_eq!(*vector_clock.get(4), 0);
+    }    
 }
