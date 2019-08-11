@@ -32,9 +32,12 @@ use crate::abd_node::AbdNode;
 struct MockMediator {
     node_id: NodeId,
     node_ids: HashSet<NodeId>,
-    sent_write_messages: Mutex<Vec<WriteMessage<'static, String>>>,
     run_result: Mutex<RunResult>,
     abd_node: ResponsibleCell<Option<AbdNode<MockMediator, String>>>,
+    sent_write_messages: Mutex<Vec<WriteMessage<'static, String>>>,
+    write_message_receivers: Mutex<HashSet<NodeId>>,
+    sent_write_ack_messages: Mutex<Vec<WriteAckMessage<'static, String>>>,
+    write_ack_message_receivers: Mutex<HashSet<NodeId>>
 }
 
 impl MockMediator {
@@ -42,9 +45,12 @@ impl MockMediator {
         let mediator = MockMediator {
             node_id: node_id,
             node_ids: node_ids,
-            sent_write_messages: Mutex::new(Vec::new()),
             run_result: Mutex::new(RunResult::new()),
-            abd_node: ResponsibleCell::new(None)
+            abd_node: ResponsibleCell::new(None),
+            sent_write_messages: Mutex::new(Vec::new()),
+            write_message_receivers: Mutex::new(HashSet::new()),
+            sent_write_ack_messages: Mutex::new(Vec::new()),
+            write_ack_message_receivers: Mutex::new(HashSet::new()),
         };
         let mediator = Arc::new(mediator);
         let abd_node: AbdNode<MockMediator, String> = AbdNode::new(Arc::downgrade(&mediator));
@@ -61,7 +67,17 @@ impl MockMediator {
 impl Mediator for MockMediator{
     fn send_json_to(&self, json: &str, receiver: NodeId) {
         if messages::json_is_write_message(json) {
-            self.sent_write_messages.lock().expect("Could not lock sent write messages.").push(serde_json::from_str(json).expect("Could not derserialize a write message."));
+            self.sent_write_messages.lock()
+                .expect("Could not lock sent write messages.")
+                .push(serde_json::from_str(json)
+                .expect("Could not derserialize a write message."));
+            self.write_message_receivers.lock().expect("Could not lock write message receivers.").insert(receiver);
+        } else if messages::json_is_write_ack_message(json) {
+            self.sent_write_ack_messages.lock()
+                .expect("Could not lock sent write ack messages.")
+                .push(serde_json::from_str(json)
+                .expect("Could not derserialize a write ack message."));
+            self.write_ack_message_receivers.lock().expect("Could not lock write ack message receivers.").insert(receiver);
         }
     }
 
@@ -142,28 +158,14 @@ fn test_number_of_nodes_in_a_majority() {
     }
 }
 
-// If writes don't terminates, neither will the tests.
-#[test]
-fn test_that_write_terminates() {
+
+fn create_mediator_perform_write_and_ack() -> Arc<MockMediator> {
     let mediator = create_mediator();
     let write_thread_handle = perform_single_write_on_background_thread(&mediator);
     wait_until_local_register_array_is_written(&mediator);    
     send_write_ack_message_from_all_nodes(&mediator);
     write_thread_handle.join().unwrap();
-}
-
-#[test]
-fn test_that_write_sends_correct_messages() {
-    let mediator = create_mediator();
-    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
-    wait_until_local_register_array_is_written(&mediator);    
-    send_write_ack_message_from_all_nodes(&mediator);
-    write_thread_handle.join().unwrap();
-    check_that_sent_write_messages_are_the_expected_form(&mediator);
-}
-
-fn value_for_writes() -> String {
-    format!("Rust")
+    mediator
 }
 
 fn create_mediator() -> Arc<MockMediator> {
@@ -177,6 +179,10 @@ fn perform_single_write_on_background_thread(mediator: &Arc<MockMediator>) -> Jo
     thread::spawn(move || {
         mediator_for_write_thread.write(value_for_writes());
     })
+}
+
+fn value_for_writes() -> String {
+    format!("Rust")
 }
 
 fn wait_until_local_register_array_is_written(mediator: &Arc<MockMediator>) {
@@ -203,6 +209,19 @@ fn send_write_ack_message_from_all_nodes(mediator: &Arc<MockMediator>) {
     }
 }
 
+
+// If writes don't terminates, neither will the tests.
+#[test]
+fn test_that_write_terminates() {
+    create_mediator_perform_write_and_ack();
+}
+
+#[test]
+fn test_that_write_sends_correct_write_messages() {
+    let mediator = create_mediator_perform_write_and_ack();
+    check_that_sent_write_messages_are_the_expected_form(&mediator);
+}
+
 fn check_that_sent_write_messages_are_the_expected_form(mediator: &Arc<MockMediator>) {
     let reg_array = mediator.abd_node().reg.lock().unwrap();
     let expected_write_message = WriteMessage {
@@ -212,6 +231,38 @@ fn check_that_sent_write_messages_are_the_expected_form(mediator: &Arc<MockMedia
 
     for write_message in mediator.sent_write_messages.lock().unwrap().iter() {
         assert_eq!(*write_message, expected_write_message);
+    }
+}
+
+#[test]
+fn test_that_write_sends_write_messages_to_all_nodes() {
+    let mediator = create_mediator_perform_write_and_ack();
+    check_that_write_messages_are_sent_to_all_nodes(&mediator);
+}
+
+fn check_that_write_messages_are_sent_to_all_nodes(mediator: &Arc<MockMediator>) {
+    for &node_id in mediator.node_ids.iter() {
+        assert_eq!(*mediator.write_message_receivers.lock()
+            .expect("Could not lock write message receivers."),
+            mediator.node_ids);
+    }
+}
+
+#[test]
+fn test_that_write_sends_correct_write_ack_messages() {
+    let mediator = create_mediator_perform_write_and_ack();
+    check_that_sent_write_ack_messages_are_the_expected_form(&mediator);
+}
+
+fn check_that_sent_write_ack_messages_are_the_expected_form(mediator: &Arc<MockMediator>) {
+    let reg_array = mediator.abd_node().reg.lock().unwrap();
+    let expected_write_ack_message = WriteAckMessage {
+        sender: mediator.node_id,
+        register_array: Cow::Borrowed(&reg_array)
+    };
+
+    for write_ack_message in mediator.sent_write_ack_messages.lock().unwrap().iter() {
+        assert_eq!(*write_ack_message, expected_write_ack_message);
     }
 }
 
@@ -226,3 +277,4 @@ fn test_that_own_register_array_is_updated_correctly_on_write() {
     expected_register_array.set(mediator.node_id, register);
     assert_eq!(*own_register_array, expected_register_array);
 }
+
