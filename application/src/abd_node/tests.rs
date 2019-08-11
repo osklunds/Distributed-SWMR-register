@@ -413,6 +413,35 @@ fn test_that_write_does_not_terminate_without_acks() {
     assert_ne!(*register_array_being_written, None);
 }
 
+#[test]
+fn test_that_write_terminates_even_if_not_all_nodes_ack() {
+    let mediator = create_mediator();
+    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+    wait_until_local_register_array_is_written(&mediator);    
+    send_write_ack_message_from_all_majority_but_not_all(&mediator);
+    write_thread_handle.join().unwrap();
+}
+
+fn send_write_ack_message_from_all_majority_but_not_all(mediator: &Arc<MockMediator>) {
+    let mut node_ids = mediator.node_ids.clone();
+    node_ids.remove(&mediator.node_id);
+    for &node_id in node_ids.iter() {
+        let json;
+
+        {
+            let reg_array = &mediator.abd_node().reg.lock().unwrap();
+            let write_ack_message = WriteAckMessage {
+                sender: node_id,
+                register_array: Cow::Borrowed(reg_array)
+            };
+            
+            json = serde_json::to_string(&write_ack_message).unwrap();
+        }
+
+        mediator.json_received(&json);
+    }
+}
+
 /*
 + Start values
 + Reacts on write mess
