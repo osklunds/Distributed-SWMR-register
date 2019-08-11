@@ -395,12 +395,30 @@ fn test_that_a_write_ack_message_does_not_change_acking_processors_for_write_whe
     assert!(acking_processors_for_write.is_empty());
 }
 
+#[test]
+fn test_that_write_does_not_terminate_without_acks() {
+    let mediator = create_mediator();
+    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+
+    // If this test terminates, it means that retransmissions had
+    // to be done, because no write acks received.
+    while mediator.sent_write_messages.lock()
+        .expect("Could not lock sent write messages.")
+        .len() <= node_ids_for_tests().len() * 3 {
+    }
+
+    let register_array_being_written = mediator.abd_node().register_array_being_written.lock()
+        .expect("Could not lock register array being written.");
+
+    assert_ne!(*register_array_being_written, None);
+}
+
 /*
 + Start values
 + Reacts on write mess
-- Reacts on write ack mess
-    - Update reg array
-    - But if no write, does not change None
-- Does not terminates < Maj
++ Reacts on write ack mess
+    + Update reg array
+    + But if no write, does not change None
++ Does not terminates < Maj
 - Terminates = Maj
 */
