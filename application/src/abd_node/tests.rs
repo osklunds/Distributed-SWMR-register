@@ -10,7 +10,7 @@ use std::borrow::Cow;
 use std::fmt::Debug;
 use std::time::Duration;
 use std::iter::FromIterator;
-use std::thread;
+use std::thread::{self, JoinHandle};
 
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -26,6 +26,7 @@ use crate::data_types::register::{self, Register};
 use crate::messages::{self, Message, WriteMessage, WriteAckMessage, ReadMessage, ReadAckMessage};
 use crate::mediator::Mediator;
 use crate::responsible_cell::ResponsibleCell;
+use crate::abd_node::AbdNode;
 
 
 struct MockMediator {
@@ -37,18 +38,19 @@ struct MockMediator {
 }
 
 impl MockMediator {
-    pub fn new(node_id: NodeId, node_ids: HashSet<NodeId>) -> MockMediator{
-        MockMediator {
+    pub fn new(node_id: NodeId, node_ids: HashSet<NodeId>) -> Arc<MockMediator> {
+        let mediator = MockMediator {
             node_id: node_id,
             node_ids: node_ids,
             sent_write_messages: Mutex::new(Vec::new()),
             run_result: Mutex::new(RunResult::new()),
             abd_node: ResponsibleCell::new(None)
-        }
-    }
+        };
+        let mediator = Arc::new(mediator);
+        let abd_node: AbdNode<MockMediator, String> = AbdNode::new(Arc::downgrade(&mediator));
+        *mediator.abd_node.get_mut() = Some(abd_node);
 
-    pub fn set_abd_node(&self, abd_node: AbdNode<MockMediator, String>) {
-        *self.abd_node.get_mut() = Some(abd_node);
+        mediator
     }
 
     pub fn abd_node(&self) -> &AbdNode<MockMediator, String> {
@@ -140,24 +142,38 @@ fn test_number_of_nodes_in_a_majority() {
     }
 }
 
+
 #[test]
 fn test_that_write_sends_correct_messages() {
+    let mediator = create_mediator();
+    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+    wait_until_local_register_array_is_written(&mediator);    
+    send_write_ack_message_from_all_nodes(&mediator);
+    write_thread_handle.join().unwrap();
+    check_that_sent_write_messages_are_the_expected_form(&mediator);
+}
+
+fn create_mediator() -> Arc<MockMediator> {
     let node_id = 1;
     let node_ids = node_ids_for_tests();
-    let mediator = Arc::new(MockMediator::new(node_id, node_ids.clone()));
-    let abd_node: AbdNode<MockMediator, String> = AbdNode::new(Arc::downgrade(&mediator));
-    mediator.set_abd_node(abd_node);
+    MockMediator::new(node_id, node_ids.clone())
+}
 
+fn perform_single_write_on_background_thread(mediator: &Arc<MockMediator>) -> JoinHandle<()> {
     let mediator_for_write_thread = Arc::clone(&mediator);
-    let abd_node_write_thread_handle = thread::spawn(move || {
+    thread::spawn(move || {
         mediator_for_write_thread.write("Rust".to_string());
-    });
+    })
+}
 
-    while mediator.abd_node().reg.lock().unwrap().get(node_id).ts == timestamp::default_timestamp() {
+fn wait_until_local_register_array_is_written(mediator: &Arc<MockMediator>) {
+    while mediator.abd_node().reg.lock().unwrap().get(mediator.node_id).ts == timestamp::default_timestamp() {
 
     }
+}
 
-    for &node_id in node_ids.iter() {
+fn send_write_ack_message_from_all_nodes(mediator: &Arc<MockMediator>) {
+    for &node_id in mediator.node_ids.iter() {
         let json;
 
         {
@@ -172,13 +188,13 @@ fn test_that_write_sends_correct_messages() {
 
         mediator.json_received(&json);
     }
+}
 
-    abd_node_write_thread_handle.join().unwrap();
-
-    let reg_array = &mediator.abd_node().reg.lock().unwrap();
+fn check_that_sent_write_messages_are_the_expected_form(mediator: &Arc<MockMediator>) {
+    let reg_array = mediator.abd_node().reg.lock().unwrap();
     let expected_write_message = WriteMessage {
-        sender: node_id,
-        register_array: Cow::Borrowed(reg_array)
+        sender: mediator.node_id,
+        register_array: Cow::Borrowed(&reg_array)
     };
 
     for write_message in mediator.sent_write_messages.lock().unwrap().iter() {
