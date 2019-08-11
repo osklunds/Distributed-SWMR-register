@@ -289,8 +289,32 @@ fn test_that_register_array_is_empty_at_start() {
     }
 }
 
+#[test]
+fn test_that_ts_is_0_at_start() {
+    let mediator = create_mediator();
+    assert_eq!(*mediator.abd_node().ts.lock().expect("Could not lock ts."), 
+        0);
+}
+
+#[test]
+fn test_that_register_array_being_written_is_none_at_start() {
+    let mediator = create_mediator();
+    assert_eq!(*mediator.abd_node()
+        .register_array_being_written.lock()
+        .expect("Could not lock register array."), 
+        None);
+}
+
+#[test]
+fn test_that_acking_processors_for_write_is_empty_at_start() {
+    let mediator = create_mediator();
+    assert!(mediator.abd_node()
+        .acking_processors_for_write.lock()
+        .expect("Could not lock register array.").is_empty());
+}
+
 /*
-- Start values
++ Start values
 - Reacts on write mess
 - Reacts on write ack mess
     - Update reg array
