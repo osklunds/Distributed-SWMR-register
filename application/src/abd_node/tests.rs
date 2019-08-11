@@ -235,17 +235,15 @@ fn check_that_sent_write_messages_are_the_expected_form(mediator: &Arc<MockMedia
 }
 
 #[test]
-fn test_that_write_sends_write_messages_to_all_nodes() {
+fn test_that_write_sends_write_messages_to_the_correct_nodes() {
     let mediator = create_mediator_perform_write_and_ack();
-    check_that_write_messages_are_sent_to_all_nodes(&mediator);
+    check_that_write_messages_are_sent_to_the_correct_nodes(&mediator);
 }
 
-fn check_that_write_messages_are_sent_to_all_nodes(mediator: &Arc<MockMediator>) {
-    for &node_id in mediator.node_ids.iter() {
-        assert_eq!(*mediator.write_message_receivers.lock()
+fn check_that_write_messages_are_sent_to_the_correct_nodes(mediator: &Arc<MockMediator>) {
+    assert_eq!(*mediator.write_message_receivers.lock()
             .expect("Could not lock write message receivers."),
             mediator.node_ids);
-    }
 }
 
 #[test]
@@ -278,3 +276,24 @@ fn test_that_own_register_array_is_updated_correctly_on_write() {
     assert_eq!(*own_register_array, expected_register_array);
 }
 
+#[test]
+fn test_that_register_array_is_empty_at_start() {
+    let mediator = create_mediator();
+    let register = Register::new(timestamp::default_timestamp(), String::default());
+
+    for &node_id in mediator.node_ids.iter() {
+        assert_eq!(mediator.abd_node().reg.lock()
+                    .expect("Could not lock register array")
+                    .get(node_id),
+                   &register);
+    }
+}
+
+/*
+- Start values
+- Reacts on write mess
+- Reacts on write ack mess
+    - Update reg array
+    - But if no write, does not change None
+- Does not terminates < Maj
+*/
