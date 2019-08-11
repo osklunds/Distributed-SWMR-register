@@ -348,6 +348,53 @@ fn test_that_a_write_message_does_not_change_register_being_written() {
         .expect("Could not lock register array being written"), None);
 }
 
+#[test]
+fn test_that_a_write_ack_message_updates_own_register_array() {
+    let mediator = create_mediator();
+    let reg_array = send_a_register_array_in_a_write_ack_message(&mediator);
+    let reg_array_abd_node = mediator.abd_node().reg.lock()
+        .expect("Could not lock register array.");
+
+    assert_eq!(*reg_array_abd_node, reg_array);
+}
+
+fn send_a_register_array_in_a_write_ack_message(mediator: &Arc<MockMediator>) -> RegisterArray<String> {
+    let mut reg_array = mediator.abd_node().reg.lock()
+        .expect("Could not lock register array.").clone();
+    reg_array.set(2, Register::new(7, "Haskell".to_string()));
+    reg_array.set(3, Register::new(10, "Idris".to_string()));
+
+    let write_ack_message = WriteAckMessage {
+        sender: 2,
+        register_array: Cow::Owned(reg_array.clone())
+    };
+    let json = serde_json::to_string(&write_ack_message)
+        .expect("Could not serialize a write ack message");
+    
+    mediator.json_received(&json);
+    reg_array
+}
+
+#[test]
+fn test_that_a_write_ack_message_does_not_change_register_array_being_written_when_there_is_no_write() {
+    let mediator = create_mediator();
+    send_a_register_array_in_a_write_message(&mediator);
+    let register_array_being_written = mediator.abd_node().register_array_being_written.lock()
+        .expect("Could not lock register array being written.");
+
+    assert_eq!(*register_array_being_written, None);
+}
+
+#[test]
+fn test_that_a_write_ack_message_does_not_change_acking_processors_for_write_when_there_is_no_write() {
+    let mediator = create_mediator();
+    send_a_register_array_in_a_write_message(&mediator);
+    let acking_processors_for_write = mediator.abd_node().acking_processors_for_write.lock()
+        .expect("Could not lock acking_processors_for_write.");
+
+    assert!(acking_processors_for_write.is_empty());
+}
+
 /*
 + Start values
 + Reacts on write mess
@@ -355,4 +402,5 @@ fn test_that_a_write_message_does_not_change_register_being_written() {
     - Update reg array
     - But if no write, does not change None
 - Does not terminates < Maj
+- Terminates = Maj
 */
