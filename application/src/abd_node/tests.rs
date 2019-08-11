@@ -163,7 +163,7 @@ fn create_mediator_perform_write_and_ack() -> Arc<MockMediator> {
     let mediator = create_mediator();
     let write_thread_handle = perform_single_write_on_background_thread(&mediator);
     wait_until_local_register_array_is_written(&mediator);    
-    send_write_ack_message_from_all_nodes(&mediator);
+    send_write_ack_message_from_node_ids(&mediator, node_ids_for_tests());
     write_thread_handle.join().unwrap();
     mediator
 }
@@ -191,8 +191,68 @@ fn wait_until_local_register_array_is_written(mediator: &Arc<MockMediator>) {
     }
 }
 
-fn send_write_ack_message_from_all_nodes(mediator: &Arc<MockMediator>) {
-    for &node_id in mediator.node_ids.iter() {
+
+// If writes don't terminates, neither will the tests.
+#[test]
+fn test_that_write_terminates() {
+    create_mediator_perform_write_and_ack();
+}
+
+#[test]
+fn test_that_write_terminates_even_if_not_all_nodes_ack() {
+    let mediator = create_mediator();
+    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+    wait_until_local_register_array_is_written(&mediator);
+
+    let mut node_ids = HashSet::new();
+    node_ids.insert(1);  
+    node_ids.insert(2);
+    node_ids.insert(3);
+    send_write_ack_message_from_node_ids(&mediator, node_ids);
+    
+    write_thread_handle.join().unwrap();
+}
+
+#[test]
+fn test_that_write_does_not_terminate_without_acks() {
+    let mediator = create_mediator();
+    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+    wait_until_local_register_array_is_written(&mediator);
+
+    check_that_write_fails(&mediator);
+}
+
+#[test]
+fn test_that_write_does_not_terminate_without_acks_from_majority() {
+    let mediator = create_mediator();
+    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+    wait_until_local_register_array_is_written(&mediator);
+
+    let mut node_ids = HashSet::new();
+    node_ids.insert(2);
+    node_ids.insert(3);
+    send_write_ack_message_from_node_ids(&mediator, node_ids);
+
+    check_that_write_fails(&mediator);
+}
+
+fn check_that_write_fails(mediator: &Arc<MockMediator>) {
+    // If this test terminates, it means that retransmissions had
+    // to be done, because no write acks received.
+    while mediator.sent_write_messages.lock()
+        .expect("Could not lock sent write messages.")
+        .len() <= node_ids_for_tests().len() * 3 {
+    }
+
+    let register_array_being_written = mediator.abd_node().register_array_being_written.lock()
+        .expect("Could not lock register array being written.");
+
+    assert_ne!(*register_array_being_written, None);
+}
+
+
+fn send_write_ack_message_from_node_ids(mediator: &Arc<MockMediator>, node_ids: HashSet<NodeId>) {
+    for &node_id in node_ids.iter() {
         let json;
 
         {
@@ -207,13 +267,6 @@ fn send_write_ack_message_from_all_nodes(mediator: &Arc<MockMediator>) {
 
         mediator.json_received(&json);
     }
-}
-
-
-// If writes don't terminates, neither will the tests.
-#[test]
-fn test_that_write_terminates() {
-    create_mediator_perform_write_and_ack();
 }
 
 #[test]
@@ -395,52 +448,9 @@ fn test_that_a_write_ack_message_does_not_change_acking_processors_for_write_whe
     assert!(acking_processors_for_write.is_empty());
 }
 
-#[test]
-fn test_that_write_does_not_terminate_without_acks() {
-    let mediator = create_mediator();
-    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
 
-    // If this test terminates, it means that retransmissions had
-    // to be done, because no write acks received.
-    while mediator.sent_write_messages.lock()
-        .expect("Could not lock sent write messages.")
-        .len() <= node_ids_for_tests().len() * 3 {
-    }
 
-    let register_array_being_written = mediator.abd_node().register_array_being_written.lock()
-        .expect("Could not lock register array being written.");
 
-    assert_ne!(*register_array_being_written, None);
-}
-
-#[test]
-fn test_that_write_terminates_even_if_not_all_nodes_ack() {
-    let mediator = create_mediator();
-    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
-    wait_until_local_register_array_is_written(&mediator);    
-    send_write_ack_message_from_all_majority_but_not_all(&mediator);
-    write_thread_handle.join().unwrap();
-}
-
-fn send_write_ack_message_from_all_majority_but_not_all(mediator: &Arc<MockMediator>) {
-    let mut node_ids = mediator.node_ids.clone();
-    node_ids.remove(&mediator.node_id);
-    for &node_id in node_ids.iter() {
-        let json;
-
-        {
-            let reg_array = &mediator.abd_node().reg.lock().unwrap();
-            let write_ack_message = WriteAckMessage {
-                sender: node_id,
-                register_array: Cow::Borrowed(reg_array)
-            };
-            
-            json = serde_json::to_string(&write_ack_message).unwrap();
-        }
-
-        mediator.json_received(&json);
-    }
-}
 
 /*
 + Start values
