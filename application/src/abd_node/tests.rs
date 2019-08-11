@@ -142,6 +142,15 @@ fn test_number_of_nodes_in_a_majority() {
     }
 }
 
+// If writes don't terminates, neither will the tests.
+#[test]
+fn test_that_write_terminates() {
+    let mediator = create_mediator();
+    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+    wait_until_local_register_array_is_written(&mediator);    
+    send_write_ack_message_from_all_nodes(&mediator);
+    write_thread_handle.join().unwrap();
+}
 
 #[test]
 fn test_that_write_sends_correct_messages() {
