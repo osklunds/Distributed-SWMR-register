@@ -313,6 +313,28 @@ fn test_that_acking_processors_for_write_is_empty_at_start() {
         .expect("Could not lock register array.").is_empty());
 }
 
+#[test]
+fn test_that_a_write_messages_updates_own_register_array() {
+    let mediator = create_mediator();
+    let mut reg_array = mediator.abd_node().reg.lock()
+        .expect("Could not lock register array.").clone();
+    reg_array.set(2, Register::new(7, "Haskell".to_string()));
+    reg_array.set(3, Register::new(10, "Idris".to_string()));
+
+    let write_message = WriteMessage {
+        sender: 2,
+        register_array: Cow::Owned(reg_array.clone())
+    };
+    let json = serde_json::to_string(&write_message)
+        .expect("Could not serialize a write message");
+    
+    mediator.json_received(&json);
+
+    let reg_array_abd_node = mediator.abd_node().reg.lock()
+        .expect("Could not lock register array.");
+    assert_eq!(*reg_array_abd_node, reg_array);
+}
+
 /*
 + Start values
 - Reacts on write mess
