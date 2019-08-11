@@ -43,7 +43,7 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
 
         AbdNode {
             mediator: mediator,
-            ts: Mutex::new(timestamp::default_timestamp()),
+            ts: Mutex::new(0),
             reg: Mutex::new(RegisterArray::new(node_ids)),
             
             register_array_being_written: Mutex::new(None),

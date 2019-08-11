@@ -162,6 +162,10 @@ fn test_that_write_sends_correct_messages() {
     check_that_sent_write_messages_are_the_expected_form(&mediator);
 }
 
+fn value_for_writes() -> String {
+    format!("Rust")
+}
+
 fn create_mediator() -> Arc<MockMediator> {
     let node_id = 1;
     let node_ids = node_ids_for_tests();
@@ -171,7 +175,7 @@ fn create_mediator() -> Arc<MockMediator> {
 fn perform_single_write_on_background_thread(mediator: &Arc<MockMediator>) -> JoinHandle<()> {
     let mediator_for_write_thread = Arc::clone(&mediator);
     thread::spawn(move || {
-        mediator_for_write_thread.write("Rust".to_string());
+        mediator_for_write_thread.write(value_for_writes());
     })
 }
 
@@ -209,4 +213,16 @@ fn check_that_sent_write_messages_are_the_expected_form(mediator: &Arc<MockMedia
     for write_message in mediator.sent_write_messages.lock().unwrap().iter() {
         assert_eq!(*write_message, expected_write_message);
     }
+}
+
+#[test]
+fn test_that_own_register_array_is_updated_correctly_on_write() {
+    let mediator = create_mediator();
+    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+    wait_until_local_register_array_is_written(&mediator);
+    let own_register_array = mediator.abd_node().reg.lock().unwrap();
+    let mut expected_register_array = RegisterArray::new(&mediator.node_ids);
+    let register = Register::new(1, value_for_writes());
+    expected_register_array.set(mediator.node_id, register);
+    assert_eq!(*own_register_array, expected_register_array);
 }
