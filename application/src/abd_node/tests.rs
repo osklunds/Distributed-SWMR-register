@@ -314,8 +314,16 @@ fn test_that_acking_processors_for_write_is_empty_at_start() {
 }
 
 #[test]
-fn test_that_a_write_messages_updates_own_register_array() {
+fn test_that_a_write_message_updates_own_register_array() {
     let mediator = create_mediator();
+    let reg_array = send_a_register_array_in_a_write_message(&mediator);
+    let reg_array_abd_node = mediator.abd_node().reg.lock()
+        .expect("Could not lock register array.");
+
+    assert_eq!(*reg_array_abd_node, reg_array);
+}
+
+fn send_a_register_array_in_a_write_message(mediator: &Arc<MockMediator>) -> RegisterArray<String> {
     let mut reg_array = mediator.abd_node().reg.lock()
         .expect("Could not lock register array.").clone();
     reg_array.set(2, Register::new(7, "Haskell".to_string()));
@@ -329,15 +337,20 @@ fn test_that_a_write_messages_updates_own_register_array() {
         .expect("Could not serialize a write message");
     
     mediator.json_received(&json);
+    reg_array
+}
 
-    let reg_array_abd_node = mediator.abd_node().reg.lock()
-        .expect("Could not lock register array.");
-    assert_eq!(*reg_array_abd_node, reg_array);
+#[test]
+fn test_that_a_write_message_does_not_change_register_being_written() {
+    let mediator = create_mediator();
+    send_a_register_array_in_a_write_message(&mediator);
+    assert_eq!(*mediator.abd_node().register_array_being_written.lock()
+        .expect("Could not lock register array being written"), None);
 }
 
 /*
 + Start values
-- Reacts on write mess
++ Reacts on write mess
 - Reacts on write ack mess
     - Update reg array
     - But if no write, does not change None
