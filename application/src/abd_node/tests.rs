@@ -192,62 +192,72 @@ fn wait_until_local_register_array_is_written(mediator: &Arc<MockMediator>) {
 }
 
 
-// If writes don't terminates, neither will the tests.
-#[test]
-fn test_that_write_terminates() {
-    create_mediator_perform_write_and_ack();
-}
+mod termination {
+    use super::*;
 
-#[test]
-fn test_that_write_terminates_even_if_not_all_nodes_ack() {
-    let mediator = create_mediator();
-    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
-    wait_until_local_register_array_is_written(&mediator);
+    // If writes don't terminates, neither will the tests.
+    #[test]
+    fn test_that_write_terminates() {
+        let mediator = create_mediator();
+        let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+        wait_until_local_register_array_is_written(&mediator);
 
-    let mut node_ids = HashSet::new();
-    node_ids.insert(1);  
-    node_ids.insert(2);
-    node_ids.insert(3);
-    send_write_ack_message_from_node_ids(&mediator, node_ids);
-    
-    write_thread_handle.join().unwrap();
-}
+        send_write_ack_message_from_node_ids(&mediator, node_ids_for_tests());
 
-#[test]
-fn test_that_write_does_not_terminate_without_acks() {
-    let mediator = create_mediator();
-    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
-    wait_until_local_register_array_is_written(&mediator);
-
-    check_that_write_fails(&mediator);
-}
-
-#[test]
-fn test_that_write_does_not_terminate_without_acks_from_majority() {
-    let mediator = create_mediator();
-    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
-    wait_until_local_register_array_is_written(&mediator);
-
-    let mut node_ids = HashSet::new();
-    node_ids.insert(2);
-    node_ids.insert(3);
-    send_write_ack_message_from_node_ids(&mediator, node_ids);
-
-    check_that_write_fails(&mediator);
-}
-
-fn check_that_write_fails(mediator: &Arc<MockMediator>) {
-    // If this test terminates, it means that retransmissions had
-    // to be done, because no write acks received.
-    while mediator.sent_write_messages.lock()
-        .expect("Could not lock sent write messages.")
-        .len() <= node_ids_for_tests().len() * 3 {
+        write_thread_handle.join().unwrap();
     }
 
-    let register_array_being_written = mediator.abd_node().register_array_being_written.lock()
-        .expect("Could not lock register array being written.");
+    #[test]
+    fn test_that_write_terminates_even_if_not_all_nodes_ack() {
+        let mediator = create_mediator();
+        let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+        wait_until_local_register_array_is_written(&mediator);
 
-    assert_ne!(*register_array_being_written, None);
+        let mut node_ids = HashSet::new();
+        node_ids.insert(1);  
+        node_ids.insert(2);
+        node_ids.insert(3);
+        send_write_ack_message_from_node_ids(&mediator, node_ids);
+
+        write_thread_handle.join().unwrap();
+    }
+
+    #[test]
+    fn test_that_write_does_not_terminate_without_acks() {
+        let mediator = create_mediator();
+        let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+        wait_until_local_register_array_is_written(&mediator);
+
+        check_that_write_fails(&mediator);
+    }
+
+    #[test]
+    fn test_that_write_does_not_terminate_without_acks_from_majority() {
+        let mediator = create_mediator();
+        let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+        wait_until_local_register_array_is_written(&mediator);
+
+        let mut node_ids = HashSet::new();
+        node_ids.insert(2);
+        node_ids.insert(3);
+        send_write_ack_message_from_node_ids(&mediator, node_ids);
+
+        check_that_write_fails(&mediator);
+    }
+
+    fn check_that_write_fails(mediator: &Arc<MockMediator>) {
+        // If this test terminates, it means that retransmissions had
+        // to be done, because no write acks received.
+        while mediator.sent_write_messages.lock()
+            .expect("Could not lock sent write messages.")
+            .len() <= node_ids_for_tests().len() * 3 {
+        }
+
+        let register_array_being_written = mediator.abd_node().register_array_being_written.lock()
+            .expect("Could not lock register array being written.");
+
+        assert_ne!(*register_array_being_written, None);
+    }
 }
 
 
@@ -269,195 +279,198 @@ fn send_write_ack_message_from_node_ids(mediator: &Arc<MockMediator>, node_ids: 
     }
 }
 
-#[test]
-fn test_that_write_sends_correct_write_messages() {
-    let mediator = create_mediator_perform_write_and_ack();
-    check_that_sent_write_messages_are_the_expected_form(&mediator);
-}
 
-fn check_that_sent_write_messages_are_the_expected_form(mediator: &Arc<MockMediator>) {
-    let reg_array = mediator.abd_node().reg.lock().unwrap();
-    let expected_write_message = WriteMessage {
-        sender: mediator.node_id,
-        register_array: Cow::Borrowed(&reg_array)
-    };
+mod message_sending {
+    use super::*;
 
-    for write_message in mediator.sent_write_messages.lock().unwrap().iter() {
-        assert_eq!(*write_message, expected_write_message);
+    #[test]
+    fn test_that_write_sends_correct_write_messages() {
+        let mediator = create_mediator_perform_write_and_ack();
+        check_that_sent_write_messages_are_the_expected_form(&mediator);
+    }
+
+    fn check_that_sent_write_messages_are_the_expected_form(mediator: &Arc<MockMediator>) {
+        let reg_array = mediator.abd_node().reg.lock().unwrap();
+        let expected_write_message = WriteMessage {
+            sender: mediator.node_id,
+            register_array: Cow::Borrowed(&reg_array)
+        };
+
+        for write_message in mediator.sent_write_messages.lock().unwrap().iter() {
+            assert_eq!(*write_message, expected_write_message);
+        }
+    }
+
+    #[test]
+    fn test_that_write_sends_write_messages_to_the_correct_nodes() {
+        let mediator = create_mediator_perform_write_and_ack();
+        check_that_write_messages_are_sent_to_the_correct_nodes(&mediator);
+    }
+
+    fn check_that_write_messages_are_sent_to_the_correct_nodes(mediator: &Arc<MockMediator>) {
+        assert_eq!(*mediator.write_message_receivers.lock()
+                .expect("Could not lock write message receivers."),
+                mediator.node_ids);
+    }
+
+    #[test]
+    fn test_that_write_sends_correct_write_ack_messages() {
+        let mediator = create_mediator_perform_write_and_ack();
+        check_that_sent_write_ack_messages_are_the_expected_form(&mediator);
+    }
+
+    fn check_that_sent_write_ack_messages_are_the_expected_form(mediator: &Arc<MockMediator>) {
+        let reg_array = mediator.abd_node().reg.lock().unwrap();
+        let expected_write_ack_message = WriteAckMessage {
+            sender: mediator.node_id,
+            register_array: Cow::Borrowed(&reg_array)
+        };
+
+        for write_ack_message in mediator.sent_write_ack_messages.lock().unwrap().iter() {
+            assert_eq!(*write_ack_message, expected_write_ack_message);
+        }
     }
 }
 
-#[test]
-fn test_that_write_sends_write_messages_to_the_correct_nodes() {
-    let mediator = create_mediator_perform_write_and_ack();
-    check_that_write_messages_are_sent_to_the_correct_nodes(&mediator);
-}
 
-fn check_that_write_messages_are_sent_to_the_correct_nodes(mediator: &Arc<MockMediator>) {
-    assert_eq!(*mediator.write_message_receivers.lock()
-            .expect("Could not lock write message receivers."),
-            mediator.node_ids);
-}
+mod start_values {
+    use super::*;
 
-#[test]
-fn test_that_write_sends_correct_write_ack_messages() {
-    let mediator = create_mediator_perform_write_and_ack();
-    check_that_sent_write_ack_messages_are_the_expected_form(&mediator);
-}
+    #[test]
+    fn test_that_register_array_is_empty_at_start() {
+        let mediator = create_mediator();
+        let register = Register::new(timestamp::default_timestamp(), String::default());
 
-fn check_that_sent_write_ack_messages_are_the_expected_form(mediator: &Arc<MockMediator>) {
-    let reg_array = mediator.abd_node().reg.lock().unwrap();
-    let expected_write_ack_message = WriteAckMessage {
-        sender: mediator.node_id,
-        register_array: Cow::Borrowed(&reg_array)
-    };
+        for &node_id in mediator.node_ids.iter() {
+            assert_eq!(mediator.abd_node().reg.lock()
+                        .expect("Could not lock register array")
+                        .get(node_id),
+                       &register);
+        }
+    }
 
-    for write_ack_message in mediator.sent_write_ack_messages.lock().unwrap().iter() {
-        assert_eq!(*write_ack_message, expected_write_ack_message);
+    #[test]
+    fn test_that_ts_is_0_at_start() {
+        let mediator = create_mediator();
+        assert_eq!(*mediator.abd_node().ts.lock().expect("Could not lock ts."), 
+            0);
+    }
+
+    #[test]
+    fn test_that_register_array_being_written_is_none_at_start() {
+        let mediator = create_mediator();
+        assert_eq!(*mediator.abd_node()
+            .register_array_being_written.lock()
+            .expect("Could not lock register array."), 
+            None);
+    }
+
+    #[test]
+    fn test_that_acking_processors_for_write_is_empty_at_start() {
+        let mediator = create_mediator();
+        assert!(mediator.abd_node()
+            .acking_processors_for_write.lock()
+            .expect("Could not lock register array.").is_empty());
     }
 }
 
-#[test]
-fn test_that_own_register_array_is_updated_correctly_on_write() {
-    let mediator = create_mediator();
-    let write_thread_handle = perform_single_write_on_background_thread(&mediator);
-    wait_until_local_register_array_is_written(&mediator);
-    let own_register_array = mediator.abd_node().reg.lock().unwrap();
-    let mut expected_register_array = RegisterArray::new(&mediator.node_ids);
-    let register = Register::new(1, value_for_writes());
-    expected_register_array.set(mediator.node_id, register);
-    assert_eq!(*own_register_array, expected_register_array);
-}
 
-#[test]
-fn test_that_register_array_is_empty_at_start() {
-    let mediator = create_mediator();
-    let register = Register::new(timestamp::default_timestamp(), String::default());
+mod variable_changes {
+    use super::*;
 
-    for &node_id in mediator.node_ids.iter() {
-        assert_eq!(mediator.abd_node().reg.lock()
-                    .expect("Could not lock register array")
-                    .get(node_id),
-                   &register);
+    #[test]
+    fn test_that_own_register_array_is_updated_correctly_on_write() {
+        let mediator = create_mediator();
+        let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+        wait_until_local_register_array_is_written(&mediator);
+        let own_register_array = mediator.abd_node().reg.lock().unwrap();
+        let mut expected_register_array = RegisterArray::new(&mediator.node_ids);
+        let register = Register::new(1, value_for_writes());
+        expected_register_array.set(mediator.node_id, register);
+        assert_eq!(*own_register_array, expected_register_array);
+    }
+
+
+
+    #[test]
+    fn test_that_a_write_message_updates_own_register_array() {
+        let mediator = create_mediator();
+        let reg_array = send_a_register_array_in_a_write_message(&mediator);
+        let reg_array_abd_node = mediator.abd_node().reg.lock()
+            .expect("Could not lock register array.");
+
+        assert_eq!(*reg_array_abd_node, reg_array);
+    }
+
+    fn send_a_register_array_in_a_write_message(mediator: &Arc<MockMediator>) -> RegisterArray<String> {
+        let mut reg_array = mediator.abd_node().reg.lock()
+            .expect("Could not lock register array.").clone();
+        reg_array.set(2, Register::new(7, "Haskell".to_string()));
+        reg_array.set(3, Register::new(10, "Idris".to_string()));
+
+        let write_message = WriteMessage {
+            sender: 2,
+            register_array: Cow::Owned(reg_array.clone())
+        };
+        let json = serde_json::to_string(&write_message)
+            .expect("Could not serialize a write message");
+        
+        mediator.json_received(&json);
+        reg_array
+    }
+
+    #[test]
+    fn test_that_a_write_message_does_not_change_register_being_written() {
+        let mediator = create_mediator();
+        send_a_register_array_in_a_write_message(&mediator);
+        assert_eq!(*mediator.abd_node().register_array_being_written.lock()
+            .expect("Could not lock register array being written"), None);
+    }
+
+    #[test]
+    fn test_that_a_write_ack_message_updates_own_register_array() {
+        let mediator = create_mediator();
+        let reg_array = send_a_register_array_in_a_write_ack_message(&mediator);
+        let reg_array_abd_node = mediator.abd_node().reg.lock()
+            .expect("Could not lock register array.");
+
+        assert_eq!(*reg_array_abd_node, reg_array);
+    }
+
+    fn send_a_register_array_in_a_write_ack_message(mediator: &Arc<MockMediator>) -> RegisterArray<String> {
+        let mut reg_array = mediator.abd_node().reg.lock()
+            .expect("Could not lock register array.").clone();
+        reg_array.set(2, Register::new(7, "Haskell".to_string()));
+        reg_array.set(3, Register::new(10, "Idris".to_string()));
+
+        let write_ack_message = WriteAckMessage {
+            sender: 2,
+            register_array: Cow::Owned(reg_array.clone())
+        };
+        let json = serde_json::to_string(&write_ack_message)
+            .expect("Could not serialize a write ack message");
+        
+        mediator.json_received(&json);
+        reg_array
+    }
+
+    #[test]
+    fn test_that_a_write_ack_message_does_not_change_register_array_being_written_when_there_is_no_write() {
+        let mediator = create_mediator();
+        send_a_register_array_in_a_write_message(&mediator);
+        let register_array_being_written = mediator.abd_node().register_array_being_written.lock()
+            .expect("Could not lock register array being written.");
+
+        assert_eq!(*register_array_being_written, None);
+    }
+
+    #[test]
+    fn test_that_a_write_ack_message_does_not_change_acking_processors_for_write_when_there_is_no_write() {
+        let mediator = create_mediator();
+        send_a_register_array_in_a_write_message(&mediator);
+        let acking_processors_for_write = mediator.abd_node().acking_processors_for_write.lock()
+            .expect("Could not lock acking_processors_for_write.");
+
+        assert!(acking_processors_for_write.is_empty());
     }
 }
-
-#[test]
-fn test_that_ts_is_0_at_start() {
-    let mediator = create_mediator();
-    assert_eq!(*mediator.abd_node().ts.lock().expect("Could not lock ts."), 
-        0);
-}
-
-#[test]
-fn test_that_register_array_being_written_is_none_at_start() {
-    let mediator = create_mediator();
-    assert_eq!(*mediator.abd_node()
-        .register_array_being_written.lock()
-        .expect("Could not lock register array."), 
-        None);
-}
-
-#[test]
-fn test_that_acking_processors_for_write_is_empty_at_start() {
-    let mediator = create_mediator();
-    assert!(mediator.abd_node()
-        .acking_processors_for_write.lock()
-        .expect("Could not lock register array.").is_empty());
-}
-
-#[test]
-fn test_that_a_write_message_updates_own_register_array() {
-    let mediator = create_mediator();
-    let reg_array = send_a_register_array_in_a_write_message(&mediator);
-    let reg_array_abd_node = mediator.abd_node().reg.lock()
-        .expect("Could not lock register array.");
-
-    assert_eq!(*reg_array_abd_node, reg_array);
-}
-
-fn send_a_register_array_in_a_write_message(mediator: &Arc<MockMediator>) -> RegisterArray<String> {
-    let mut reg_array = mediator.abd_node().reg.lock()
-        .expect("Could not lock register array.").clone();
-    reg_array.set(2, Register::new(7, "Haskell".to_string()));
-    reg_array.set(3, Register::new(10, "Idris".to_string()));
-
-    let write_message = WriteMessage {
-        sender: 2,
-        register_array: Cow::Owned(reg_array.clone())
-    };
-    let json = serde_json::to_string(&write_message)
-        .expect("Could not serialize a write message");
-    
-    mediator.json_received(&json);
-    reg_array
-}
-
-#[test]
-fn test_that_a_write_message_does_not_change_register_being_written() {
-    let mediator = create_mediator();
-    send_a_register_array_in_a_write_message(&mediator);
-    assert_eq!(*mediator.abd_node().register_array_being_written.lock()
-        .expect("Could not lock register array being written"), None);
-}
-
-#[test]
-fn test_that_a_write_ack_message_updates_own_register_array() {
-    let mediator = create_mediator();
-    let reg_array = send_a_register_array_in_a_write_ack_message(&mediator);
-    let reg_array_abd_node = mediator.abd_node().reg.lock()
-        .expect("Could not lock register array.");
-
-    assert_eq!(*reg_array_abd_node, reg_array);
-}
-
-fn send_a_register_array_in_a_write_ack_message(mediator: &Arc<MockMediator>) -> RegisterArray<String> {
-    let mut reg_array = mediator.abd_node().reg.lock()
-        .expect("Could not lock register array.").clone();
-    reg_array.set(2, Register::new(7, "Haskell".to_string()));
-    reg_array.set(3, Register::new(10, "Idris".to_string()));
-
-    let write_ack_message = WriteAckMessage {
-        sender: 2,
-        register_array: Cow::Owned(reg_array.clone())
-    };
-    let json = serde_json::to_string(&write_ack_message)
-        .expect("Could not serialize a write ack message");
-    
-    mediator.json_received(&json);
-    reg_array
-}
-
-#[test]
-fn test_that_a_write_ack_message_does_not_change_register_array_being_written_when_there_is_no_write() {
-    let mediator = create_mediator();
-    send_a_register_array_in_a_write_message(&mediator);
-    let register_array_being_written = mediator.abd_node().register_array_being_written.lock()
-        .expect("Could not lock register array being written.");
-
-    assert_eq!(*register_array_being_written, None);
-}
-
-#[test]
-fn test_that_a_write_ack_message_does_not_change_acking_processors_for_write_when_there_is_no_write() {
-    let mediator = create_mediator();
-    send_a_register_array_in_a_write_message(&mediator);
-    let acking_processors_for_write = mediator.abd_node().acking_processors_for_write.lock()
-        .expect("Could not lock acking_processors_for_write.");
-
-    assert!(acking_processors_for_write.is_empty());
-}
-
-
-
-
-
-/*
-+ Start values
-+ Reacts on write mess
-+ Reacts on write ack mess
-    + Update reg array
-    + But if no write, does not change None
-+ Does not terminates < Maj
-- Terminates = Maj
-*/
