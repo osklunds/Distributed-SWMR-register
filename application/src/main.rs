@@ -18,9 +18,8 @@ mod configuration_manager;
 use std::fs;
 use std::time::Duration;
 use std::sync::Arc;
-use std::thread::{self, JoinHandle};
+use std::thread;
 use std::sync::mpsc::{self, TryRecvError, Receiver, Sender};
-use std::marker::{Send, Sync};
 
 use commons::types::Int;
 use commons::misc;
@@ -68,14 +67,14 @@ fn start_client_threads_and_get_channel_send_ends<M: Med>(mediator: &Arc<M>) -> 
     let (write_tx, write_rx) = mpsc::channel();
 
     let read_thread_mediator = Arc::clone(mediator);
-    let read_thread_handle = thread::spawn(move || {
+    thread::spawn(move || {
         if SETTINGS.should_read() {
             client_reads(read_rx, read_thread_mediator);
         }
     });
     
     let write_thread_mediator = Arc::clone(mediator);
-    let write_thread_handle = thread::spawn(move || {
+    thread::spawn(move || {
         if SETTINGS.should_write() {
             client_writes(write_rx, write_thread_mediator);
         }

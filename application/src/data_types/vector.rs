@@ -3,11 +3,10 @@ use std::collections::{HashMap, HashSet, BTreeMap};
 use std::collections::hash_map::IntoIter;
 use std::fmt::{Formatter, Display, Result};
 use std::cmp::Ordering;
-use std::iter::IntoIterator;
 
 use serde::{Serialize, Deserialize};
 
-use commons::types::{NodeId, Int};
+use commons::types::NodeId;
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -48,6 +47,7 @@ impl<V: Default + Clone + PartialEq + Eq + PartialOrd> Vector<V> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn node_ids(&self) -> &HashSet<NodeId> {
         &self.node_ids
     }
@@ -139,6 +139,7 @@ impl<V> IntoIterator for Vector<V> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use commons::types::Int;
 
     fn node_ids_for_tests() -> HashSet<NodeId> {
         let mut node_ids = HashSet::new();

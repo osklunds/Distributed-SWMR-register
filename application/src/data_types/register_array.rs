@@ -1,5 +1,5 @@
 
-use std::collections::{HashMap, HashSet, BTreeMap};
+use std::collections::HashSet;
 use std::fmt::{Formatter, Display, Result};
 use std::cmp::Ordering;
 
@@ -7,7 +7,7 @@ use serde::{Serialize, Deserialize};
 
 use commons::types::NodeId;
 
-use super::register::{self, Register};
+use super::register::Register;
 use super::timestamp::{self, Timestamp};
 use super::vector::Vector;
 use super::vector_clock::VectorClock;
@@ -37,12 +37,14 @@ impl<V: Default + Clone> RegisterArray<V> {
         self.vector.merge_to_max_from_vector(&other.vector);
     }
     
+    #[allow(dead_code)]
     // Turns -1 timestamps into 0. Used for comparing the time
     // difference between different points of the execution.
     pub fn to_vector_clock_time_comparison(&self) -> VectorClock {
         self.to_vector_clock_with_default_timestamp_replacement(0)
     }
 
+    #[allow(dead_code)]
     // Turns -1 timestamps into -1. Used for comparing two register arrays
     // but one register array is just as its vector clock.
     pub fn to_vector_clock_register_array_comparison(&self) -> VectorClock {
@@ -63,6 +65,7 @@ impl<V: Default + Clone> RegisterArray<V> {
         vector_clock
     }
 
+    #[allow(dead_code)]
     pub fn greater_than_or_equal_to_vector_clock(&self, vector_clock: &VectorClock) -> bool {
         if cfg!(debug_assertions) {
             // Todo: Check that same node ids

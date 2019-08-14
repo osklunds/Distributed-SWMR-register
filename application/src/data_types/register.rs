@@ -6,8 +6,6 @@ use std::default::Default;
 
 use serde::{Serialize, Deserialize};
 
-use commons::types::Int;
-
 use super::timestamp::{self, Timestamp};
 
 

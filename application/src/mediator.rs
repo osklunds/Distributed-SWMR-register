@@ -13,7 +13,6 @@ use crate::abd_node::AbdNode;
 use crate::communicator::Communicator;
 use crate::data_types::register_array::RegisterArray;
 use crate::configuration_manager::ConfigurationManager;
-use crate::messages;
 
 
 pub trait Mediator {

@@ -1,14 +1,14 @@
 
-use std::collections::{HashMap, HashSet, BTreeMap};
+use std::collections::HashSet;
 use std::fmt::{Formatter, Display, Result};
 use std::cmp::Ordering;
 
 use serde::{Serialize, Deserialize};
 
-use commons::types::NodeId;
-
 use super::vector::Vector;
 use super::timestamp::Timestamp;
+
+use commons::types::NodeId;
 
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -16,6 +16,7 @@ pub struct VectorClock {
     vector: Vector<Timestamp>
 }
 
+#[allow(dead_code)]
 impl VectorClock {
     pub fn new(node_ids: &HashSet<NodeId>) -> VectorClock {
         VectorClock {

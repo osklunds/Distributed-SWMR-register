@@ -12,9 +12,9 @@ use serde::de::DeserializeOwned;
 use commons::types::{NodeId, Int};
 
 use crate::terminal_output::printlnu;
-use crate::data_types::timestamp::{self, Timestamp};
+use crate::data_types::timestamp::Timestamp;
 use crate::data_types::register_array::*;
-use crate::data_types::register::{self, Register};
+use crate::data_types::register::Register;
 use crate::messages::{self, Message, WriteMessage, WriteAckMessage, ReadMessage, ReadAckMessage};
 use crate::mediator::Med;
 
@@ -38,8 +38,8 @@ pub struct AbdNode<M, V> {
 
 impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<M, V> {
     pub fn new(mediator: Weak<M>) -> AbdNode<M, V> {
-        let mediator2 = mediator.upgrade().expect("Error upgrading mediator in AbdNode constructor");
-        let node_ids = mediator2.node_ids();
+        let mediator_upgraded = mediator.upgrade().expect("Error upgrading mediator in AbdNode constructor");
+        let node_ids = mediator_upgraded.node_ids();
 
         AbdNode {
             mediator: mediator,
@@ -105,10 +105,10 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
             register_array: Cow::Borrowed(&register_array)
         };
 
-        self.jsonify_message(&write_message)
+        serde_json::to_string(&write_message).expect("Could not serialize a message")
     }
 
-    fn jsonify_message(&self, message: &impl Message) -> String {
+    fn jsonify_message<Me: Message>(&self, message: &Me) -> String {
         serde_json::to_string(message).expect("Could not serialize a message")
     }
 

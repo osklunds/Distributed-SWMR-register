@@ -1,29 +1,20 @@
 
 #[cfg(test)]
 
-use super::*;
-
 use std::str;
-use std::sync::{Arc, Mutex, MutexGuard, Condvar, Weak};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::collections::HashSet;
 use std::borrow::Cow;
-use std::fmt::Debug;
-use std::time::Duration;
-use std::iter::FromIterator;
 use std::thread::{self, JoinHandle};
-
-use serde::Serialize;
-use serde::de::DeserializeOwned;
+use std::iter::FromIterator;
 
 use commons::types::{NodeId, Int};
 use commons::run_result::RunResult;
 
-use crate::terminal_output::printlnu;
-use crate::settings::SETTINGS;
-use crate::data_types::timestamp::{self, Timestamp};
+use crate::data_types::timestamp;
+use crate::data_types::register::Register;
 use crate::data_types::register_array::*;
-use crate::data_types::register::{self, Register};
-use crate::messages::{self, Message, WriteMessage, WriteAckMessage, ReadMessage, ReadAckMessage};
+use crate::messages::{self, WriteMessage, WriteAckMessage};
 use crate::mediator::Mediator;
 use crate::responsible_cell::ResponsibleCell;
 use crate::abd_node::AbdNode;
@@ -41,6 +32,7 @@ struct MockMediator {
 }
 
 impl MockMediator {
+    #[allow(dead_code)]
     pub fn new(node_id: NodeId, node_ids: HashSet<NodeId>) -> Arc<MockMediator> {
         let mediator = MockMediator {
             node_id: node_id,
@@ -114,7 +106,7 @@ impl Mediator for MockMediator{
         self.abd_node().write(message);
     }
     
-    fn read(&self, node_id: NodeId) -> String {
+    fn read(&self, _node_id: NodeId) -> String {
         panic!("Unused");
     }
     
@@ -126,7 +118,6 @@ impl Mediator for MockMediator{
         true
     }
 }
-
 
 fn node_ids_for_tests() -> HashSet<NodeId> {
     let mut node_ids = HashSet::new();
@@ -191,7 +182,7 @@ fn wait_until_local_register_array_is_written(mediator: &Arc<MockMediator>) {
     }
 }
 
-
+#[cfg(test)]
 mod termination {
     use super::*;
 
@@ -225,7 +216,7 @@ mod termination {
     #[test]
     fn test_that_write_does_not_terminate_without_acks() {
         let mediator = create_mediator();
-        let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+        perform_single_write_on_background_thread(&mediator);
         wait_until_local_register_array_is_written(&mediator);
 
         check_that_write_fails(&mediator);
@@ -234,7 +225,7 @@ mod termination {
     #[test]
     fn test_that_write_does_not_terminate_without_acks_from_majority() {
         let mediator = create_mediator();
-        let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+        perform_single_write_on_background_thread(&mediator);
         wait_until_local_register_array_is_written(&mediator);
 
         let mut node_ids = HashSet::new();
@@ -280,7 +271,9 @@ fn send_write_ack_message_from_node_ids(mediator: &Arc<MockMediator>, node_ids: 
 }
 
 
+#[cfg(test)]
 mod message_sending {
+    #[allow(dead_code)]
     use super::*;
 
     #[test]
@@ -333,6 +326,7 @@ mod message_sending {
 }
 
 
+#[cfg(test)]
 mod start_values {
     use super::*;
 
@@ -375,13 +369,14 @@ mod start_values {
 }
 
 
+#[cfg(test)]
 mod variable_changes {
     use super::*;
 
     #[test]
     fn test_that_own_register_array_is_updated_correctly_on_write() {
         let mediator = create_mediator();
-        let write_thread_handle = perform_single_write_on_background_thread(&mediator);
+        perform_single_write_on_background_thread(&mediator);
         wait_until_local_register_array_is_written(&mediator);
         let own_register_array = mediator.abd_node().reg.lock().unwrap();
         let mut expected_register_array = RegisterArray::new(&mediator.node_ids);

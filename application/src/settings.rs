@@ -1,6 +1,5 @@
 
-use std::collections::{HashMap, HashSet};
-use std::iter::FromIterator;
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::fs;
 use std::time::Duration;
@@ -68,10 +67,6 @@ impl Settings {
 
     pub fn number_of_nodes(&self) -> Int {
         self.socket_addrs.len() as Int
-    }
-
-    pub fn node_ids(&self) -> HashSet<NodeId> {
-        HashSet::from_iter(self.socket_addrs.keys().map(|id| *id))
     }
 
     pub fn should_read(&self) -> bool {
