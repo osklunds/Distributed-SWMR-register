@@ -2,27 +2,20 @@
 use std::cell::UnsafeCell;
 
 /*
-In order to create a circular reference, I need to create
-references to both objects, but at the same time create
-mutable references to them, so I can modify them to
-include the reference to the other object. This is why I
-created ResponsibleCell. How the above is achieved is shown
-in the Mediator struct.
-
-This violates Rust's borrowing rules even at run-time.
-However, I haven't seen a problem doing this. The code
-doesn't panic. It might be because this struct is only
-used in a "responsible" way, hence the name. Because after
-the intial wiring-up of circular references, the mutable
-references are dropped and onwards only immutable references
-are made. Furthermore, the initialiazation happens on
-only a single thread.
+Interior mutability is needed when Mediator is created. RefCell would
+do, but it's not thread-safe. Mutex and RwLock are, but they have a
+performance overhead. This responsible cell is thread safe and doesn't
+have a performance overhead, but, it must be used responsibly.
+That means that mutable references may only be taken before any threading
+occurs. Once threaded, no mutable references may appear, and only
+immutable once may be used. Which is sufficient for my use of it
+in Mediator.
 */
 pub struct ResponsibleCell<T> {
     unsafe_cell: UnsafeCell<T>
 }
 
-unsafe impl<T> Sync for ResponsibleCell<T> {}
+unsafe impl<T: Sync> Sync for ResponsibleCell<T> {}
 
 impl<T> ResponsibleCell<T> {
     pub fn new(value: T) -> ResponsibleCell<T> {
