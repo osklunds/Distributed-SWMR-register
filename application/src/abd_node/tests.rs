@@ -1,6 +1,4 @@
 
-#[cfg(test)]
-
 use std::str;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::collections::HashSet;
@@ -32,7 +30,6 @@ struct MockMediator {
 }
 
 impl MockMediator {
-    #[allow(dead_code)]
     pub fn new(node_id: NodeId, node_ids: HashSet<NodeId>) -> Arc<MockMediator> {
         let mediator = MockMediator {
             node_id: node_id,
@@ -182,7 +179,7 @@ fn wait_until_local_register_array_is_written(mediator: &Arc<MockMediator>) {
     }
 }
 
-#[cfg(test)]
+
 mod termination {
     use super::*;
 
@@ -271,9 +268,7 @@ fn send_write_ack_message_from_node_ids(mediator: &Arc<MockMediator>, node_ids: 
 }
 
 
-#[cfg(test)]
 mod message_sending {
-    #[allow(dead_code)]
     use super::*;
 
     #[test]
@@ -326,7 +321,6 @@ mod message_sending {
 }
 
 
-#[cfg(test)]
 mod start_values {
     use super::*;
 
@@ -369,7 +363,6 @@ mod start_values {
 }
 
 
-#[cfg(test)]
 mod variable_changes {
     use super::*;
 

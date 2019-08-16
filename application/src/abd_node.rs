@@ -18,6 +18,7 @@ use crate::data_types::register::Register;
 use crate::messages::{self, Message, WriteMessage, WriteAckMessage, ReadMessage, ReadAckMessage};
 use crate::mediator::Med;
 
+#[cfg(test)]
 pub mod tests;
 
 

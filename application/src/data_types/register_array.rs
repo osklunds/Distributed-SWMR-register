@@ -9,7 +9,6 @@ use commons::types::NodeId;
 
 use super::register::Register;
 use super::timestamp::{self, Timestamp};
-use super::vector::Vector;
 use super::vector_clock::VectorClock;
 
 
