@@ -1,5 +1,5 @@
 
-use std::collections::HashSet;
+use std::collections::{HashSet, HashMap, BTreeMap};
 use std::fmt::{Formatter, Display, Result};
 use std::cmp::Ordering;
 
@@ -15,26 +15,38 @@ use super::vector_clock::VectorClock;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RegisterArray<V> {
-    vector: Vector<Register<V>>
+    map: HashMap<NodeId, Register<V>>
 }
 
 impl<V: Default + Clone> RegisterArray<V> {
     pub fn new(node_ids: &HashSet<NodeId>) -> RegisterArray<V> {
+        let mut map = HashMap::new();
+        for &node_id in node_ids {
+            map.insert(node_id, Register::default());
+        }
+
         RegisterArray {
-            vector: Vector::new(node_ids)
+            map: map,
         }
     }
 
     pub fn get(&self, node_id: NodeId) -> &Register<V> {
-        self.vector.get(node_id)
+        self.map.get(&node_id).expect("Trying to get value in Vector, but that node id does not exist.")
     }
 
     pub fn set(&mut self, node_id: NodeId, register: Register<V>) {
-        self.vector.set(node_id, register);
+        if self.map.insert(node_id, register) == None {
+            panic!("Trying to set value in Vector, but that node id does not exist.");
+        } 
     }
 
     pub fn merge_to_max_from_register_array(&mut self, other: &RegisterArray<V>) {
-        self.vector.merge_to_max_from_vector(&other.vector);
+        for (node_id, value) in self.map.iter_mut() {
+            let other_value = other.map.get(node_id).unwrap();
+            if other_value > value {
+                *value = other_value.clone(); // Potential future improvement: take ownership of other so that no cloning is needed
+            }
+        }
     }
     
     #[allow(dead_code)]
@@ -52,9 +64,9 @@ impl<V: Default + Clone> RegisterArray<V> {
     }
 
     fn to_vector_clock_with_default_timestamp_replacement(&self, replacement: Timestamp) -> VectorClock {
-        let mut vector_clock = VectorClock::new(self.vector.node_ids());
+        let mut vector_clock = VectorClock::new(&self.map.keys().map(|node_id| *node_id).collect());
 
-        for &node_id in self.vector.node_ids() {
+        for &node_id in self.map.keys() {
             let mut ts = self.get(node_id).ts;
             if ts == timestamp::default_timestamp() {
                 ts = replacement;
@@ -71,7 +83,7 @@ impl<V: Default + Clone> RegisterArray<V> {
             // Todo: Check that same node ids
         }
 
-        for &node_id in self.vector.node_ids() {
+        for &node_id in self.map.keys() {
             let my_ts = self.get(node_id).ts;
             let vc_ts = vector_clock.get(node_id);
 
@@ -84,21 +96,77 @@ impl<V: Default + Clone> RegisterArray<V> {
     }
 }
 
+impl<V> RegisterArray<V> {
+    fn panic_if_not_same_node_ids(&self, other: &RegisterArray<V>) {
+        for node_id in self.map.keys() {
+            other.map.get(node_id).expect("Comparing two RegisterArrays with different node ids.");
+        }
+
+        for node_id in other.map.keys() {
+            self.map.get(node_id).expect("Comparing two RegisterArrays with different node ids.");
+        }
+    }
+}
+
 impl<V: Display> Display for RegisterArray<V> {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        self.vector.fmt(f)
+        let mut sorted_map = BTreeMap::new();
+        for (node_id, entry) in self.map.iter() {
+            sorted_map.insert(node_id, entry);
+        }
+        let mut string = String::new();
+        for (node_id, entry) in sorted_map.iter() {
+            string.push_str(&format!("{}: {}\n", node_id, entry));
+        }
+
+        write!(f, "{}", string.trim_end())
     }
 }
 
 impl<V> PartialEq for RegisterArray<V> {
     fn eq(&self, other: &Self) -> bool {
-        self.vector.eq(&other.vector)
+        if cfg!(debug_assertions) {
+            self.panic_if_not_same_node_ids(other);
+        }
+
+        self.map == other.map
     }
 }
 
 impl<V> PartialOrd for RegisterArray<V> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.vector.partial_cmp(&other.vector)
+        if cfg!(debug_assertions) {
+            self.panic_if_not_same_node_ids(other);
+        }
+
+        let lhs = &self.map;
+        let rhs = &other.map;
+
+        let mut lhs_has_one_greater = false;
+        let mut rhs_has_one_greater = false;
+
+        for node_id in lhs.keys() {
+            let lhs_val = lhs.get(&node_id).unwrap();
+            let rhs_val = rhs.get(&node_id).unwrap();
+
+            if lhs_val > rhs_val {
+                lhs_has_one_greater = true;
+            } else if lhs_val < rhs_val {
+                rhs_has_one_greater = true;
+            }
+        }
+
+        let eq = !lhs_has_one_greater && !rhs_has_one_greater;
+
+        if eq {
+            Some(Ordering::Equal)
+        } else if lhs_has_one_greater && !rhs_has_one_greater && !eq {
+            Some(Ordering::Greater)
+        } else if !lhs_has_one_greater && rhs_has_one_greater && !eq {
+            Some(Ordering::Less)
+        } else {
+            None
+        }
     }
 }
 
