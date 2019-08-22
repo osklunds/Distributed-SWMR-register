@@ -14,6 +14,7 @@ pub struct Vector<V> {
     map: HashMap<NodeId, V>
 }
 
+#[allow(dead_code)]
 impl<V: Default + Clone + PartialEq + Eq + PartialOrd> Vector<V> {
     pub fn new(node_ids: &HashSet<NodeId>) -> Vector<V> {
         let mut map = HashMap::new();
