@@ -11,8 +11,7 @@ use commons::types::NodeId;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Vector<V> {
-    map: HashMap<NodeId, V>,
-    node_ids: HashSet<NodeId>
+    map: HashMap<NodeId, V>
 }
 
 impl<V: Default + Clone + PartialEq + Eq + PartialOrd> Vector<V> {
@@ -23,8 +22,7 @@ impl<V: Default + Clone + PartialEq + Eq + PartialOrd> Vector<V> {
         }
 
         Vector {
-            map: map,
-            node_ids: node_ids.clone()
+            map: map
         }
     }
 
@@ -45,11 +43,6 @@ impl<V: Default + Clone + PartialEq + Eq + PartialOrd> Vector<V> {
                 *value = other_value.clone(); // Potential future improvement: take ownership of other so that no cloning is needed
             }
         }
-    }
-
-    #[allow(dead_code)]
-    pub fn node_ids(&self) -> &HashSet<NodeId> {
-        &self.node_ids
     }
 }
 
