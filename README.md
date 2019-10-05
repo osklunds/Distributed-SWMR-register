@@ -1,7 +1,7 @@
 
 # Distributed-SWMR-registers
 
-The ABD algorithm allows a set of distributed nodes, that communicate with a message-passing system (i.e. the Internet), to emulate shared registers. The registers are so called *single-writer* *multi-reader* registers. This means that every node can read every other node's register, but only the owner of a register can write to it.
+The ABD algorithm allows a set of distributed nodes, that communicate with a message-passing system (i.e. the Internet), to emulate a shared register. The register is a so called *single-writer* *multi-reader* register. This means that every node can read the register, but only the owner of the register can write to it. This implementation uses a modification to the ABD algorithm that allows all nodes to own a register, not just a single one.
 
 The goal of this project is for me to become a better Rust programmer. For another project I have used the excellent [SSPBFT framework](https://github.com/sspbft/BFTList), which serves as an inspiration for this project. I wanted to create something similar to SSPBFT but in Rust.
 
