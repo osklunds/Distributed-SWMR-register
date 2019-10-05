@@ -33,11 +33,9 @@ The `evaluator` directory contains the code for another helper tool. `evaluator`
 
 |                                 | Linux | Mac | Windows |
 |---------------------------------|-------|-----|---------|
-| application                     | Yes   | Yes | Yes*    |
+| application                     | Yes   | Yes | Maybe   |
 | local_starter                   | Yes   | Yes | No      |
 | remote_starter: local computer  | Yes   | Yes | No      |
 | remote_starter: remote computer | Yes   | Yes | No      |
 | evaluator: local computer       | Yes   | Yes | No      |
 | evaluator: remote computer      | Yes   | Yes | No      |
-
-*Todo: test this. But nothing unix-specific is used in the application itself.
