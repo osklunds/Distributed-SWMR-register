@@ -39,3 +39,7 @@ The `evaluator` directory contains the code for another helper tool. `evaluator`
 | remote_starter: remote computer | Yes   | Yes | No      |
 | evaluator: local computer       | Yes   | Yes | No      |
 | evaluator: remote computer      | Yes   | Yes | No      |
+
+## The modification
+
+The implementation almost follows the ABD algorithm, but is modified to allow each processor to store own a register. This modification doesn't have a correctness proof, so I'm working on switching to the vanilla ABD.
