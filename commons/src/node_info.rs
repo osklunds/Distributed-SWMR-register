@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 use crate::types::NodeId;
 
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct NodeInfo {
     pub node_id: NodeId,
     pub socket_addr: SocketAddr,

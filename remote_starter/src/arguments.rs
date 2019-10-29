@@ -43,6 +43,19 @@ impl Arguments {
             install: install_from_matches(&matches),
         }
     }
+
+    pub fn node_infos_for_unique_hosts(&self) -> HashSet<NodeInfo> {
+        let mut node_ids_for_unique_hosts = HashSet::new();
+        let mut handled_hosts = HashSet::new();
+
+        for node_info in self.node_infos.iter() {
+            if handled_hosts.insert(node_info.ip_addr_string()) {
+                node_ids_for_unique_hosts.insert(node_info.clone());
+            }
+        }
+
+        node_ids_for_unique_hosts
+    }
 }
 
 fn get_matches() -> ArgMatches<'static> {
