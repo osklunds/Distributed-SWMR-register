@@ -1,16 +1,14 @@
-
 use std::collections::HashSet;
 
-use clap::{Arg, App, ArgMatches, AppSettings};
+use clap::{App, AppSettings, Arg, ArgMatches};
 
+use commons::arguments;
 use commons::node_info::NodeInfo;
 use commons::types::Int;
-use commons::arguments;
 
 lazy_static! {
     pub static ref ARGUMENTS: Arguments = Arguments::new();
 }
-
 
 #[derive(Debug)]
 pub struct Arguments {
@@ -22,7 +20,7 @@ pub struct Arguments {
     pub print_client_operations_string: String,
     pub run_length_string: String,
     pub record_evaluation_info_string: String,
-    pub install: bool
+    pub install: bool,
 }
 
 impl Arguments {
@@ -35,10 +33,14 @@ impl Arguments {
             number_of_writers: arguments::number_of_writers_from_matches(&matches),
             number_of_readers: arguments::number_of_readers_from_matches(&matches),
             release_mode_string: arguments::release_mode_string_from_matches(&matches),
-            print_client_operations_string: arguments::print_client_operations_string_from_matches(&matches),
+            print_client_operations_string: arguments::print_client_operations_string_from_matches(
+                &matches,
+            ),
             run_length_string: arguments::run_length_string_from_matches(&matches),
-            record_evaluation_info_string: arguments::record_evaluation_info_string_from_matches(&matches),
-            install: install_from_matches(&matches)
+            record_evaluation_info_string: arguments::record_evaluation_info_string_from_matches(
+                &matches,
+            ),
+            install: install_from_matches(&matches),
         }
     }
 }
@@ -48,8 +50,9 @@ fn get_matches() -> ArgMatches<'static> {
         .setting(AppSettings::DisableVersion)
         .setting(AppSettings::VersionlessSubcommands)
         .about("A helper utility that starts multiple nodes on remote machines via SSH.")
-
-        .arg(arguments::hosts_file("The file with node ids, addresses, ports, ssh key paths and usernames."))
+        .arg(arguments::hosts_file(
+            "The file with node ids, addresses, ports, ssh key paths and usernames.",
+        ))
         .arg(arguments::number_of_writers())
         .arg(arguments::number_of_readers())
         .arg(arguments::run_length())
@@ -57,7 +60,6 @@ fn get_matches() -> ArgMatches<'static> {
         .arg(arguments::optimize())
         .arg(install_argument())
         .arg(arguments::print_client_operations())
-
         .get_matches()
 }
 
