@@ -9,7 +9,8 @@ pub struct NodeInfo {
     pub node_id: NodeId,
     pub socket_addr: SocketAddr,
     pub key_path: String,
-    pub username: String
+    pub username: String,
+    pub script_path: String,
 }
 
 impl NodeInfo {

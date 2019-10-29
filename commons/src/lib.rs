@@ -7,4 +7,3 @@ pub mod remote_machine;
 pub mod run_result;
 pub mod arguments;
 pub mod types;
-pub mod misc;
