@@ -28,7 +28,7 @@ impl Quorum {
         Quorum {
             acking_processors: Mutex::new(HashSet::new()),
             accessing: Mutex::new(false),
-            majority_reached: Condvar::new()
+            majority_reached: Condvar::new(),
         }
     }
 
@@ -45,7 +45,7 @@ impl Quorum {
     }
 
     pub fn is_idle(&self) -> bool {
-        self.acking_processors.lock().unwrap().is_empty() &&
-        !*self.accessing.lock().unwrap()
+        self.acking_processors.lock().unwrap().is_empty()
+            && !*self.accessing.lock().unwrap()
     }
 }

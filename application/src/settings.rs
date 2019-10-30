@@ -28,7 +28,7 @@ pub struct Settings {
 pub enum ClientOperation {
     Write,
     Read,
-    Nop
+    Nop,
 }
 
 impl Settings {
@@ -176,7 +176,9 @@ fn read_argument() -> Arg<'static, 'static> {
         .help("Makes this node perform read operations.")
 }
 
-fn client_operation_from_matches(matches: &ArgMatches<'static>) -> ClientOperation {
+fn client_operation_from_matches(
+    matches: &ArgMatches<'static>,
+) -> ClientOperation {
     if matches.is_present("write") {
         ClientOperation::Write
     } else if matches.is_present("read") {

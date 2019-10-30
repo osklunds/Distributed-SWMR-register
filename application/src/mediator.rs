@@ -153,7 +153,7 @@ impl Mediator for MediatorImpl {
     fn read(&self, node_id: NodeId) -> String {
         "".to_string() //self.abd_node().read(node_id)
     }
-    
+
     // Settings
 
     fn record_evaluation_info(&self) -> bool {

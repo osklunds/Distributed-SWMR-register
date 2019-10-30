@@ -14,7 +14,9 @@ use crate::data_types::register::Register;
 use crate::data_types::register_array::*;
 use crate::data_types::timestamp::Timestamp;
 use crate::mediator::Med;
-use crate::messages::{self, Message, WriteMessage, WriteAckMessage};
+use crate::messages::{
+    self, Message, TimestampValueMessage, WriteAckMessage, WriteMessage,
+};
 use crate::quorum::Quorum;
 use crate::terminal_output::printlnu;
 
@@ -32,14 +34,16 @@ pub struct AbdNode<M, V> {
     read2_quorum: Quorum,
 }
 
-pub trait Value: Default + Serialize + DeserializeOwned + Debug + Clone {}
-impl <V: Default + Serialize + DeserializeOwned + Debug + Clone> Value for V {}
-
-impl<
-        V: Value,
-        M: Med,
-    > AbdNode<M, V>
+pub trait Value:
+    Default + Serialize + DeserializeOwned + Debug + Clone
 {
+}
+impl<V: Default + Serialize + DeserializeOwned + Debug + Clone> Value
+    for V
+{
+}
+
+impl<V: Value, M: Med> AbdNode<M, V> {
     pub fn new(mediator: Weak<M>) -> AbdNode<M, V> {
         let mediator_upgraded = mediator
             .upgrade()
@@ -48,7 +52,7 @@ impl<
 
         AbdNode {
             mediator: mediator,
-            
+
             timestamp: Mutex::new(0),
             value: Mutex::new(V::default()),
 
@@ -63,7 +67,7 @@ impl<
             assert!(self.write_quorum.is_idle());
         }
 
-        self.inner_write(value);
+        self.write_internal(value);
 
         if cfg!(debug_assertions) {
             assert!(self.write_quorum.is_idle());
@@ -80,18 +84,29 @@ impl<
             .expect("Error upgrading mediator in AbdNode")
     }
 
-    fn inner_write(&self, new_value: V) {
+    fn write_internal(&self, new_value: V) {
+        self.update_local_timestamp_and_value(new_value);
+        let write_message = self.construct_write_message();
+        self.quorum_access(&write_message, &self.write_quorum);
+    }
+
+    fn update_local_timestamp_and_value(&self, new_value: V) {
         let mut timestamp = self.timestamp.lock().unwrap();
         let mut value = self.value.lock().unwrap();
 
         *timestamp += 1;
         *value = new_value;
+    }
 
-        let message = WriteMessage::new(self.mediator().node_id(), *timestamp, value.clone());
-        drop(timestamp);
-        drop(value);
+    fn construct_write_message(&self) -> WriteMessage<V> {
+        let mut timestamp = self.timestamp.lock().unwrap();
+        let mut value = self.value.lock().unwrap();
 
-        self.quorum_access(&message, &self.write_quorum);
+        WriteMessage::new(
+            self.mediator().node_id(),
+            *timestamp,
+            value.clone(),
+        )
     }
 
     fn quorum_access<Msg: Message>(&self, message: &Msg, quorum: &Quorum) {
@@ -101,11 +116,14 @@ impl<
         let mut accessing = quorum.accessing().lock().unwrap();
         *accessing = true;
         while *accessing {
-            let result = quorum.majority_reached().wait_timeout(accessing, Duration::from_millis(100)).unwrap();
+            let result = quorum
+                .majority_reached()
+                .wait_timeout(accessing, Duration::from_millis(100))
+                .unwrap();
             accessing = result.0;
             if result.1.timed_out() {
                 self.broadcast_json(&json);
-            }        
+            }
         }
     }
 
@@ -119,91 +137,141 @@ impl<
 
         if self.mediator().record_evaluation_info() {
             if messages::json_is_write_message(json) {
-                self.mediator().run_result().write_message.sent += 1;
+                self.mediator().run_result().write_message.sent +=
+                    self.mediator().number_of_nodes();
             } else if messages::json_is_write_ack_message(json) {
-                self.mediator().run_result().write_ack_message.sent += 1;
+                self.mediator().run_result().write_ack_message.sent +=
+                    self.mediator().number_of_nodes();
             } /* else if messages::json_is_read_message(json) {
-                self.mediator().run_result().read_message.sent += 1;
-            } else if messages::json_is_read_ack_message(json) {
-                self.mediator().run_result().read_ack_message.sent += 1;
-            } */
+                  self.mediator().run_result().read_message.sent += 1;
+              } else if messages::json_is_read_ack_message(json) {
+                  self.mediator().run_result().read_ack_message.sent += 1;
+              } */
         }
     }
 
     pub fn json_received(&self, json: &str) {
-        if self.mediator().record_evaluation_info() {
-            if messages::json_is_write_message(json) {
-                self.mediator().run_result().write_message.received += 1;
-            } else if messages::json_is_write_ack_message(json) {
-                self.mediator().run_result().write_ack_message.received +=
-                    1;
-            }
-        }
-
         if messages::json_is_write_message(json) {
             if let Ok(write_message) = serde_json::from_str(&json) {
-                return self.receive_write_message(write_message);
+                self.receive_write_message(&write_message);
+
+                if self.mediator().record_evaluation_info() {
+                    self.mediator().run_result().write_message.received +=
+                        1;
+                    self.mediator()
+                        .run_result()
+                        .write_message
+                        .nodes_received_from
+                        .insert(write_message.sender);
+                }
+
+                return;
             }
         }
 
         if messages::json_is_write_ack_message(json) {
             if let Ok(write_ack_message) = serde_json::from_str(&json) {
-                return self.receive_write_ack_message(write_ack_message);
+                self.receive_write_ack_message(&write_ack_message);
+
+                if self.mediator().record_evaluation_info() {
+                    self.mediator()
+                        .run_result()
+                        .write_ack_message
+                        .received += 1;
+                    self.mediator()
+                        .run_result()
+                        .write_ack_message
+                        .nodes_received_from
+                        .insert(write_ack_message.sender);
+                }
+
+                return;
             }
         }
 
         printlnu(format!("Could not parse the json: {}", json));
     }
 
-    fn receive_write_message(&self, write_message: WriteMessage<V>) {
+    fn receive_write_message(&self, write_message: &WriteMessage<V>) {
+        self.update_local_timestamp_and_value_from_message(write_message);
+        let write_ack_message =
+            self.write_ack_message_from_write_message(write_message);
+        self.send_message_to(&write_ack_message, write_message.sender);
+    }
+
+    fn update_local_timestamp_and_value_from_message<
+        TVM: TimestampValueMessage<V>,
+    >(
+        &self,
+        message: &TVM,
+    ) {
         let mut timestamp = self.timestamp.lock().unwrap();
         let mut value = self.value.lock().unwrap();
 
-        if write_message.timestamp > *timestamp {
-            *timestamp = write_message.timestamp;
-            *value = write_message.value;
+        if message.timestamp() > *timestamp {
+            *timestamp = message.timestamp();
+            *value = message.value().clone();
         }
+    }
 
-        let write_ack_message = WriteAckMessage {
-            sender: self.mediator().node_id(),
-            timestamp: write_message.timestamp
-        };
+    fn write_ack_message_from_write_message(
+        &self,
+        write_message: &WriteMessage<V>,
+    ) -> WriteAckMessage {
+        WriteAckMessage::new(
+            self.mediator().node_id(),
+            write_message.timestamp,
+        )
+    }
 
-        let json = self.jsonify_message(&write_ack_message);
-        self.send_json_message_to(&json, write_message.sender);
+    fn send_message_to<Msg: Message>(
+        &self,
+        message: &Msg,
+        receiver_id: NodeId,
+    ) {
+        let json = self.jsonify_message(message);
+        self.mediator().send_json_to(&json, receiver_id);
 
         if self.mediator().record_evaluation_info() {
-            self.mediator()
-                .run_result()
-                .write_message
-                .nodes_received_from
-                .insert(write_message.sender);
+            if messages::json_is_write_message(&json) {
+                self.mediator().run_result().write_message.sent += 1;
+            } else if messages::json_is_write_ack_message(&json) {
+                self.mediator().run_result().write_ack_message.sent += 1;
+            } /* else if messages::json_is_read_message(json) {
+                  self.mediator().run_result().read_message.sent += 1;
+              } else if messages::json_is_read_ack_message(json) {
+                  self.mediator().run_result().read_ack_message.sent += 1;
+              } */
         }
     }
 
     fn receive_write_ack_message(
         &self,
-        write_ack_message: WriteAckMessage,
+        write_ack_message: &WriteAckMessage,
+    ) {
+        self.add_processor_if_ack_for_current_timestamp(write_ack_message);
+        self.notify_if_write_ack_from_majority();
+    }
+
+    fn add_processor_if_ack_for_current_timestamp(
+        &self,
+        write_ack_message: &WriteAckMessage,
     ) {
         let timestamp = self.timestamp.lock().unwrap();
 
         if write_ack_message.timestamp == *timestamp {
-            let mut acking_processors = self.write_quorum.acking_processors().lock().unwrap();
+            let mut acking_processors =
+                self.write_quorum.acking_processors().lock().unwrap();
             acking_processors.insert(write_ack_message.sender);
         }
+    }
 
+    fn notify_if_write_ack_from_majority(&self) {
         if self.write_ack_from_majority() {
-            let mut accessing = self.write_quorum.accessing().lock().unwrap();
+            let mut accessing =
+                self.write_quorum.accessing().lock().unwrap();
             *accessing = false;
             self.write_quorum.majority_reached().notify_one();
-        }
-
-        if self.mediator().record_evaluation_info() {
-            self.mediator()
-                .run_result()
-                .write_ack_message
-                .nodes_received_from
-                .insert(write_ack_message.sender);
         }
     }
 
@@ -218,25 +286,6 @@ impl<
     fn number_of_nodes_in_a_majority(&self) -> Int {
         self.mediator().number_of_nodes() / 2 + 1
     }
-
-    fn send_json_message_to(&self, json: &str, receiver_id: NodeId) {
-        self.mediator().send_json_to(json, receiver_id);
-
-        if self.mediator().record_evaluation_info() {
-            if messages::json_is_write_message(json) {
-                self.mediator().run_result().write_message.sent += 1;
-            } else if messages::json_is_write_ack_message(json) {
-                self.mediator().run_result().write_ack_message.sent += 1;
-            } /* else if messages::json_is_read_message(json) {
-                self.mediator().run_result().read_message.sent += 1;
-            } else if messages::json_is_read_ack_message(json) {
-                self.mediator().run_result().read_ack_message.sent += 1;
-            } */
-        }
-    }
-
-
-
 
     /*
     #[allow(dead_code)]
@@ -288,7 +337,7 @@ impl<
         register_array
     }
 
-    
+
 
     fn construct_json_read_message_and_release_register_array(
         &self,
@@ -330,8 +379,7 @@ impl<
         }
     }
     */
-    
-    
+
     /*
     fn receive_read_message(&self, read_message: ReadMessage<V>) {
         let mut reg = self.reg.lock().unwrap();
