@@ -14,10 +14,8 @@ use crate::data_types::register::Register;
 use crate::data_types::register_array::*;
 use crate::data_types::timestamp::Timestamp;
 use crate::mediator::Med;
-use crate::messages::{
-    self, Message, ReadAckMessage, ReadMessage, WriteAckMessage,
-    WriteMessage,
-};
+use crate::messages::*;
+use crate::quorum::Quorum;
 use crate::terminal_output::printlnu;
 
 #[cfg(test)]
@@ -25,6 +23,14 @@ pub mod tests;
 
 pub struct AbdNode<M, V> {
     mediator: Weak<M>,
+
+    timestamp: Mutex<Timestamp>,
+    value: Mutex<V>,
+
+
+
+
+
 
     ts: Mutex<Timestamp>,
     reg: Mutex<RegisterArray<V>>,
@@ -43,6 +49,7 @@ impl<
         M: Med,
     > AbdNode<M, V>
 {
+    /*
     pub fn new(mediator: Weak<M>) -> AbdNode<M, V> {
         let mediator_upgraded = mediator
             .upgrade()
@@ -508,4 +515,5 @@ impl<
         acking_processors_for_read.len() as Int
             >= self.number_of_nodes_in_a_majority()
     }
+    */
 }

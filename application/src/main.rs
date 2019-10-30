@@ -1,4 +1,4 @@
-//#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
+#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
 
 #[macro_use]
 extern crate lazy_static;
@@ -10,6 +10,7 @@ mod configuration_manager;
 mod data_types;
 mod mediator;
 mod messages;
+mod quorum;
 mod responsible_cell;
 mod settings;
 mod terminal_output;
@@ -27,6 +28,9 @@ use crate::mediator::{Med, Mediator, MediatorImpl};
 use crate::settings::SETTINGS;
 use crate::terminal_output::printlnu;
 
+fn main() {}
+
+/*
 fn main() {
     SETTINGS.node_id();
 
@@ -148,3 +152,4 @@ fn sleep_time_specified_by_arguments() {
         thread::sleep(SETTINGS.run_length());
     }
 }
+*/

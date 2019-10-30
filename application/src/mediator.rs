@@ -34,7 +34,6 @@ pub trait Mediator {
 
     fn write(&self, message: String);
     fn read(&self, node_id: NodeId) -> String;
-    fn read_all(&self) -> RegisterArray<String>;
 
     // Settings
 
@@ -53,6 +52,7 @@ pub struct MediatorImpl {
 }
 
 impl MediatorImpl {
+    /*
     pub fn new() -> Arc<MediatorImpl> {
         let node_id = SETTINGS.node_id();
         let socket_addrs = SETTINGS.socket_addrs().clone();
@@ -85,7 +85,7 @@ impl MediatorImpl {
 
         mediator
     }
-
+    */
     // Modules
 
     fn communicator(&self) -> &Communicator<MediatorImpl> {
@@ -121,7 +121,7 @@ impl Mediator for MediatorImpl {
     }
 
     fn json_received(&self, json: &str) {
-        self.abd_node().json_received(json);
+        //self.abd_node().json_received(json);
     }
 
     // Configuration manager
@@ -147,17 +147,13 @@ impl Mediator for MediatorImpl {
     // Abd Node
 
     fn write(&self, message: String) {
-        self.abd_node().write(message);
+        //self.abd_node().write(message);
     }
 
     fn read(&self, node_id: NodeId) -> String {
-        self.abd_node().read(node_id)
+        "".to_string() //self.abd_node().read(node_id)
     }
-
-    fn read_all(&self) -> RegisterArray<String> {
-        self.abd_node().read_all()
-    }
-
+    
     // Settings
 
     fn record_evaluation_info(&self) -> bool {

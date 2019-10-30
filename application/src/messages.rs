@@ -23,13 +23,13 @@ pub fn json_is_write_message(json: &str) -> bool {
 
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-pub struct WriteAckMessage<V> {
+pub struct WriteAckMessage {
     #[serde(rename = "WriteAckMessage")]
     pub sender: NodeId,
     pub timestamp: Timestamp,
 }
 
-impl<V: Serialize> Message for WriteAckMessage<V> {}
+impl Message for WriteAckMessage {}
 
 pub fn json_is_write_ack_message(json: &str) -> bool {
     json.starts_with("{\"WriteAckMessage\":")
@@ -37,13 +37,13 @@ pub fn json_is_write_ack_message(json: &str) -> bool {
 
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-pub struct Read1Message<V> {
+pub struct Read1Message {
     #[serde(rename = "Read1Message")]
     pub sender: NodeId,
     pub timestamp: Timestamp,
 }
 
-impl<V: Serialize> Message for Read1Message<V> {}
+impl Message for Read1Message {}
 
 pub fn json_is_read1_message(json: &str) -> bool {
     json.starts_with("{\"Read1Message\":")
@@ -81,13 +81,13 @@ pub fn json_is_read2_message(json: &str) -> bool {
 
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-pub struct Read2AckMessage<V> {
+pub struct Read2AckMessage {
     #[serde(rename = "Read2AckMessage")]
     pub sender: NodeId,
     pub timestamp: Timestamp,
 }
 
-impl<V: Serialize> Message for Read2AckMessage<V> {}
+impl Message for Read2AckMessage {}
 
 pub fn json_is_read2_ack_message(json: &str) -> bool {
     json.starts_with("{\"Read2AckMessage\":")
