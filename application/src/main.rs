@@ -1,47 +1,48 @@
-
 //#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
 
 #[macro_use]
 extern crate lazy_static;
 extern crate serde;
 
-mod data_types;
 mod abd_node;
+mod communicator;
+mod configuration_manager;
+mod data_types;
+mod mediator;
 mod messages;
+mod responsible_cell;
 mod settings;
 mod terminal_output;
-mod communicator;
-mod mediator;
-mod responsible_cell;
-mod configuration_manager;
 
 use std::fs;
-use std::time::Duration;
+use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
 use std::thread;
-use std::sync::mpsc::{self, TryRecvError, Receiver, Sender};
+use std::time::Duration;
 
-use commons::types::Int;
 use commons::arguments;
+use commons::types::Int;
 
+use crate::mediator::{Med, Mediator, MediatorImpl};
 use crate::settings::SETTINGS;
 use crate::terminal_output::printlnu;
-use crate::mediator::{Mediator, MediatorImpl, Med};
-
 
 fn main() {
     SETTINGS.node_id();
 
     let mediator = MediatorImpl::new();
-    
+
     // This is important when running locally. If some application
     // processes start before all have been built, they will
     // consume so much CPU time that the build processes
     // are very slow, and hence some nodes will be run for
     // a longer time than others.
-    thread::sleep(Duration::from_millis(100 * SETTINGS.number_of_nodes() as u64));
+    thread::sleep(Duration::from_millis(
+        100 * SETTINGS.number_of_nodes() as u64,
+    ));
 
-    let (read_tx, write_tx) = start_client_threads_and_get_channel_send_ends(&mediator);
+    let (read_tx, write_tx) =
+        start_client_threads_and_get_channel_send_ends(&mediator);
 
     sleep_time_specified_by_arguments();
 
@@ -54,15 +55,24 @@ fn main() {
         run_result.metadata.node_id = SETTINGS.node_id();
         run_result.metadata.is_reader = SETTINGS.should_read();
         run_result.metadata.is_writer = SETTINGS.should_write();
-        run_result.metadata.run_length = SETTINGS.run_length().as_secs() as Int;
+        run_result.metadata.run_length =
+            SETTINGS.run_length().as_secs() as Int;
 
         let json = serde_json::to_string(&*run_result).unwrap();
         printlnu(format!("{}", &json));
-        fs::write(arguments::run_result_file_name_from_node_id(SETTINGS.node_id()), json).expect("Could not write the json result file");
+        fs::write(
+            arguments::run_result_file_name_from_node_id(
+                SETTINGS.node_id(),
+            ),
+            json,
+        )
+        .expect("Could not write the json result file");
     }
 }
 
-fn start_client_threads_and_get_channel_send_ends<M: Med>(mediator: &Arc<M>) -> (Sender<()>, Sender<()>) {
+fn start_client_threads_and_get_channel_send_ends<M: Med>(
+    mediator: &Arc<M>,
+) -> (Sender<()>, Sender<()>) {
     let (read_tx, read_rx) = mpsc::channel();
     let (write_tx, write_rx) = mpsc::channel();
 
@@ -72,7 +82,7 @@ fn start_client_threads_and_get_channel_send_ends<M: Med>(mediator: &Arc<M>) -> 
             client_reads(read_rx, read_thread_mediator);
         }
     });
-    
+
     let write_thread_mediator = Arc::clone(mediator);
     thread::spawn(move || {
         if SETTINGS.should_write() {
@@ -94,14 +104,14 @@ fn client_reads<M: Med>(read_rx: Receiver<()>, mediator: Arc<M>) {
             }
 
             let res = mediator.read_all();
-            
+
             if SETTINGS.print_client_operations() {
                 printlnu(format!("Stop read {}\n{}", read_number, res));
             }
 
             match read_rx.try_recv() {
-                Err(TryRecvError::Empty) => {},
-                _                        => break
+                Err(TryRecvError::Empty) => {}
+                _ => break,
             }
         }
     }
@@ -123,8 +133,8 @@ fn client_writes<M: Med>(write_rx: Receiver<()>, mediator: Arc<M>) {
         }
 
         match write_rx.try_recv() {
-            Err(TryRecvError::Empty) => {},
-            _                        => break
+            Err(TryRecvError::Empty) => {}
+            _ => break,
         }
     }
 }

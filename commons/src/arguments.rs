@@ -23,9 +23,12 @@ pub fn hosts_file_from_matches(matches: &ArgMatches<'static>) -> String {
         .to_string()
 }
 
-pub fn node_infos_from_matches(matches: &ArgMatches<'static>) -> HashSet<NodeInfo> {
+pub fn node_infos_from_matches(
+    matches: &ArgMatches<'static>,
+) -> HashSet<NodeInfo> {
     let hosts_file_path = hosts_file_from_matches(matches);
-    let string = fs::read_to_string(hosts_file_path).expect("Unable to read the hosts file.");
+    let string = fs::read_to_string(hosts_file_path)
+        .expect("Unable to read the hosts file.");
     node_infos_from_string(string)
 }
 
@@ -34,7 +37,8 @@ pub fn node_infos_from_string(string: String) -> HashSet<NodeInfo> {
 
     for line in string.lines() {
         let components: Vec<&str> = line.split(",").collect();
-        let node_id = components[0].parse().expect("Could not parse node id.");
+        let node_id =
+            components[0].parse().expect("Could not parse node id.");
         let socket_addr = components[1]
             .to_socket_addrs()
             .expect("Could not transform to socket addrs.")
@@ -68,8 +72,14 @@ pub fn number_of_writers() -> Arg<'static, 'static> {
         .help("The number of nodes that should write.")
 }
 
-pub fn number_of_writers_from_matches(matches: &ArgMatches<'static>) -> Int {
-    matches.value_of("number-of-writers").expect("Number of writers arg not existing.").parse().expect("Could not parse number of writers.")
+pub fn number_of_writers_from_matches(
+    matches: &ArgMatches<'static>,
+) -> Int {
+    matches
+        .value_of("number-of-writers")
+        .expect("Number of writers arg not existing.")
+        .parse()
+        .expect("Could not parse number of writers.")
 }
 
 pub fn number_of_readers() -> Arg<'static, 'static> {
@@ -82,8 +92,14 @@ pub fn number_of_readers() -> Arg<'static, 'static> {
         .help("The number of nodes that should read.")
 }
 
-pub fn number_of_readers_from_matches(matches: &ArgMatches<'static>) -> Int {
-    matches.value_of("number-of-readers").expect("Number of readers arg not existing.").parse().expect("Could not parse number of readers.")
+pub fn number_of_readers_from_matches(
+    matches: &ArgMatches<'static>,
+) -> Int {
+    matches
+        .value_of("number-of-readers")
+        .expect("Number of readers arg not existing.")
+        .parse()
+        .expect("Could not parse number of readers.")
 }
 
 pub fn run_length() -> Arg<'static, 'static> {
@@ -96,8 +112,13 @@ pub fn run_length() -> Arg<'static, 'static> {
         .help("The number of seconds the program should run for. If 0 is given, the program will run until aborted with Ctrl-C.")
 }
 
-pub fn run_length_string_from_matches(matches: &ArgMatches<'static>) -> String {
-    matches.value_of("run-length").expect("run length arg not existing.").to_string()
+pub fn run_length_string_from_matches(
+    matches: &ArgMatches<'static>,
+) -> String {
+    matches
+        .value_of("run-length")
+        .expect("run length arg not existing.")
+        .to_string()
 }
 
 pub fn record_evaluation_info() -> Arg<'static, 'static> {
@@ -108,10 +129,12 @@ pub fn record_evaluation_info() -> Arg<'static, 'static> {
         .help("Record information used for the evaluation, such as latency and number of messages sent. If not done, the performance might be slightly higher.")
 }
 
-pub fn record_evaluation_info_string_from_matches(matches: &ArgMatches<'static>) -> String {
+pub fn record_evaluation_info_string_from_matches(
+    matches: &ArgMatches<'static>,
+) -> String {
     match matches.is_present("record-evaluation-info") {
-        true  => "--record-evaluation-info".to_string(),
-        false => "".to_string()
+        true => "--record-evaluation-info".to_string(),
+        false => "".to_string(),
     }
 }
 
@@ -123,10 +146,12 @@ pub fn optimize() -> Arg<'static, 'static> {
         .help("With this option, cargo will build/run in release mode. This uses optimizations and yields higher performance.")
 }
 
-pub fn release_mode_string_from_matches(matches: &ArgMatches<'static>) -> String {
+pub fn release_mode_string_from_matches(
+    matches: &ArgMatches<'static>,
+) -> String {
     match matches.is_present("optimize") {
-        true  => "--release".to_string(),
-        false => "".to_string()
+        true => "--release".to_string(),
+        false => "".to_string(),
     }
 }
 
@@ -138,13 +163,14 @@ pub fn print_client_operations() -> Arg<'static, 'static> {
         .help("Print when a read/write operation starts/ends. If not included, the performance might be slightly higher.")
 }
 
-pub fn print_client_operations_string_from_matches(matches: &ArgMatches<'static>) -> String {
+pub fn print_client_operations_string_from_matches(
+    matches: &ArgMatches<'static>,
+) -> String {
     match matches.is_present("print-client-operations") {
-        true  => "--print-client-operations".to_string(),
-        false => "".to_string()
+        true => "--print-client-operations".to_string(),
+        false => "".to_string(),
     }
 }
-
 
 pub fn color_from_node_id(node_id: NodeId) -> Color {
     let colors = vec![Black, Red, Green, Yellow, Blue, Magenta, Cyan];

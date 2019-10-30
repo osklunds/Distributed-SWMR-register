@@ -1,17 +1,15 @@
-
-use std::collections::{HashMap, HashSet, BTreeMap};
-use std::collections::hash_map::IntoIter;
-use std::fmt::{Formatter, Display, Result};
 use std::cmp::Ordering;
+use std::collections::hash_map::IntoIter;
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::fmt::{Display, Formatter, Result};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use commons::types::NodeId;
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Vector<V> {
-    map: HashMap<NodeId, V>
+    map: HashMap<NodeId, V>,
 }
 
 #[allow(dead_code)]
@@ -22,9 +20,7 @@ impl<V: Default + Clone + PartialEq + Eq + PartialOrd> Vector<V> {
             map.insert(node_id, V::default());
         }
 
-        Vector {
-            map: map
-        }
+        Vector { map: map }
     }
 
     pub fn get(&self, node_id: NodeId) -> &V {
@@ -34,7 +30,7 @@ impl<V: Default + Clone + PartialEq + Eq + PartialOrd> Vector<V> {
     pub fn set(&mut self, node_id: NodeId, value: V) {
         if self.map.insert(node_id, value) == None {
             panic!("Trying to set value in Vector, but that node id does not exist.");
-        } 
+        }
     }
 
     pub fn merge_to_max_from_vector(&mut self, other: &Vector<V>) {
@@ -50,11 +46,16 @@ impl<V: Default + Clone + PartialEq + Eq + PartialOrd> Vector<V> {
 impl<V> Vector<V> {
     fn panic_if_not_same_node_ids(&self, other: &Vector<V>) {
         for node_id in self.map.keys() {
-            other.map.get(node_id).expect("Comparing two Vectors with different node ids.");
+            other
+                .map
+                .get(node_id)
+                .expect("Comparing two Vectors with different node ids.");
         }
 
         for node_id in other.map.keys() {
-            self.map.get(node_id).expect("Comparing two Vectors with different node ids.");
+            self.map
+                .get(node_id)
+                .expect("Comparing two Vectors with different node ids.");
         }
     }
 }
@@ -202,7 +203,12 @@ mod tests {
         let mut vec = vector_for_tests();
         vec.set(2, 7);
         let string = format!("{}", vec);
-        let correct = String::from(format!("1: {}\n2: 7\n3: {}\n4: {}", value_for_tests(), value_for_tests(), value_for_tests()));
+        let correct = String::from(format!(
+            "1: {}\n2: 7\n3: {}\n4: {}",
+            value_for_tests(),
+            value_for_tests(),
+            value_for_tests()
+        ));
 
         assert_eq!(string, correct);
     }
@@ -285,7 +291,7 @@ mod tests {
     fn test_vectors_le_for_one_less_value() {
         let vec1 = vector_for_tests();
         let mut vec2 = vector_for_tests();
-        vec2.set(1,value_for_tests() - 1);
+        vec2.set(1, value_for_tests() - 1);
 
         assert!(vec2 < vec1);
     }

@@ -1,20 +1,17 @@
-
 use std::collections::HashMap;
-use std::net::SocketAddr;
 use std::fs;
+use std::net::SocketAddr;
 use std::time::Duration;
 
+use clap::{App, AppSettings, Arg, ArgMatches};
 use colored::*;
-use clap::{Arg, App, ArgMatches, AppSettings};
 
-use commons::types::{NodeId, Int};
 use commons::arguments;
-
+use commons::types::{Int, NodeId};
 
 lazy_static! {
     pub static ref SETTINGS: Settings = Settings::new();
 }
-
 
 #[derive(Debug)]
 pub struct Settings {
@@ -38,9 +35,13 @@ impl Settings {
             terminal_color: color_from_matches(&matches),
             should_write: should_write_from_matches(&matches),
             should_read: should_read_from_matches(&matches),
-            print_client_operations: print_client_operations_from_matches(&matches),
+            print_client_operations: print_client_operations_from_matches(
+                &matches,
+            ),
             run_length: run_length_from_matches(&matches),
-            record_evaluation_info: record_evaluation_info_from_matches(&matches),
+            record_evaluation_info: record_evaluation_info_from_matches(
+                &matches,
+            ),
         }
     }
 
@@ -87,16 +88,16 @@ fn get_matches() -> ArgMatches<'static> {
         .setting(AppSettings::DisableVersion)
         .setting(AppSettings::VersionlessSubcommands)
         .about("The application code, that is an instance of an ABD node.")
-
         .arg(node_id_argument())
-        .arg(arguments::hosts_file("The file with host ids, addresses and ports."))
+        .arg(arguments::hosts_file(
+            "The file with host ids, addresses and ports.",
+        ))
         .arg(color_argument())
         .arg(write_argument())
         .arg(read_argument())
         .arg(arguments::print_client_operations())
         .arg(arguments::run_length())
         .arg(arguments::record_evaluation_info())
-        
         .get_matches()
 }
 
@@ -111,13 +112,18 @@ fn node_id_from_matches(matches: &ArgMatches<'static>) -> NodeId {
     matches.value_of("node-id").unwrap().parse().unwrap()
 }
 
-fn socket_addrs_from_matches(matches: &ArgMatches<'static>) -> HashMap<NodeId, SocketAddr> {
+fn socket_addrs_from_matches(
+    matches: &ArgMatches<'static>,
+) -> HashMap<NodeId, SocketAddr> {
     let hosts_file_path = matches.value_of("hosts-file").unwrap();
-    let string = fs::read_to_string(hosts_file_path).expect("Unable to read file");
+    let string =
+        fs::read_to_string(hosts_file_path).expect("Unable to read file");
     socket_addrs_from_string(string)
 }
 
-fn socket_addrs_from_string(string: String) -> HashMap<NodeId, SocketAddr> {
+fn socket_addrs_from_string(
+    string: String,
+) -> HashMap<NodeId, SocketAddr> {
     let mut socket_addrs = HashMap::new();
 
     for line in string.lines() {
@@ -132,7 +138,8 @@ fn socket_addrs_from_string(string: String) -> HashMap<NodeId, SocketAddr> {
 }
 
 fn color_argument() -> Arg<'static, 'static> {
-    let colors = &["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan"];
+    let colors =
+        &["Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan"];
     Arg::with_name("color")
         .short("c")
         .long("color")
@@ -170,15 +177,21 @@ fn should_read_from_matches(matches: &ArgMatches<'static>) -> bool {
     matches.is_present("read")
 }
 
-fn print_client_operations_from_matches(matches: &ArgMatches<'static>) -> bool {
+fn print_client_operations_from_matches(
+    matches: &ArgMatches<'static>,
+) -> bool {
     matches.is_present("print-client-operations")
 }
 
 fn run_length_from_matches(matches: &ArgMatches<'static>) -> Duration {
-    let seconds = arguments::run_length_string_from_matches(matches).parse().unwrap();
+    let seconds = arguments::run_length_string_from_matches(matches)
+        .parse()
+        .unwrap();
     Duration::from_secs(seconds)
 }
 
-fn record_evaluation_info_from_matches(matches: &ArgMatches<'static>) -> bool {
+fn record_evaluation_info_from_matches(
+    matches: &ArgMatches<'static>,
+) -> bool {
     matches.is_present("record-evaluation-info")
 }

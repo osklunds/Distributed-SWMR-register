@@ -1,11 +1,9 @@
-
 use std::collections::HashSet;
 use std::iter::FromIterator;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use crate::types::{NodeId, Int};
-
+use crate::types::{Int, NodeId};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RunResult {
@@ -19,7 +17,7 @@ pub struct RunResult {
     pub read_message: MessageTypeResult,
     pub read_ack_message: MessageTypeResult,
 
-    pub metadata: Metadata
+    pub metadata: Metadata,
 }
 
 impl RunResult {
@@ -35,20 +33,34 @@ impl RunResult {
             read_message: MessageTypeResult::new(),
             read_ack_message: MessageTypeResult::new(),
 
-            metadata: Metadata::new()
+            metadata: Metadata::new(),
         }
     }
 
     pub fn is_sound(&self, number_of_nodes: Int) -> bool {
         let mut sound = true;
-        
-        sound &= Self::implies(self.metadata.is_writer, self.write_ack_message.nodes_received_from == Self::all_nodes_set(number_of_nodes));
 
-        sound &= Self::implies(self.metadata.is_reader, self.read_ack_message.nodes_received_from == Self::all_nodes_set(number_of_nodes));
+        sound &= Self::implies(
+            self.metadata.is_writer,
+            self.write_ack_message.nodes_received_from
+                == Self::all_nodes_set(number_of_nodes),
+        );
 
-        sound &= Self::implies(!self.metadata.is_writer, self.write_ack_message.nodes_received_from.is_empty());
+        sound &= Self::implies(
+            self.metadata.is_reader,
+            self.read_ack_message.nodes_received_from
+                == Self::all_nodes_set(number_of_nodes),
+        );
 
-        sound &= Self::implies(!self.metadata.is_reader, self.read_ack_message.nodes_received_from.is_empty());
+        sound &= Self::implies(
+            !self.metadata.is_writer,
+            self.write_ack_message.nodes_received_from.is_empty(),
+        );
+
+        sound &= Self::implies(
+            !self.metadata.is_reader,
+            self.read_ack_message.nodes_received_from.is_empty(),
+        );
 
         sound
     }
@@ -62,7 +74,7 @@ impl RunResult {
     }
 
     fn all_nodes_set(number_of_nodes: Int) -> HashSet<NodeId> {
-        HashSet::from_iter(1..(number_of_nodes+1) as NodeId)
+        HashSet::from_iter(1..(number_of_nodes + 1) as NodeId)
     }
 }
 
@@ -70,7 +82,7 @@ impl RunResult {
 pub struct MessageTypeResult {
     pub sent: Int,
     pub received: Int,
-    pub nodes_received_from: HashSet<NodeId>
+    pub nodes_received_from: HashSet<NodeId>,
 }
 
 impl MessageTypeResult {
@@ -78,7 +90,7 @@ impl MessageTypeResult {
         MessageTypeResult {
             sent: 0,
             received: 0,
-            nodes_received_from: HashSet::new()
+            nodes_received_from: HashSet::new(),
         }
     }
 }
@@ -97,7 +109,7 @@ impl Metadata {
             node_id: 0,
             is_reader: false,
             is_writer: false,
-            run_length: 0
+            run_length: 0,
         }
     }
 }

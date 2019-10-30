@@ -1,26 +1,21 @@
-
-use std::fmt;
-use std::fmt::Display;
 use std::cmp::Ordering;
 use std::default::Default;
+use std::fmt;
+use std::fmt::Display;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use super::timestamp::{self, Timestamp};
-
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Register<V> {
     pub ts: Timestamp,
-    pub val: V
+    pub val: V,
 }
 
 impl<V> Register<V> {
     pub fn new(ts: Timestamp, val: V) -> Register<V> {
-        Register {
-            ts: ts,
-            val: val
-        }
+        Register { ts: ts, val: val }
     }
 }
 
@@ -39,13 +34,13 @@ impl<V> PartialEq for Register<V> {
 impl<V> Eq for Register<V> {}
 
 impl<V> PartialOrd for Register<V> {
-    fn partial_cmp(&self, other:&Self) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.ts.partial_cmp(&other.ts)
     }
 }
 
 impl<V> Ord for Register<V> {
-    fn cmp(&self, other:&Self) -> Ordering {
+    fn cmp(&self, other: &Self) -> Ordering {
         self.ts.cmp(&other.ts)
     }
 }
@@ -55,7 +50,6 @@ impl<V: Default> Default for Register<V> {
         Register::new(timestamp::default_timestamp(), V::default())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -81,7 +75,10 @@ mod tests {
     fn register_eq_is_same_as_timestamp_eq() {
         for i in 0..100 {
             for j in 0..100 {
-                assert_eq!(Register::new(i, "") == Register::new(j, ""), i == j);
+                assert_eq!(
+                    Register::new(i, "") == Register::new(j, ""),
+                    i == j
+                );
             }
         }
     }
@@ -90,7 +87,10 @@ mod tests {
     fn register_leq_is_same_as_timestamp_leq() {
         for i in 0..100 {
             for j in 0..100 {
-                assert_eq!(Register::new(i, "") <= Register::new(j, ""), i <= j);
+                assert_eq!(
+                    Register::new(i, "") <= Register::new(j, ""),
+                    i <= j
+                );
             }
         }
     }
@@ -99,7 +99,10 @@ mod tests {
     fn register_le_is_same_as_timestamp_le() {
         for i in 0..100 {
             for j in 0..100 {
-                assert_eq!(Register::new(i, "") < Register::new(j, ""), i < j);
+                assert_eq!(
+                    Register::new(i, "") < Register::new(j, ""),
+                    i < j
+                );
             }
         }
     }

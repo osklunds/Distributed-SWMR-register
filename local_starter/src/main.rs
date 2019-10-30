@@ -29,10 +29,12 @@ fn create_hosts_file() {
             }
         }
 
-        fs::remove_file(file_path).expect("Could not remove existing hosts.txt file");
+        fs::remove_file(file_path)
+            .expect("Could not remove existing hosts.txt file");
     }
 
-    fs::write(file_path, hosts_file_string).expect("Could not write the new hosts.txt file.");
+    fs::write(file_path, hosts_file_string)
+        .expect("Could not write the new hosts.txt file.");
 }
 
 fn hosts_file_string() -> String {

@@ -1,26 +1,27 @@
-
-use std::str;
-use std::sync::{Arc, Mutex, MutexGuard, Condvar, Weak};
-use std::collections::HashSet;
 use std::borrow::Cow;
+use std::collections::HashSet;
 use std::fmt::Debug;
+use std::str;
+use std::sync::{Arc, Condvar, Mutex, MutexGuard, Weak};
 use std::time::Duration;
 
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 
-use commons::types::{NodeId, Int};
+use commons::types::{Int, NodeId};
 
-use crate::terminal_output::printlnu;
-use crate::data_types::timestamp::Timestamp;
-use crate::data_types::register_array::*;
 use crate::data_types::register::Register;
-use crate::messages::{self, Message, WriteMessage, WriteAckMessage, ReadMessage, ReadAckMessage};
+use crate::data_types::register_array::*;
+use crate::data_types::timestamp::Timestamp;
 use crate::mediator::Med;
+use crate::messages::{
+    self, Message, ReadAckMessage, ReadMessage, WriteAckMessage,
+    WriteMessage,
+};
+use crate::terminal_output::printlnu;
 
 #[cfg(test)]
 pub mod tests;
-
 
 pub struct AbdNode<M, V> {
     mediator: Weak<M>,
@@ -34,26 +35,32 @@ pub struct AbdNode<M, V> {
 
     register_array_being_read: Mutex<Option<RegisterArray<V>>>,
     acking_processors_for_read: Mutex<HashSet<NodeId>>,
-    read_ack_majority_reached: Condvar
+    read_ack_majority_reached: Condvar,
 }
 
-impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<M, V> {
+impl<
+        V: Default + Serialize + DeserializeOwned + Debug + Clone,
+        M: Med,
+    > AbdNode<M, V>
+{
     pub fn new(mediator: Weak<M>) -> AbdNode<M, V> {
-        let mediator_upgraded = mediator.upgrade().expect("Error upgrading mediator in AbdNode constructor");
+        let mediator_upgraded = mediator
+            .upgrade()
+            .expect("Error upgrading mediator in AbdNode constructor");
         let node_ids = mediator_upgraded.node_ids();
 
         AbdNode {
             mediator: mediator,
             ts: Mutex::new(0),
             reg: Mutex::new(RegisterArray::new(node_ids)),
-            
+
             register_array_being_written: Mutex::new(None),
             acking_processors_for_write: Mutex::new(HashSet::new()),
             write_ack_majority_reached: Condvar::new(),
-            
+
             register_array_being_read: Mutex::new(None),
             acking_processors_for_read: Mutex::new(HashSet::new()),
-            read_ack_majority_reached: Condvar::new()
+            read_ack_majority_reached: Condvar::new(),
         }
     }
 
@@ -62,8 +69,10 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
         self.inner_write(value);
 
         if cfg!(debug_assertions) {
-            let acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
-            let register_array_being_written = self.register_array_being_written.lock().unwrap();
+            let acking_processors_for_write =
+                self.acking_processors_for_write.lock().unwrap();
+            let register_array_being_written =
+                self.register_array_being_written.lock().unwrap();
             assert!(acking_processors_for_write.is_empty());
             assert!(register_array_being_written.is_none());
         }
@@ -74,14 +83,25 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
     }
 
     fn inner_write(&self, value: V) {
-        let register_array = self.acquire_register_array_and_update_it_with_value(value);
-        self.clone_register_array_to_register_array_being_written(&register_array);
-        let json_write_message = self.construct_json_write_message_and_release_register_array(register_array);
+        let register_array =
+            self.acquire_register_array_and_update_it_with_value(value);
+        self.clone_register_array_to_register_array_being_written(
+            &register_array,
+        );
+        let json_write_message = self
+            .construct_json_write_message_and_release_register_array(
+                register_array,
+            );
 
-        self.broadcast_json_write_message_until_majority_has_acked(&json_write_message);
+        self.broadcast_json_write_message_until_majority_has_acked(
+            &json_write_message,
+        );
     }
 
-    fn acquire_register_array_and_update_it_with_value(&self, value: V) -> MutexGuard<RegisterArray<V>> {
+    fn acquire_register_array_and_update_it_with_value(
+        &self,
+        value: V,
+    ) -> MutexGuard<RegisterArray<V>> {
         let mut ts = self.ts.lock().unwrap();
         let mut reg = self.reg.lock().unwrap();
 
@@ -90,8 +110,12 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
         reg
     }
 
-    fn clone_register_array_to_register_array_being_written(&self, register_array: &RegisterArray<V>) {
-       let mut register_array_being_written = self.register_array_being_written.lock().unwrap();
+    fn clone_register_array_to_register_array_being_written(
+        &self,
+        register_array: &RegisterArray<V>,
+    ) {
+        let mut register_array_being_written =
+            self.register_array_being_written.lock().unwrap();
 
         if cfg!(debug_assertions) {
             assert_eq!(*register_array_being_written, None);
@@ -100,34 +124,47 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
         *register_array_being_written = Some(register_array.clone());
     }
 
-    fn construct_json_write_message_and_release_register_array(&self, register_array: MutexGuard<RegisterArray<V>>) -> String {
+    fn construct_json_write_message_and_release_register_array(
+        &self,
+        register_array: MutexGuard<RegisterArray<V>>,
+    ) -> String {
         let write_message = WriteMessage {
             sender: self.mediator().node_id(),
-            register_array: Cow::Borrowed(&register_array)
+            register_array: Cow::Borrowed(&register_array),
         };
 
-        serde_json::to_string(&write_message).expect("Could not serialize a message")
+        serde_json::to_string(&write_message)
+            .expect("Could not serialize a message")
     }
 
     fn jsonify_message<Me: Message>(&self, message: &Me) -> String {
-        serde_json::to_string(message).expect("Could not serialize a message")
+        serde_json::to_string(message)
+            .expect("Could not serialize a message")
     }
 
-    fn broadcast_json_write_message_until_majority_has_acked(&self, json_write_message: &str) {
+    fn broadcast_json_write_message_until_majority_has_acked(
+        &self,
+        json_write_message: &str,
+    ) {
         self.broadcast_json_message(&json_write_message);
         if self.mediator().record_evaluation_info() {
             self.mediator().run_result().write_quorum_accesses += 1;
         }
-        let mut register_array_being_written = self.register_array_being_written.lock().unwrap();
+        let mut register_array_being_written =
+            self.register_array_being_written.lock().unwrap();
 
         while register_array_being_written.is_some() {
             let timeout = Duration::from_millis(100); // TODO: Have as a parameter somewhere
-            let result = self.write_ack_majority_reached.wait_timeout(register_array_being_written, timeout).expect("Error when waiting on write ack Condvar");
+            let result = self
+                .write_ack_majority_reached
+                .wait_timeout(register_array_being_written, timeout)
+                .expect("Error when waiting on write ack Condvar");
             register_array_being_written = result.0;
             if result.1.timed_out() {
                 self.broadcast_json_message(&json_write_message);
                 if self.mediator().record_evaluation_info() {
-                   self.mediator().run_result().write_quorum_accesses += 1;
+                    self.mediator().run_result().write_quorum_accesses +=
+                        1;
                 }
             }
         }
@@ -154,19 +191,25 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
 
         if self.mediator().record_evaluation_info() {
             if messages::json_is_write_message(json) {
-                self.mediator().run_result().write_message.sent += self.mediator().number_of_nodes();
+                self.mediator().run_result().write_message.sent +=
+                    self.mediator().number_of_nodes();
             } else if messages::json_is_write_ack_message(json) {
-                self.mediator().run_result().write_ack_message.sent += self.mediator().number_of_nodes();
+                self.mediator().run_result().write_ack_message.sent +=
+                    self.mediator().number_of_nodes();
             } else if messages::json_is_read_message(json) {
-                self.mediator().run_result().read_message.sent += self.mediator().number_of_nodes();
+                self.mediator().run_result().read_message.sent +=
+                    self.mediator().number_of_nodes();
             } else if messages::json_is_read_ack_message(json) {
-                self.mediator().run_result().read_ack_message.sent += self.mediator().number_of_nodes();
+                self.mediator().run_result().read_ack_message.sent +=
+                    self.mediator().number_of_nodes();
             }
         }
     }
 
     fn mediator(&self) -> Arc<M> {
-        self.mediator.upgrade().expect("Error upgrading mediator in AbdNode")
+        self.mediator
+            .upgrade()
+            .expect("Error upgrading mediator in AbdNode")
     }
 
     #[allow(dead_code)]
@@ -183,13 +226,20 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
 
     fn inner_read(&self) -> MutexGuard<RegisterArray<V>> {
         let register_array = self.acquire_register_array_and_clone_it_to_register_array_being_read();
-        let json_read_message = self.construct_json_read_message_and_release_register_array(register_array);
+        let json_read_message = self
+            .construct_json_read_message_and_release_register_array(
+                register_array,
+            );
 
-        self.broadcast_json_read_message_until_majority_has_acked(&json_read_message);
+        self.broadcast_json_read_message_until_majority_has_acked(
+            &json_read_message,
+        );
 
         if cfg!(debug_assertions) {
-            let acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
-            let register_array_being_read = self.register_array_being_read.lock().unwrap();
+            let acking_processors_for_read =
+                self.acking_processors_for_read.lock().unwrap();
+            let register_array_being_read =
+                self.register_array_being_read.lock().unwrap();
             assert!(acking_processors_for_read.is_empty());
             assert!(register_array_being_read.is_none());
         }
@@ -201,33 +251,46 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
         self.reg.lock().unwrap()
     }
 
-    fn acquire_register_array_and_clone_it_to_register_array_being_read(&self) -> MutexGuard<RegisterArray<V>> {
+    fn acquire_register_array_and_clone_it_to_register_array_being_read(
+        &self,
+    ) -> MutexGuard<RegisterArray<V>> {
         let register_array = self.reg.lock().unwrap();
-        let mut register_array_being_read = self.register_array_being_read.lock().unwrap();
+        let mut register_array_being_read =
+            self.register_array_being_read.lock().unwrap();
         *register_array_being_read = Some(register_array.clone());
         register_array
     }
 
-    fn construct_json_read_message_and_release_register_array(&self, register_array: MutexGuard<RegisterArray<V>>) -> String {
+    fn construct_json_read_message_and_release_register_array(
+        &self,
+        register_array: MutexGuard<RegisterArray<V>>,
+    ) -> String {
         let read_message = ReadMessage {
             sender: self.mediator().node_id(),
-            register_array: Cow::Borrowed(&register_array)
+            register_array: Cow::Borrowed(&register_array),
         };
 
         self.jsonify_message(&read_message)
     }
 
-    fn broadcast_json_read_message_until_majority_has_acked(&self, json_read_message: &str) {
+    fn broadcast_json_read_message_until_majority_has_acked(
+        &self,
+        json_read_message: &str,
+    ) {
         self.broadcast_json_message(&json_read_message);
         if self.mediator().record_evaluation_info() {
             self.mediator().run_result().read_quorum_accesses += 1;
         }
 
-        let mut register_array_being_read = self.register_array_being_read.lock().unwrap();
+        let mut register_array_being_read =
+            self.register_array_being_read.lock().unwrap();
 
         while register_array_being_read.is_some() {
             let timeout = Duration::from_millis(100); // TODO: Have as a parameter somewhere
-            let result = self.read_ack_majority_reached.wait_timeout(register_array_being_read, timeout).expect("Error waiting on read ack condvar");
+            let result = self
+                .read_ack_majority_reached
+                .wait_timeout(register_array_being_read, timeout)
+                .expect("Error waiting on read ack condvar");
             register_array_being_read = result.0;
             if result.1.timed_out() {
                 self.broadcast_json_message(&json_read_message);
@@ -244,11 +307,13 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
             if messages::json_is_write_message(json) {
                 self.mediator().run_result().write_message.received += 1;
             } else if messages::json_is_write_ack_message(json) {
-                self.mediator().run_result().write_ack_message.received += 1;
+                self.mediator().run_result().write_ack_message.received +=
+                    1;
             } else if messages::json_is_read_message(json) {
                 self.mediator().run_result().read_message.received += 1;
             } else if messages::json_is_read_ack_message(json) {
-                self.mediator().run_result().read_ack_message.received += 1;
+                self.mediator().run_result().read_ack_message.received +=
+                    1;
             }
         }
 
@@ -281,11 +346,13 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
 
     fn receive_write_message(&self, write_message: WriteMessage<V>) {
         let mut reg = self.reg.lock().unwrap();
-        reg.merge_to_max_from_register_array(&write_message.register_array);
+        reg.merge_to_max_from_register_array(
+            &write_message.register_array,
+        );
 
         let write_ack_message = WriteAckMessage {
             sender: self.mediator().node_id(),
-            register_array: Cow::Borrowed(&reg)
+            register_array: Cow::Borrowed(&reg),
         };
 
         let json = self.jsonify_message(&write_ack_message);
@@ -298,31 +365,47 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
         // might be better.
 
         if self.mediator().record_evaluation_info() {
-            self.mediator().run_result().write_message.nodes_received_from.insert(write_message.sender);
+            self.mediator()
+                .run_result()
+                .write_message
+                .nodes_received_from
+                .insert(write_message.sender);
         }
     }
 
-    fn receive_write_ack_message(&self, write_ack_message: WriteAckMessage<V>) {
-        let received_register_array: &RegisterArray<V> = &write_ack_message.register_array;        
+    fn receive_write_ack_message(
+        &self,
+        write_ack_message: WriteAckMessage<V>,
+    ) {
+        let received_register_array: &RegisterArray<V> =
+            &write_ack_message.register_array;
         {
             let mut reg = self.reg.lock().unwrap();
             reg.merge_to_max_from_register_array(received_register_array);
         }
 
-        let mut register_array_being_written = self.register_array_being_written.lock().unwrap();
+        let mut register_array_being_written =
+            self.register_array_being_written.lock().unwrap();
         let mut received_register_array_was_at_least_as_large = false;
-        
-        if let Some(register_array_being_written) = &*register_array_being_written {
+
+        if let Some(register_array_being_written) =
+            &*register_array_being_written
+        {
             if received_register_array >= register_array_being_written {
-                let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
-                acking_processors_for_write.insert(write_ack_message.sender);
+                let mut acking_processors_for_write =
+                    self.acking_processors_for_write.lock().unwrap();
+                acking_processors_for_write
+                    .insert(write_ack_message.sender);
 
                 received_register_array_was_at_least_as_large = true;
             }
         }
 
-        if received_register_array_was_at_least_as_large && self.write_ack_from_majority() {
-            let mut acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
+        if received_register_array_was_at_least_as_large
+            && self.write_ack_from_majority()
+        {
+            let mut acking_processors_for_write =
+                self.acking_processors_for_write.lock().unwrap();
             acking_processors_for_write.clear();
             *register_array_being_written = None;
 
@@ -330,58 +413,79 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
         }
 
         if self.mediator().record_evaluation_info() {
-            self.mediator().run_result().write_ack_message.nodes_received_from.insert(write_ack_message.sender);
+            self.mediator()
+                .run_result()
+                .write_ack_message
+                .nodes_received_from
+                .insert(write_ack_message.sender);
         }
     }
 
     fn write_ack_from_majority(&self) -> bool {
-        let acking_processors_for_write = self.acking_processors_for_write.lock().unwrap();
+        let acking_processors_for_write =
+            self.acking_processors_for_write.lock().unwrap();
 
-        acking_processors_for_write.len() as Int >= self.number_of_nodes_in_a_majority()
+        acking_processors_for_write.len() as Int
+            >= self.number_of_nodes_in_a_majority()
     }
 
     fn number_of_nodes_in_a_majority(&self) -> Int {
         self.mediator().number_of_nodes() / 2 + 1
     }
 
-    fn receive_read_message(&self, read_message: ReadMessage<V>) {    
+    fn receive_read_message(&self, read_message: ReadMessage<V>) {
         let mut reg = self.reg.lock().unwrap();
         reg.merge_to_max_from_register_array(&read_message.register_array);
 
         let read_ack_message = ReadAckMessage {
             sender: self.mediator().node_id(),
-            register_array: Cow::Borrowed(&reg)
+            register_array: Cow::Borrowed(&reg),
         };
 
         let json = self.jsonify_message(&read_ack_message);
         self.send_json_message_to(&json, read_message.sender);
 
         if self.mediator().record_evaluation_info() {
-            self.mediator().run_result().read_message.nodes_received_from.insert(read_message.sender);
+            self.mediator()
+                .run_result()
+                .read_message
+                .nodes_received_from
+                .insert(read_message.sender);
         }
     }
 
-    fn receive_read_ack_message(&self, read_ack_message: ReadAckMessage<V>) {
-        let received_register_array: &RegisterArray<V> = &read_ack_message.register_array;
+    fn receive_read_ack_message(
+        &self,
+        read_ack_message: ReadAckMessage<V>,
+    ) {
+        let received_register_array: &RegisterArray<V> =
+            &read_ack_message.register_array;
         {
             let mut reg = self.reg.lock().unwrap();
             reg.merge_to_max_from_register_array(&received_register_array);
         }
 
-        let mut register_array_being_read = self.register_array_being_read.lock().unwrap();
+        let mut register_array_being_read =
+            self.register_array_being_read.lock().unwrap();
         let mut received_register_array_was_at_least_as_large = false;
-        
-        if let Some(register_array_being_read) = &*register_array_being_read {
+
+        if let Some(register_array_being_read) =
+            &*register_array_being_read
+        {
             if received_register_array >= register_array_being_read {
-                let mut acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
+                let mut acking_processors_for_read =
+                    self.acking_processors_for_read.lock().unwrap();
                 acking_processors_for_read.insert(read_ack_message.sender);
 
                 received_register_array_was_at_least_as_large = true;
             }
         }
 
-        if received_register_array_was_at_least_as_large && self.read_ack_from_majority() {
-            let mut acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
+        if received_register_array_was_at_least_as_large
+            && self.read_ack_from_majority()
+        {
+            let mut acking_processors_for_read =
+                self.acking_processors_for_read.lock().unwrap();
             acking_processors_for_read.clear();
 
             *register_array_being_read = None;
@@ -389,13 +493,19 @@ impl<V: Default + Serialize + DeserializeOwned + Debug + Clone, M: Med> AbdNode<
         }
 
         if self.mediator().record_evaluation_info() {
-            self.mediator().run_result().read_ack_message.nodes_received_from.insert(read_ack_message.sender);
+            self.mediator()
+                .run_result()
+                .read_ack_message
+                .nodes_received_from
+                .insert(read_ack_message.sender);
         }
     }
 
     fn read_ack_from_majority(&self) -> bool {
-        let acking_processors_for_read = self.acking_processors_for_read.lock().unwrap();
+        let acking_processors_for_read =
+            self.acking_processors_for_read.lock().unwrap();
 
-        acking_processors_for_read.len() as Int >= self.number_of_nodes_in_a_majority()
+        acking_processors_for_read.len() as Int
+            >= self.number_of_nodes_in_a_majority()
     }
 }

@@ -1,19 +1,20 @@
-
 use std::collections::HashSet;
 
-use commons::types::{NodeId, Int};
-
+use commons::types::{Int, NodeId};
 
 pub struct ConfigurationManager {
     node_id: NodeId,
-    node_ids: HashSet<NodeId>
+    node_ids: HashSet<NodeId>,
 }
 
 impl ConfigurationManager {
-    pub fn new(node_id: NodeId, node_ids: HashSet<NodeId>) -> ConfigurationManager {
+    pub fn new(
+        node_id: NodeId,
+        node_ids: HashSet<NodeId>,
+    ) -> ConfigurationManager {
         ConfigurationManager {
             node_id: node_id,
-            node_ids: node_ids
+            node_ids: node_ids,
         }
     }
 

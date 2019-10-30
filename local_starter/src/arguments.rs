@@ -23,16 +23,25 @@ impl Arguments {
 
         Arguments {
             number_of_nodes: number_of_nodes_from_matches(&matches),
-            number_of_writers: arguments::number_of_writers_from_matches(&matches),
-            number_of_readers: arguments::number_of_readers_from_matches(&matches),
-            release_mode_string: arguments::release_mode_string_from_matches(&matches),
-            print_client_operations_string: arguments::print_client_operations_string_from_matches(
+            number_of_writers: arguments::number_of_writers_from_matches(
                 &matches,
             ),
-            run_length_string: arguments::run_length_string_from_matches(&matches),
-            record_evaluation_info_string: arguments::record_evaluation_info_string_from_matches(
+            number_of_readers: arguments::number_of_readers_from_matches(
                 &matches,
             ),
+            release_mode_string:
+                arguments::release_mode_string_from_matches(&matches),
+            print_client_operations_string:
+                arguments::print_client_operations_string_from_matches(
+                    &matches,
+                ),
+            run_length_string: arguments::run_length_string_from_matches(
+                &matches,
+            ),
+            record_evaluation_info_string:
+                arguments::record_evaluation_info_string_from_matches(
+                    &matches,
+                ),
         }
     }
 }

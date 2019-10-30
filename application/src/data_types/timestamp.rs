@@ -1,6 +1,4 @@
-
 use commons::types::Int;
-
 
 pub type Timestamp = Int;
 

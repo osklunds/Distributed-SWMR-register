@@ -11,7 +11,10 @@ pub fn execute_local_command(command: &str) -> Child {
         .expect(&format!("Failed to execute the command: {}", command))
 }
 
-pub fn execute_remote_command(command: &str, node_info: &NodeInfo) -> Child {
+pub fn execute_remote_command(
+    command: &str,
+    node_info: &NodeInfo,
+) -> Child {
     let ssh_command = format!(
         "ssh -o \"StrictHostKeyChecking=no\" -i {} {}@{} {}",
         node_info.key_path,
