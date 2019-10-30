@@ -40,6 +40,6 @@ The `evaluator` directory contains the code for another helper tool. `evaluator`
 | evaluator: local computer       | Yes   | Yes | No      |
 | evaluator: remote computer      | Yes   | Yes | No      |
 
-## The modification
+## License
 
-The implementation almost follows the ABD algorithm, but is modified to allow each processor to own a register. This modification doesn't have a correctness proof, so I'm working on switching to the vanilla ABD. In fact, the current implementation doesn't provide *atomic* registers like ABD, but rather *regular* registers.
+This project uses 3rd-party code, which is licensed under the BSD-3-License. The corresponding license file is `3RD-PARTY-LICENSES/rusty_self_stabilizing_snapshots_license`.
