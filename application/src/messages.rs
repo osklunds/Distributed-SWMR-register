@@ -1,60 +1,96 @@
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 
 use commons::types::NodeId;
 
-use crate::data_types::register_array::RegisterArray;
+use super::data_types::timestamp::Timestamp;
 
 pub trait Message: Serialize {}
 
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-pub struct WriteMessage<'a, V: Clone> {
+pub struct WriteMessage<V> {
     #[serde(rename = "WriteMessage")]
     pub sender: NodeId,
-    pub register_array: Cow<'a, RegisterArray<V>>,
+    pub timestamp: Timestamp,
+    pub value: V
 }
 
-impl<'a, V: Serialize + Clone> Message for WriteMessage<'a, V> {}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-pub struct WriteAckMessage<'a, V: Clone> {
-    #[serde(rename = "WriteAckMessage")]
-    pub sender: NodeId,
-    pub register_array: Cow<'a, RegisterArray<V>>,
-}
-
-impl<'a, V: Serialize + Clone> Message for WriteAckMessage<'a, V> {}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-pub struct ReadMessage<'a, V: Clone> {
-    #[serde(rename = "ReadMessage")]
-    pub sender: NodeId,
-    pub register_array: Cow<'a, RegisterArray<V>>,
-}
-
-impl<'a, V: Serialize + Clone> Message for ReadMessage<'a, V> {}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-pub struct ReadAckMessage<'a, V: Clone> {
-    #[serde(rename = "ReadAckMessage")]
-    pub sender: NodeId,
-    pub register_array: Cow<'a, RegisterArray<V>>,
-}
-
-impl<'a, V: Serialize + Clone> Message for ReadAckMessage<'a, V> {}
+impl<V: Serialize> Message for WriteMessage<V> {}
 
 pub fn json_is_write_message(json: &str) -> bool {
     json.starts_with("{\"WriteMessage\":")
 }
 
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct WriteAckMessage<V> {
+    #[serde(rename = "WriteAckMessage")]
+    pub sender: NodeId,
+    pub timestamp: Timestamp,
+}
+
+impl<V: Serialize> Message for WriteAckMessage<V> {}
+
 pub fn json_is_write_ack_message(json: &str) -> bool {
     json.starts_with("{\"WriteAckMessage\":")
 }
 
-pub fn json_is_read_message(json: &str) -> bool {
-    json.starts_with("{\"ReadMessage\":")
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct Read1Message<V> {
+    #[serde(rename = "Read1Message")]
+    pub sender: NodeId,
+    pub timestamp: Timestamp,
 }
 
-pub fn json_is_read_ack_message(json: &str) -> bool {
-    json.starts_with("{\"ReadAckMessage\":")
+impl<V: Serialize> Message for Read1Message<V> {}
+
+pub fn json_is_read1_message(json: &str) -> bool {
+    json.starts_with("{\"Read1Message\":")
 }
+
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct Read1AckMessage<V> {
+    #[serde(rename = "Read1AckMessage")]
+    pub sender: NodeId,
+    pub timestamp: Timestamp,
+    pub value: V
+}
+
+impl<V: Serialize> Message for Read1AckMessage<V> {}
+
+pub fn json_is_read1_ack_message(json: &str) -> bool {
+    json.starts_with("{\"Read1AckMessage\":")
+}
+
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct Read2Message<V> {
+    #[serde(rename = "Read2Message")]
+    pub sender: NodeId,
+    pub timestamp: Timestamp,
+    pub value: V
+}
+
+impl<V: Serialize> Message for Read2Message<V> {}
+
+pub fn json_is_read2_message(json: &str) -> bool {
+    json.starts_with("{\"Read2Message\":")
+}
+
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct Read2AckMessage<V> {
+    #[serde(rename = "Read2AckMessage")]
+    pub sender: NodeId,
+    pub timestamp: Timestamp,
+}
+
+impl<V: Serialize> Message for Read2AckMessage<V> {}
+
+pub fn json_is_read2_ack_message(json: &str) -> bool {
+    json.starts_with("{\"Read2AckMessage\":")
+}
+
+// TODO: Tests
