@@ -21,3 +21,20 @@ pub struct Quorum {
     acking_processors: Mutex<HashSet<NodeId>>,
     majority_reached: Condvar,
 }
+
+impl Quorum {
+    pub fn new() -> Quorum {
+        Quorum {
+            acking_processors: Mutex::new(HashSet::new()),
+            majority_reached: Condvar::new()
+        }
+    }
+
+    pub fn acking_processors(&self) -> &Mutex<HashSet<NodeId>> {
+        &self.acking_processors
+    }
+
+    pub fn majority_reached(&self) -> &Condvar {
+        &self.majority_reached
+    }
+}

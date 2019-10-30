@@ -27,29 +27,19 @@ pub struct AbdNode<M, V> {
     timestamp: Mutex<Timestamp>,
     value: Mutex<V>,
 
-
-
-
-
-
-    ts: Mutex<Timestamp>,
-    reg: Mutex<RegisterArray<V>>,
-
-    register_array_being_written: Mutex<Option<RegisterArray<V>>>,
-    acking_processors_for_write: Mutex<HashSet<NodeId>>,
-    write_ack_majority_reached: Condvar,
-
-    register_array_being_read: Mutex<Option<RegisterArray<V>>>,
-    acking_processors_for_read: Mutex<HashSet<NodeId>>,
-    read_ack_majority_reached: Condvar,
+    write_quorum: Quorum,
+    read1_quorum: Quorum,
+    read2_quorum: Quorum,
 }
 
+pub trait Value: Default + Serialize + DeserializeOwned + Debug + Clone {}
+impl <V: Default + Serialize + DeserializeOwned + Debug + Clone> Value for V {}
+
 impl<
-        V: Default + Serialize + DeserializeOwned + Debug + Clone,
+        V: Value,
         M: Med,
     > AbdNode<M, V>
 {
-    /*
     pub fn new(mediator: Weak<M>) -> AbdNode<M, V> {
         let mediator_upgraded = mediator
             .upgrade()
@@ -58,18 +48,16 @@ impl<
 
         AbdNode {
             mediator: mediator,
-            ts: Mutex::new(0),
-            reg: Mutex::new(RegisterArray::new(node_ids)),
+            
+            timestamp: Mutex::new(0),
+            value: Mutex::new(V::default()),
 
-            register_array_being_written: Mutex::new(None),
-            acking_processors_for_write: Mutex::new(HashSet::new()),
-            write_ack_majority_reached: Condvar::new(),
-
-            register_array_being_read: Mutex::new(None),
-            acking_processors_for_read: Mutex::new(HashSet::new()),
-            read_ack_majority_reached: Condvar::new(),
+            write_quorum: Quorum::new(),
+            read1_quorum: Quorum::new(),
+            read2_quorum: Quorum::new(),
         }
     }
+    /*
 
     #[allow(dead_code)]
     pub fn write(&self, value: V) {
