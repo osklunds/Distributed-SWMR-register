@@ -205,7 +205,7 @@ fn run_application_on_remote_computer(node_info: &NodeInfo) -> Child {
             false => "",
         };
 
-        let command_string = format!("\"cd {}/application/;../../.cargo/bin/cargo run {} -- {} {} -l {} -c {:?} {} {} {} {};cd ../../\"",
+        let command_string = format!("\"cd {}/application/;cargo run {} -- {} {} -l {} -c {:?} {} {} {} {};cd ../../\"",
             REMOTE_DIRECTORY_NAME,
             ARGUMENTS.release_mode_string,
             node_info.node_id,
