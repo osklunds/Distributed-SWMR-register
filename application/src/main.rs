@@ -22,7 +22,7 @@ use std::thread;
 use std::sync::mpsc::{self, TryRecvError, Receiver, Sender};
 
 use commons::types::Int;
-use commons::misc;
+use commons::arguments;
 
 use crate::settings::SETTINGS;
 use crate::terminal_output::printlnu;
@@ -58,7 +58,7 @@ fn main() {
 
         let json = serde_json::to_string(&*run_result).unwrap();
         printlnu(format!("{}", &json));
-        fs::write(misc::run_result_file_name_from_node_id(SETTINGS.node_id()), json).expect("Could not write the json result file");
+        fs::write(arguments::run_result_file_name_from_node_id(SETTINGS.node_id()), json).expect("Could not write the json result file");
     }
 }
 

@@ -9,7 +9,6 @@ use std::process::Child;
 use std::vec::Vec;
 
 use commons::execution;
-use commons::misc;
 use commons::types::NodeId;
 
 use crate::arguments::ARGUMENTS;
@@ -77,7 +76,7 @@ fn run_application() {
 }
 
 fn run_single_application_instance(node_id: NodeId) -> Child {
-    let color = misc::color_from_node_id(node_id);
+    let color = commons::arguments::color_from_node_id(node_id);
     let write_string = match node_id <= ARGUMENTS.number_of_writers {
         true => "--write",
         false => "",
