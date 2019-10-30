@@ -18,11 +18,17 @@ pub struct Settings {
     node_id: NodeId,
     socket_addrs: HashMap<NodeId, SocketAddr>,
     terminal_color: Color,
-    should_write: bool,
-    should_read: bool,
+    client_operation: ClientOperation,
     print_client_operations: bool,
     run_length: Duration,
     record_evaluation_info: bool,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum ClientOperation {
+    Write,
+    Read,
+    Nop
 }
 
 impl Settings {
@@ -33,8 +39,7 @@ impl Settings {
             node_id: node_id_from_matches(&matches),
             socket_addrs: socket_addrs_from_matches(&matches),
             terminal_color: color_from_matches(&matches),
-            should_write: should_write_from_matches(&matches),
-            should_read: should_read_from_matches(&matches),
+            client_operation: client_operation_from_matches(&matches),
             print_client_operations: print_client_operations_from_matches(
                 &matches,
             ),
@@ -71,11 +76,11 @@ impl Settings {
     }
 
     pub fn should_read(&self) -> bool {
-        self.should_read
+        self.client_operation == ClientOperation::Read
     }
 
     pub fn should_write(&self) -> bool {
-        self.should_write
+        self.client_operation == ClientOperation::Write
     }
 
     pub fn run_length(&self) -> Duration {
@@ -158,11 +163,8 @@ fn write_argument() -> Arg<'static, 'static> {
         .short("w")
         .long("write")
         .takes_value(false)
+        .conflicts_with("read")
         .help("Makes this node perform write operations.")
-}
-
-fn should_write_from_matches(matches: &ArgMatches<'static>) -> bool {
-    matches.is_present("write")
 }
 
 fn read_argument() -> Arg<'static, 'static> {
@@ -170,11 +172,18 @@ fn read_argument() -> Arg<'static, 'static> {
         .short("r")
         .long("read")
         .takes_value(false)
+        .conflicts_with("write")
         .help("Makes this node perform read operations.")
 }
 
-fn should_read_from_matches(matches: &ArgMatches<'static>) -> bool {
-    matches.is_present("read")
+fn client_operation_from_matches(matches: &ArgMatches<'static>) -> ClientOperation {
+    if matches.is_present("write") {
+        ClientOperation::Write
+    } else if matches.is_present("read") {
+        ClientOperation::Read
+    } else {
+        ClientOperation::Nop
+    }
 }
 
 fn print_client_operations_from_matches(
