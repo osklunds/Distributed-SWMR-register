@@ -15,6 +15,16 @@ pub struct WriteMessage<V> {
     pub value: V
 }
 
+impl<V> WriteMessage<V> {
+    pub fn new(sender: NodeId, timestamp: Timestamp, value: V) -> WriteMessage<V> {
+        WriteMessage {
+            sender: sender,
+            timestamp: timestamp,
+            value: value,
+        }
+    }
+}
+
 impl<V: Serialize> Message for WriteMessage<V> {}
 
 pub fn json_is_write_message(json: &str) -> bool {
