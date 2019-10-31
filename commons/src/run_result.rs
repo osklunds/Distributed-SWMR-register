@@ -14,8 +14,10 @@ pub struct RunResult {
 
     pub write_message: MessageTypeResult,
     pub write_ack_message: MessageTypeResult,
-    pub read_message: MessageTypeResult,
-    pub read_ack_message: MessageTypeResult,
+    pub read1_message: MessageTypeResult,
+    pub read1_ack_message: MessageTypeResult,
+    pub read2_message: MessageTypeResult,
+    pub read2_ack_message: MessageTypeResult,
 
     pub metadata: Metadata,
 }
@@ -30,8 +32,10 @@ impl RunResult {
 
             write_message: MessageTypeResult::new(),
             write_ack_message: MessageTypeResult::new(),
-            read_message: MessageTypeResult::new(),
-            read_ack_message: MessageTypeResult::new(),
+            read1_message: MessageTypeResult::new(),
+            read1_ack_message: MessageTypeResult::new(),
+            read2_message: MessageTypeResult::new(),
+            read2_ack_message: MessageTypeResult::new(),
 
             metadata: Metadata::new(),
         }
@@ -48,9 +52,19 @@ impl RunResult {
 
         sound &= Self::implies(
             self.metadata.is_reader,
-            self.read_ack_message.nodes_received_from
+            self.read1_ack_message.nodes_received_from
                 == Self::all_nodes_set(number_of_nodes),
         );
+
+        sound &= Self::implies(
+            self.metadata.is_reader,
+            self.read2_ack_message.nodes_received_from
+                == Self::all_nodes_set(number_of_nodes),
+        );
+
+        sound &= Self::implies(self.metadata.is_writer, !self.metadata.is_reader);
+
+        sound &= Self::implies(self.metadata.is_reader, !self.metadata.is_writer);
 
         sound &= Self::implies(
             !self.metadata.is_writer,
@@ -59,7 +73,12 @@ impl RunResult {
 
         sound &= Self::implies(
             !self.metadata.is_reader,
-            self.read_ack_message.nodes_received_from.is_empty(),
+            self.read1_ack_message.nodes_received_from.is_empty(),
+        );
+
+        sound &= Self::implies(
+            !self.metadata.is_reader,
+            self.read2_ack_message.nodes_received_from.is_empty(),
         );
 
         sound

@@ -62,24 +62,20 @@ pub fn node_infos_from_string(string: String) -> HashSet<NodeInfo> {
     node_infos
 }
 
-pub fn number_of_writers() -> Arg<'static, 'static> {
-    Arg::with_name("number-of-writers")
+pub fn should_write() -> Arg<'static, 'static> {
+    Arg::with_name("write")
         .required(false)
         .takes_value(true)
         .default_value("0")
         .short("w")
-        .long("number-of-writers")
-        .help("The number of nodes that should write.")
+        .long("write")
+        .help("If the writer node should write.")
 }
 
-pub fn number_of_writers_from_matches(
+pub fn should_writer_from_matches(
     matches: &ArgMatches<'static>,
-) -> Int {
-    matches
-        .value_of("number-of-writers")
-        .expect("Number of writers arg not existing.")
-        .parse()
-        .expect("Could not parse number of writers.")
+) -> bool {
+    matches.is_present("write")
 }
 
 pub fn number_of_readers() -> Arg<'static, 'static> {
@@ -119,23 +115,6 @@ pub fn run_length_string_from_matches(
         .value_of("run-length")
         .expect("run length arg not existing.")
         .to_string()
-}
-
-pub fn record_evaluation_info() -> Arg<'static, 'static> {
-    Arg::with_name("record-evaluation-info")
-        .short("e")
-        .long("record-evaluation-info")
-        .takes_value(false)
-        .help("Record information used for the evaluation, such as latency and number of messages sent. If not done, the performance might be slightly higher.")
-}
-
-pub fn record_evaluation_info_string_from_matches(
-    matches: &ArgMatches<'static>,
-) -> String {
-    match matches.is_present("record-evaluation-info") {
-        true => "--record-evaluation-info".to_string(),
-        false => "".to_string(),
-    }
 }
 
 pub fn optimize() -> Arg<'static, 'static> {
