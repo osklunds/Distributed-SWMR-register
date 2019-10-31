@@ -125,11 +125,12 @@ impl<V: Value, M: Med> AbdNode<M, V> {
     }
 
     fn quorum_access<Msg: Message>(&self, message: &Msg, quorum: &Quorum) {
+        let mut accessing = quorum.accessing().lock().unwrap();
+        *accessing = true;
+
         let json = self.jsonify_message(message);
         self.broadcast_json(&json);
 
-        let mut accessing = quorum.accessing().lock().unwrap();
-        *accessing = true;
         while *accessing {
             let result = quorum
                 .majority_reached()
@@ -377,6 +378,7 @@ impl<V: Value, M: Med> AbdNode<M, V> {
     //
 
     pub fn json_received(&self, json: &str) {
+        self.try_receive_write_message_json(json);
         self.try_receive_write_message_json(json);
         self.try_receive_write_ack_message_json(json);
         self.try_receive_read1_message_json(json);
