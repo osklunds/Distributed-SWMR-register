@@ -9,12 +9,11 @@ lazy_static! {
 
 pub struct Arguments {
     pub number_of_nodes: Int,
-    pub number_of_writers: Int,
+    pub should_write: bool,
     pub number_of_readers: Int,
     pub release_mode_string: String,
     pub print_client_operations_string: String,
     pub run_length_string: String,
-    pub record_evaluation_info_string: String,
 }
 
 impl Arguments {
@@ -23,7 +22,7 @@ impl Arguments {
 
         Arguments {
             number_of_nodes: number_of_nodes_from_matches(&matches),
-            number_of_writers: arguments::number_of_writers_from_matches(
+            should_write: arguments::should_write_from_matches(
                 &matches,
             ),
             number_of_readers: arguments::number_of_readers_from_matches(
@@ -38,10 +37,6 @@ impl Arguments {
             run_length_string: arguments::run_length_string_from_matches(
                 &matches,
             ),
-            record_evaluation_info_string:
-                arguments::record_evaluation_info_string_from_matches(
-                    &matches,
-                ),
         }
     }
 }
@@ -52,12 +47,11 @@ fn get_matches() -> ArgMatches<'static> {
         .setting(AppSettings::VersionlessSubcommands)
         .about("A helper utility that starts multiple nodes on your local computer.")
         .arg(number_of_nodes_argument())
-        .arg(arguments::number_of_writers())
+        .arg(arguments::should_write())
         .arg(arguments::number_of_readers())
         .arg(arguments::optimize())
         .arg(arguments::print_client_operations())
         .arg(arguments::run_length())
-        .arg(arguments::record_evaluation_info())
         .get_matches()
 }
 

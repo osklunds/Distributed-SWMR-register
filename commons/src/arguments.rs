@@ -72,7 +72,7 @@ pub fn should_write() -> Arg<'static, 'static> {
         .help("If the writer node should write.")
 }
 
-pub fn should_writer_from_matches(
+pub fn should_write_from_matches(
     matches: &ArgMatches<'static>,
 ) -> bool {
     matches.is_present("write")

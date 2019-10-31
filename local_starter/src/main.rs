@@ -79,22 +79,22 @@ fn run_application() {
 
 fn run_single_application_instance(node_id: NodeId) -> Child {
     let color = commons::arguments::color_from_node_id(node_id);
-    let write_string = match node_id <= ARGUMENTS.number_of_writers {
-        true => "--write",
-        false => "",
+    let write_string = if node_id == ARGUMENTS.number_of_nodes - 1 && ARGUMENTS.should_write {
+        "--write"
+    } else {
+        ""
     };
     let read_string = match node_id <= ARGUMENTS.number_of_readers {
         true => "--read",
         false => "",
     };
 
-    let command = format!("cargo run {} --manifest-path ../application/Cargo.toml -- {} hosts.txt -c {:?} -l {} {} {} {} {}", 
+    let command = format!("cargo run {} --manifest-path ../application/Cargo.toml -- {} hosts.txt -c {:?} -l {} {} {} {}", 
         ARGUMENTS.release_mode_string,
         node_id,
         color,
         ARGUMENTS.run_length_string,
         ARGUMENTS.print_client_operations_string,
-        ARGUMENTS.record_evaluation_info_string,
         write_string,
         read_string);
 
