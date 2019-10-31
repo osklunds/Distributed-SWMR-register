@@ -17,7 +17,6 @@ pub trait Mediator {
     // Communicator
 
     fn send_json_to(&self, json: &str, receiver: NodeId);
-    fn broadcast_json(&self, json: &str);
     fn json_received(&self, json: &str);
 
     // Configuration manager
@@ -32,12 +31,8 @@ pub trait Mediator {
 
     // Abd Node
 
-    fn write(&self, message: String);
-    fn read(&self, node_id: NodeId) -> String;
-
-    // Settings
-
-    fn record_evaluation_info(&self) -> bool;
+    fn write(&self, value: String);
+    fn read(&self) -> String;
 }
 
 pub trait Med: Mediator + Send + Sync + 'static {}
@@ -52,7 +47,6 @@ pub struct MediatorImpl {
 }
 
 impl MediatorImpl {
-    /*
     pub fn new() -> Arc<MediatorImpl> {
         let node_id = SETTINGS.node_id();
         let socket_addrs = SETTINGS.socket_addrs().clone();
@@ -85,7 +79,7 @@ impl MediatorImpl {
 
         mediator
     }
-    */
+    
     // Modules
 
     fn communicator(&self) -> &Communicator<MediatorImpl> {
@@ -114,12 +108,6 @@ impl Mediator for MediatorImpl {
         self.communicator().send_json_to(json, receiver);
     }
 
-    fn broadcast_json(&self, json: &str) {
-        for &node_id in self.configuration_manager().node_ids() {
-            self.send_json_to(json, node_id);
-        }
-    }
-
     fn json_received(&self, json: &str) {
         //self.abd_node().json_received(json);
     }
@@ -146,17 +134,11 @@ impl Mediator for MediatorImpl {
 
     // Abd Node
 
-    fn write(&self, message: String) {
-        //self.abd_node().write(message);
+    fn write(&self, value: String) {
+        self.abd_node().write(value);
     }
 
-    fn read(&self, node_id: NodeId) -> String {
-        "".to_string() //self.abd_node().read(node_id)
-    }
-
-    // Settings
-
-    fn record_evaluation_info(&self) -> bool {
-        SETTINGS.record_evaluation_info()
+    fn read(&self) -> String {
+        self.abd_node().read()
     }
 }
