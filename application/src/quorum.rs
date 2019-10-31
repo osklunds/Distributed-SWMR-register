@@ -54,19 +54,16 @@ impl Quorum {
 
     pub fn notify_if_has_ack_from_majority(&self) {
         if self.has_ack_from_majority() {
-            let mut accessing =
-                self.accessing.lock().unwrap();
+            let mut accessing = self.accessing.lock().unwrap();
             *accessing = false;
             self.majority_reached.notify_one();
         }
     }
 
     fn has_ack_from_majority(&self) -> bool {
-        let acking_nodes =
-            self.acking_nodes.lock().unwrap();
+        let acking_nodes = self.acking_nodes.lock().unwrap();
 
-        acking_nodes.len() as Int
-            >= self.number_of_nodes_in_a_majority()
+        acking_nodes.len() as Int >= self.number_of_nodes_in_a_majority()
     }
 
     fn number_of_nodes_in_a_majority(&self) -> Int {

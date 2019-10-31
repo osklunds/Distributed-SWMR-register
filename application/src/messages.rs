@@ -4,14 +4,12 @@ use commons::types::NodeId;
 
 use super::data_types::timestamp::Timestamp;
 
-
 pub trait Message: Serialize {}
 
 pub trait TimestampValueMessage<V> {
     fn timestamp(&self) -> Timestamp;
     fn value(&self) -> &V;
 }
-
 
 //
 // WriteMessage
@@ -41,7 +39,6 @@ pub fn json_is_write_message(json: &str) -> bool {
     json.starts_with("{\"WriteMessage\":")
 }
 
-
 //
 // WriteAckMessage
 //
@@ -59,7 +56,6 @@ pub fn json_is_write_ack_message(json: &str) -> bool {
     json.starts_with("{\"WriteAckMessage\":")
 }
 
-
 //
 // Read1Message
 //
@@ -76,7 +72,6 @@ impl Message for Read1Message {}
 pub fn json_is_read1_message(json: &str) -> bool {
     json.starts_with("{\"Read1Message\":")
 }
-
 
 //
 // Read1AckMessage
@@ -107,7 +102,6 @@ pub fn json_is_read1_ack_message(json: &str) -> bool {
     json.starts_with("{\"Read1AckMessage\":")
 }
 
-
 //
 // Read2Message
 //
@@ -136,7 +130,6 @@ impl<V> TimestampValueMessage<V> for Read2Message<V> {
 pub fn json_is_read2_message(json: &str) -> bool {
     json.starts_with("{\"Read2Message\":")
 }
-
 
 //
 // Read2AckMessage

@@ -15,8 +15,8 @@ use crate::data_types::register_array::*;
 use crate::data_types::timestamp::Timestamp;
 use crate::mediator::Med;
 use crate::messages::{
-    self, Message, TimestampValueMessage, WriteAckMessage, WriteMessage,
-    Read1Message, Read1AckMessage, Read2Message, Read2AckMessage
+    self, Message, Read1AckMessage, Read1Message, Read2AckMessage,
+    Read2Message, TimestampValueMessage, WriteAckMessage, WriteMessage,
 };
 use crate::quorum::Quorum;
 use crate::terminal_output::printlnu;
@@ -96,9 +96,7 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             assert!(self.write_quorum.is_idle());
         }
 
-        if self.mediator().record_evaluation_info() {
-            self.mediator().run_result().write_ops += 1;
-        }
+        self.mediator().run_result().write_ops += 1;
     }
 
     fn write_inner(&self, new_value: V) {
@@ -151,7 +149,7 @@ impl<V: Value, M: Med> AbdNode<M, V> {
     fn receive_write_message(&self, write_message: &WriteMessage<V>) {
         self.update_local_timestamp_and_value_from_message(write_message);
         let write_ack_message =
-            self.write_ack_message_from_write_message(write_message);
+            self.construct_write_ack_message(write_message.timestamp);
         self.send_message_to(&write_ack_message, write_message.sender);
     }
 
@@ -170,13 +168,13 @@ impl<V: Value, M: Med> AbdNode<M, V> {
         }
     }
 
-    fn write_ack_message_from_write_message(
+    fn construct_write_ack_message(
         &self,
-        write_message: &WriteMessage<V>,
+        timestamp: Timestamp,
     ) -> WriteAckMessage {
         WriteAckMessage {
             sender: self.mediator().node_id(),
-            timestamp: write_message.timestamp,
+            timestamp: timestamp,
         }
     }
 
@@ -187,19 +185,37 @@ impl<V: Value, M: Med> AbdNode<M, V> {
         let timestamp = self.timestamp.lock().unwrap();
 
         if write_ack_message.timestamp == *timestamp {
-            self.write_quorum.insert_node_to_acking_nodes(write_ack_message.sender);
+            self.write_quorum
+                .insert_node_to_acking_nodes(write_ack_message.sender);
             self.write_quorum.notify_if_has_ack_from_majority();
         }
     }
 
-    
     //
     // Read client-side
     //
 
     pub fn read(&self) -> V {
+        if cfg!(debug_assertions) {
+            assert!(self.read1_quorum.is_idle());
+            assert!(self.read2_quorum.is_idle());
+        }
+
         self.read_phase1();
+
+        if cfg!(debug_assertions) {
+            assert!(self.read1_quorum.is_idle());
+            assert!(self.read2_quorum.is_idle());
+        }
+
         self.read_phase2();
+
+        if cfg!(debug_assertions) {
+            assert!(self.read1_quorum.is_idle());
+            assert!(self.read2_quorum.is_idle());
+        }
+
+        self.mediator().run_result().read_ops += 1;
 
         self.value.lock().unwrap().clone()
     }
@@ -210,11 +226,12 @@ impl<V: Value, M: Med> AbdNode<M, V> {
     }
 
     fn construct_read1_message(&self) -> Read1Message {
-        let mut sequence_number = self.read1_sequence_number.lock().unwrap();
+        let mut sequence_number =
+            self.read1_sequence_number.lock().unwrap();
         *sequence_number += 1;
 
         Read1Message {
-            sender: self.mediator().node_id(), 
+            sender: self.mediator().node_id(),
             sequence_number: *sequence_number,
         }
     }
@@ -227,13 +244,14 @@ impl<V: Value, M: Med> AbdNode<M, V> {
     fn construct_read2_message(&self) -> Read2Message<V> {
         let timestamp = self.timestamp.lock().unwrap();
         let value = self.value.lock().unwrap();
-        let mut sequence_number = self.read2_sequence_number.lock().unwrap();
+        let mut sequence_number =
+            self.read2_sequence_number.lock().unwrap();
         *sequence_number += 1;
 
         Read2Message {
-            sender: self.mediator().node_id(), 
-            timestamp: *timestamp, 
-            value: value.clone(), 
+            sender: self.mediator().node_id(),
+            timestamp: *timestamp,
+            value: value.clone(),
             sequence_number: *sequence_number,
         }
     }
@@ -243,11 +261,15 @@ impl<V: Value, M: Med> AbdNode<M, V> {
     //
 
     fn receive_read1_message(&self, read1_message: &Read1Message) {
-        let read1_ack_message = self.construct_read1_ack_message(read1_message.sender);
+        let read1_ack_message =
+            self.construct_read1_ack_message(read1_message.sender);
         self.send_message_to(&read1_ack_message, read1_message.sender);
     }
 
-    fn construct_read1_ack_message(&self, sequence_number: Timestamp) -> Read1AckMessage<V> {
+    fn construct_read1_ack_message(
+        &self,
+        sequence_number: Timestamp,
+    ) -> Read1AckMessage<V> {
         let timestamp = self.timestamp.lock().unwrap();
         let value = self.value.lock().unwrap();
 
@@ -255,42 +277,55 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             sender: self.mediator().node_id(),
             timestamp: *timestamp,
             value: value.clone(),
-            sequence_number: sequence_number
+            sequence_number: sequence_number,
         }
     }
 
-    fn receive_read1_ack_message(&self, read1_ack_message: &Read1AckMessage<V>) {
+    fn receive_read1_ack_message(
+        &self,
+        read1_ack_message: &Read1AckMessage<V>,
+    ) {
         let sequence_number = self.read1_sequence_number.lock().unwrap();
 
         if read1_ack_message.sequence_number == *sequence_number {
-            self.update_local_timestamp_and_value_from_message(read1_ack_message);
-            self.read1_quorum.insert_node_to_acking_nodes(read1_ack_message.sender);
+            self.update_local_timestamp_and_value_from_message(
+                read1_ack_message,
+            );
+            self.read1_quorum
+                .insert_node_to_acking_nodes(read1_ack_message.sender);
             self.read1_quorum.notify_if_has_ack_from_majority();
-        }        
+        }
     }
 
     fn receive_read2_message(&self, read2_message: &Read2Message<V>) {
         self.update_local_timestamp_and_value_from_message(read2_message);
-        let read2_ack_message = self.construct_read2_ack_message(read2_message.sender);
+        let read2_ack_message =
+            self.construct_read2_ack_message(read2_message.sender);
         self.send_message_to(&read2_ack_message, read2_message.sender);
     }
 
-    fn construct_read2_ack_message(&self, sequence_number: Timestamp) -> Read2AckMessage {
+    fn construct_read2_ack_message(
+        &self,
+        sequence_number: Timestamp,
+    ) -> Read2AckMessage {
         Read2AckMessage {
             sender: self.mediator().node_id(),
-            sequence_number: sequence_number
+            sequence_number: sequence_number,
         }
     }
 
-    fn receive_read2_ack_message(&self, read2_ack_message: &Read2AckMessage) {
+    fn receive_read2_ack_message(
+        &self,
+        read2_ack_message: &Read2AckMessage,
+    ) {
         let sequence_number = self.read2_sequence_number.lock().unwrap();
 
         if read2_ack_message.sequence_number == *sequence_number {
-            self.read2_quorum.insert_node_to_acking_nodes(read2_ack_message.sender);
+            self.read2_quorum
+                .insert_node_to_acking_nodes(read2_ack_message.sender);
             self.read2_quorum.notify_if_has_ack_from_majority();
         }
     }
-
 
     //
     // Message sending
@@ -302,20 +337,8 @@ impl<V: Value, M: Med> AbdNode<M, V> {
     }
 
     fn broadcast_json(&self, json: &str) {
-        self.mediator().broadcast_json(json);
-
-        if self.mediator().record_evaluation_info() {
-            if messages::json_is_write_message(json) {
-                self.mediator().run_result().write_message.sent +=
-                    self.mediator().number_of_nodes();
-            } else if messages::json_is_write_ack_message(json) {
-                self.mediator().run_result().write_ack_message.sent +=
-                    self.mediator().number_of_nodes();
-            } /* else if messages::json_is_read_message(json) {
-                  self.mediator().run_result().read_message.sent += 1;
-              } else if messages::json_is_read_ack_message(json) {
-                  self.mediator().run_result().read_ack_message.sent += 1;
-              } */
+        for &node_id in self.mediator().node_ids() {
+            self.send_json_to(json, node_id);
         }
     }
 
@@ -325,24 +348,25 @@ impl<V: Value, M: Med> AbdNode<M, V> {
         receiver_id: NodeId,
     ) {
         let json = self.jsonify_message(message);
+        self.send_json_to(&json, receiver_id);
+    }
+
+    fn send_json_to(&self, json: &str, receiver_id: NodeId) {
         self.mediator().send_json_to(&json, receiver_id);
 
-        if self.mediator().record_evaluation_info() {
-            if messages::json_is_write_message(&json) {
-                self.mediator().run_result().write_message.sent += 1;
-            } else if messages::json_is_write_ack_message(&json) {
-                self.mediator().run_result().write_ack_message.sent += 1;
-            } /* else if messages::json_is_read_message(json) {
-                  self.mediator().run_result().read_message.sent += 1;
-              } else if messages::json_is_read_ack_message(json) {
-                  self.mediator().run_result().read_ack_message.sent += 1;
-              } */
+        if messages::json_is_write_message(&json) {
+            self.mediator().run_result().write_message.sent += 1;
+        } else if messages::json_is_write_ack_message(&json) {
+            self.mediator().run_result().write_ack_message.sent += 1;
+        } else if messages::json_is_read1_message(json) {
+            self.mediator().run_result().read_message.sent += 1;
+        } else if messages::json_is_read1_ack_message(json) {
+            self.mediator().run_result().read_ack_message.sent += 1;
         }
     }
 
-
     //
-    // json message handling
+    // json message reception
     //
 
     pub fn json_received(&self, json: &str) {
@@ -350,6 +374,8 @@ impl<V: Value, M: Med> AbdNode<M, V> {
         self.try_receive_write_ack_message_json(json);
         self.try_receive_read1_message_json(json);
         self.try_receive_read1_ack_message_json(json);
+        self.try_receive_read2_message_json(json);
+        self.try_receive_read2_ack_message_json(json);
     }
 
     fn try_receive_write_message_json(&self, json: &str) {
@@ -357,15 +383,12 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             if let Ok(write_message) = serde_json::from_str(&json) {
                 self.receive_write_message(&write_message);
 
-                if self.mediator().record_evaluation_info() {
-                    self.mediator().run_result().write_message.received +=
-                        1;
-                    self.mediator()
-                        .run_result()
-                        .write_message
-                        .nodes_received_from
-                        .insert(write_message.sender);
-                }
+                self.mediator().run_result().write_message.received += 1;
+                self.mediator()
+                    .run_result()
+                    .write_message
+                    .nodes_received_from
+                    .insert(write_message.sender);
             }
         }
     }
@@ -375,17 +398,13 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             if let Ok(write_ack_message) = serde_json::from_str(&json) {
                 self.receive_write_ack_message(&write_ack_message);
 
-                if self.mediator().record_evaluation_info() {
-                    self.mediator()
-                        .run_result()
-                        .write_ack_message
-                        .received += 1;
-                    self.mediator()
-                        .run_result()
-                        .write_ack_message
-                        .nodes_received_from
-                        .insert(write_ack_message.sender);
-                }
+                self.mediator().run_result().write_ack_message.received +=
+                    1;
+                self.mediator()
+                    .run_result()
+                    .write_ack_message
+                    .nodes_received_from
+                    .insert(write_ack_message.sender);
             }
         }
     }
@@ -395,15 +414,12 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             if let Ok(read1_message) = serde_json::from_str(&json) {
                 self.receive_read1_message(&read1_message);
 
-                if self.mediator().record_evaluation_info() {
-                    self.mediator().run_result().read_message.received +=
-                        1;
-                    self.mediator()
-                        .run_result()
-                        .read_message
-                        .nodes_received_from
-                        .insert(read1_message.sender);
-                }
+                self.mediator().run_result().read_message.received += 1;
+                self.mediator()
+                    .run_result()
+                    .read_message
+                    .nodes_received_from
+                    .insert(read1_message.sender);
             }
         }
     }
@@ -413,15 +429,13 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             if let Ok(read1_ack_message) = serde_json::from_str(&json) {
                 self.receive_read1_ack_message(&read1_ack_message);
 
-                if self.mediator().record_evaluation_info() {
-                    self.mediator().run_result().read_ack_message.received +=
-                        1;
-                    self.mediator()
-                        .run_result()
-                        .read_ack_message
-                        .nodes_received_from
-                        .insert(read1_ack_message.sender);
-                }
+                self.mediator().run_result().read_ack_message.received +=
+                    1;
+                self.mediator()
+                    .run_result()
+                    .read_ack_message
+                    .nodes_received_from
+                    .insert(read1_ack_message.sender);
             }
         }
     }
@@ -431,15 +445,12 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             if let Ok(read2_message) = serde_json::from_str(&json) {
                 self.receive_read2_message(&read2_message);
 
-                if self.mediator().record_evaluation_info() {
-                    self.mediator().run_result().read_message.received +=
-                        1;
-                    self.mediator()
-                        .run_result()
-                        .read_message
-                        .nodes_received_from
-                        .insert(read2_message.sender);
-                }
+                self.mediator().run_result().read_message.received += 1;
+                self.mediator()
+                    .run_result()
+                    .read_message
+                    .nodes_received_from
+                    .insert(read2_message.sender);
             }
         }
     }
@@ -449,15 +460,13 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             if let Ok(read2_ack_message) = serde_json::from_str(&json) {
                 self.receive_read2_ack_message(&read2_ack_message);
 
-                if self.mediator().record_evaluation_info() {
-                    self.mediator().run_result().read_ack_message.received +=
-                        1;
-                    self.mediator()
-                        .run_result()
-                        .read_ack_message
-                        .nodes_received_from
-                        .insert(read2_ack_message.sender);
-                }
+                self.mediator().run_result().read_ack_message.received +=
+                    1;
+                self.mediator()
+                    .run_result()
+                    .read_ack_message
+                    .nodes_received_from
+                    .insert(read2_ack_message.sender);
             }
         }
     }
