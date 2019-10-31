@@ -28,9 +28,7 @@ use crate::mediator::{Med, Mediator, MediatorImpl};
 use crate::settings::SETTINGS;
 use crate::terminal_output::printlnu;
 
-fn main() {}
 
-/*
 fn main() {
     SETTINGS.node_id();
 
@@ -53,25 +51,23 @@ fn main() {
     let _ = read_tx.send(());
     let _ = write_tx.send(());
 
-    if SETTINGS.record_evaluation_info() {
-        let mut run_result = mediator.run_result();
+    let mut run_result = mediator.run_result();
 
-        run_result.metadata.node_id = SETTINGS.node_id();
-        run_result.metadata.is_reader = SETTINGS.should_read();
-        run_result.metadata.is_writer = SETTINGS.should_write();
-        run_result.metadata.run_length =
-            SETTINGS.run_length().as_secs() as Int;
+    run_result.metadata.node_id = SETTINGS.node_id();
+    run_result.metadata.is_reader = SETTINGS.should_read();
+    run_result.metadata.is_writer = SETTINGS.should_write();
+    run_result.metadata.run_length =
+        SETTINGS.run_length().as_secs() as Int;
 
-        let json = serde_json::to_string(&*run_result).unwrap();
-        printlnu(format!("{}", &json));
-        fs::write(
-            arguments::run_result_file_name_from_node_id(
-                SETTINGS.node_id(),
-            ),
-            json,
-        )
-        .expect("Could not write the json result file");
-    }
+    let json = serde_json::to_string(&*run_result).unwrap();
+    printlnu(format!("{}", &json));
+    fs::write(
+        arguments::run_result_file_name_from_node_id(
+            SETTINGS.node_id(),
+        ),
+        json,
+    )
+    .expect("Could not write the json result file");
 }
 
 fn start_client_threads_and_get_channel_send_ends<M: Med>(
@@ -98,25 +94,23 @@ fn start_client_threads_and_get_channel_send_ends<M: Med>(
 }
 
 fn client_reads<M: Med>(read_rx: Receiver<()>, mediator: Arc<M>) {
-    if SETTINGS.should_read() {
-        let mut read_number = 0;
-        loop {
-            read_number += 1;
+    let mut read_number = 0;
+    loop {
+        read_number += 1;
 
-            if SETTINGS.print_client_operations() {
-                printlnu(format!("Start read {}", read_number));
-            }
+        if SETTINGS.print_client_operations() {
+            printlnu(format!("Start read {}", read_number));
+        }
 
-            let res = mediator.read_all();
+        let res = mediator.read();
 
-            if SETTINGS.print_client_operations() {
-                printlnu(format!("Stop read {}\n{}", read_number, res));
-            }
+        if SETTINGS.print_client_operations() {
+            printlnu(format!("Stop read {}\n{}", read_number, res));
+        }
 
-            match read_rx.try_recv() {
-                Err(TryRecvError::Empty) => {}
-                _ => break,
-            }
+        match read_rx.try_recv() {
+            Err(TryRecvError::Empty) => {}
+            _ => break,
         }
     }
 }
@@ -152,4 +146,3 @@ fn sleep_time_specified_by_arguments() {
         thread::sleep(SETTINGS.run_length());
     }
 }
-*/
