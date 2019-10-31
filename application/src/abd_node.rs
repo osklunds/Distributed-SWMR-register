@@ -24,6 +24,8 @@ use crate::terminal_output::printlnu;
 #[cfg(test)]
 pub mod tests;
 
+const QUORUM_ACCESS_TIMEOUT: Duration = Duration::from_millis(100);
+
 pub struct AbdNode<M, V> {
     mediator: Weak<M>,
 
@@ -133,7 +135,7 @@ impl<V: Value, M: Med> AbdNode<M, V> {
         while *accessing {
             let result = quorum
                 .majority_reached()
-                .wait_timeout(accessing, Duration::from_millis(100))
+                .wait_timeout(accessing, QUORUM_ACCESS_TIMEOUT)
                 .unwrap();
             accessing = result.0;
             if result.1.timed_out() {
@@ -185,12 +187,9 @@ impl<V: Value, M: Med> AbdNode<M, V> {
         let timestamp = self.timestamp.lock().unwrap();
 
         if write_ack_message.timestamp == *timestamp {
-            let mut acking_processors =
-                self.write_quorum.acking_processors().lock().unwrap();
-            acking_processors.insert(write_ack_message.sender);
+            self.write_quorum.insert_node_to_acking_nodes(write_ack_message.sender);
+            self.write_quorum.notify_if_has_ack_from_majority();
         }
-
-        self.write_quorum.notify_if_has_ack_from_majority();
     }
 
     
@@ -206,29 +205,37 @@ impl<V: Value, M: Med> AbdNode<M, V> {
     }
 
     fn read_phase1(&self) {
-        let mut sequence_number = self.read1_sequence_number.lock().unwrap();
-        *sequence_number += 1;
-
-        let read1_message = Read1Message {
-            sender: self.mediator().node_id(), 
-            sequence_number: *sequence_number,
-        };
+        let read1_message = self.construct_read1_message();
         self.quorum_access(&read1_message, &self.read1_quorum);
     }
 
-    fn read_phase2(&self) {
-        let mut sequence_number = self.read2_sequence_number.lock().unwrap();
+    fn construct_read1_message(&self) -> Read1Message {
+        let mut sequence_number = self.read1_sequence_number.lock().unwrap();
         *sequence_number += 1;
+
+        Read1Message {
+            sender: self.mediator().node_id(), 
+            sequence_number: *sequence_number,
+        }
+    }
+
+    fn read_phase2(&self) {
+        let read2_message = self.construct_read2_message();
+        self.quorum_access(&read2_message, &self.read2_quorum);
+    }
+
+    fn construct_read2_message(&self) -> Read2Message<V> {
         let timestamp = self.timestamp.lock().unwrap();
         let value = self.value.lock().unwrap();
+        let mut sequence_number = self.read2_sequence_number.lock().unwrap();
+        *sequence_number += 1;
 
-        let read2_message = Read2Message {
+        Read2Message {
             sender: self.mediator().node_id(), 
             timestamp: *timestamp, 
             value: value.clone(), 
             sequence_number: *sequence_number,
-        };
-        self.quorum_access(&read2_message, &self.read2_quorum);
+        }
     }
 
     //
@@ -236,17 +243,20 @@ impl<V: Value, M: Med> AbdNode<M, V> {
     //
 
     fn receive_read1_message(&self, read1_message: &Read1Message) {
+        let read1_ack_message = self.construct_read1_ack_message(read1_message.sender);
+        self.send_message_to(&read1_ack_message, read1_message.sender);
+    }
+
+    fn construct_read1_ack_message(&self, sequence_number: Timestamp) -> Read1AckMessage<V> {
         let timestamp = self.timestamp.lock().unwrap();
         let value = self.value.lock().unwrap();
 
-        let read1_ack_message = Read1AckMessage {
+        Read1AckMessage {
             sender: self.mediator().node_id(),
             timestamp: *timestamp,
             value: value.clone(),
-            sequence_number: read1_message.sequence_number
-        };
-
-        self.send_message_to(&read1_ack_message, read1_message.sender);
+            sequence_number: sequence_number
+        }
     }
 
     fn receive_read1_ack_message(&self, read1_ack_message: &Read1AckMessage<V>) {
@@ -254,36 +264,32 @@ impl<V: Value, M: Med> AbdNode<M, V> {
 
         if read1_ack_message.sequence_number == *sequence_number {
             self.update_local_timestamp_and_value_from_message(read1_ack_message);
-
-            let mut acking_processors = self.read1_quorum.acking_processors().lock().unwrap();
-            acking_processors.insert(read1_ack_message.sender);
-        }
-
-        self.read1_quorum.notify_if_has_ack_from_majority();
+            self.read1_quorum.insert_node_to_acking_nodes(read1_ack_message.sender);
+            self.read1_quorum.notify_if_has_ack_from_majority();
+        }        
     }
 
     fn receive_read2_message(&self, read2_message: &Read2Message<V>) {
         self.update_local_timestamp_and_value_from_message(read2_message);
-        let read2_ack_message = Read2AckMessage {
-            sender: self.mediator().node_id(),
-            sequence_number: read2_message.sequence_number
-        };
+        let read2_ack_message = self.construct_read2_ack_message(read2_message.sender);
         self.send_message_to(&read2_ack_message, read2_message.sender);
+    }
+
+    fn construct_read2_ack_message(&self, sequence_number: Timestamp) -> Read2AckMessage {
+        Read2AckMessage {
+            sender: self.mediator().node_id(),
+            sequence_number: sequence_number
+        }
     }
 
     fn receive_read2_ack_message(&self, read2_ack_message: &Read2AckMessage) {
         let sequence_number = self.read2_sequence_number.lock().unwrap();
 
         if read2_ack_message.sequence_number == *sequence_number {
-            let mut acking_processors =
-                self.read2_quorum.acking_processors().lock().unwrap();
-            acking_processors.insert(read2_ack_message.sender);
+            self.read2_quorum.insert_node_to_acking_nodes(read2_ack_message.sender);
+            self.read2_quorum.notify_if_has_ack_from_majority();
         }
-
-        self.read2_quorum.notify_if_has_ack_from_majority();
     }
-
-
 
 
     //
