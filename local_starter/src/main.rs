@@ -79,7 +79,7 @@ fn run_application() {
 
 fn run_single_application_instance(node_id: NodeId) -> Child {
     let color = commons::arguments::color_from_node_id(node_id);
-    let write_string = if node_id == ARGUMENTS.number_of_nodes - 1 && ARGUMENTS.should_write {
+    let write_string = if node_id == ARGUMENTS.number_of_nodes && ARGUMENTS.should_write {
         "--write"
     } else {
         ""

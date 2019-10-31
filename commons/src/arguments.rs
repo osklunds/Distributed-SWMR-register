@@ -65,8 +65,7 @@ pub fn node_infos_from_string(string: String) -> HashSet<NodeInfo> {
 pub fn should_write() -> Arg<'static, 'static> {
     Arg::with_name("write")
         .required(false)
-        .takes_value(true)
-        .default_value("0")
+        .takes_value(false)
         .short("w")
         .long("write")
         .help("If the writer node should write.")

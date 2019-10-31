@@ -183,8 +183,9 @@ impl<V: Value, M: Med> AbdNode<M, V> {
         write_ack_message: &WriteAckMessage,
     ) {
         let timestamp = self.timestamp.lock().unwrap();
+        let accessing = self.write_quorum.accessing().lock().unwrap().clone();
 
-        if write_ack_message.timestamp == *timestamp {
+        if write_ack_message.timestamp == *timestamp && accessing {
             self.write_quorum
                 .insert_node_to_acking_nodes(write_ack_message.sender);
             self.write_quorum.notify_if_has_ack_from_majority();
@@ -286,8 +287,9 @@ impl<V: Value, M: Med> AbdNode<M, V> {
         read1_ack_message: &Read1AckMessage<V>,
     ) {
         let sequence_number = self.read1_sequence_number.lock().unwrap();
+        let accessing = self.read1_quorum.accessing().lock().unwrap().clone();
 
-        if read1_ack_message.sequence_number == *sequence_number {
+        if read1_ack_message.sequence_number == *sequence_number && accessing {
             self.update_local_timestamp_and_value_from_message(
                 read1_ack_message,
             );
@@ -319,8 +321,9 @@ impl<V: Value, M: Med> AbdNode<M, V> {
         read2_ack_message: &Read2AckMessage,
     ) {
         let sequence_number = self.read2_sequence_number.lock().unwrap();
+        let accessing = self.read2_quorum.accessing().lock().unwrap().clone();
 
-        if read2_ack_message.sequence_number == *sequence_number {
+        if read2_ack_message.sequence_number == *sequence_number && accessing {
             self.read2_quorum
                 .insert_node_to_acking_nodes(read2_ack_message.sender);
             self.read2_quorum.notify_if_has_ack_from_majority();

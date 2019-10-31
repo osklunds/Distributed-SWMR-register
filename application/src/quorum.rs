@@ -54,8 +54,12 @@ impl Quorum {
 
     pub fn notify_if_has_ack_from_majority(&self) {
         if self.has_ack_from_majority() {
+            let mut acking_nodes = self.acking_nodes.lock().unwrap();
+            acking_nodes.clear();
+
             let mut accessing = self.accessing.lock().unwrap();
             *accessing = false;
+
             self.majority_reached.notify_one();
         }
     }

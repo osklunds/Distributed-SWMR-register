@@ -109,7 +109,7 @@ impl Mediator for MediatorImpl {
     }
 
     fn json_received(&self, json: &str) {
-        //self.abd_node().json_received(json);
+        self.abd_node().json_received(json);
     }
 
     // Configuration manager
