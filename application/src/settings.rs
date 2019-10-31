@@ -21,7 +21,6 @@ pub struct Settings {
     client_operation: ClientOperation,
     print_client_operations: bool,
     run_length: Duration,
-    record_evaluation_info: bool,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -44,9 +43,6 @@ impl Settings {
                 &matches,
             ),
             run_length: run_length_from_matches(&matches),
-            record_evaluation_info: record_evaluation_info_from_matches(
-                &matches,
-            ),
         }
     }
 
@@ -60,11 +56,6 @@ impl Settings {
 
     pub fn terminal_color(&self) -> Color {
         self.terminal_color
-    }
-
-    #[allow(dead_code)]
-    pub fn record_evaluation_info(&self) -> bool {
-        self.record_evaluation_info
     }
 
     pub fn print_client_operations(&self) -> bool {
@@ -102,7 +93,6 @@ fn get_matches() -> ArgMatches<'static> {
         .arg(read_argument())
         .arg(arguments::print_client_operations())
         .arg(arguments::run_length())
-        .arg(arguments::record_evaluation_info())
         .get_matches()
 }
 
@@ -199,10 +189,4 @@ fn run_length_from_matches(matches: &ArgMatches<'static>) -> Duration {
         .parse()
         .unwrap();
     Duration::from_secs(seconds)
-}
-
-fn record_evaluation_info_from_matches(
-    matches: &ArgMatches<'static>,
-) -> bool {
-    matches.is_present("record-evaluation-info")
 }

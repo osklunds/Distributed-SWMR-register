@@ -359,9 +359,13 @@ impl<V: Value, M: Med> AbdNode<M, V> {
         } else if messages::json_is_write_ack_message(&json) {
             self.mediator().run_result().write_ack_message.sent += 1;
         } else if messages::json_is_read1_message(json) {
-            self.mediator().run_result().read_message.sent += 1;
+            self.mediator().run_result().read1_message.sent += 1;
         } else if messages::json_is_read1_ack_message(json) {
-            self.mediator().run_result().read_ack_message.sent += 1;
+            self.mediator().run_result().read1_ack_message.sent += 1;
+        } else if messages::json_is_read2_message(json) {
+            self.mediator().run_result().read2_message.sent += 1;
+        } else if messages::json_is_read2_ack_message(json) {
+            self.mediator().run_result().read2_ack_message.sent += 1;
         }
     }
 
@@ -414,10 +418,10 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             if let Ok(read1_message) = serde_json::from_str(&json) {
                 self.receive_read1_message(&read1_message);
 
-                self.mediator().run_result().read_message.received += 1;
+                self.mediator().run_result().read1_message.received += 1;
                 self.mediator()
                     .run_result()
-                    .read_message
+                    .read1_message
                     .nodes_received_from
                     .insert(read1_message.sender);
             }
@@ -429,11 +433,11 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             if let Ok(read1_ack_message) = serde_json::from_str(&json) {
                 self.receive_read1_ack_message(&read1_ack_message);
 
-                self.mediator().run_result().read_ack_message.received +=
+                self.mediator().run_result().read1_ack_message.received +=
                     1;
                 self.mediator()
                     .run_result()
-                    .read_ack_message
+                    .read1_ack_message
                     .nodes_received_from
                     .insert(read1_ack_message.sender);
             }
@@ -445,10 +449,10 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             if let Ok(read2_message) = serde_json::from_str(&json) {
                 self.receive_read2_message(&read2_message);
 
-                self.mediator().run_result().read_message.received += 1;
+                self.mediator().run_result().read2_message.received += 1;
                 self.mediator()
                     .run_result()
-                    .read_message
+                    .read2_message
                     .nodes_received_from
                     .insert(read2_message.sender);
             }
@@ -460,11 +464,11 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             if let Ok(read2_ack_message) = serde_json::from_str(&json) {
                 self.receive_read2_ack_message(&read2_ack_message);
 
-                self.mediator().run_result().read_ack_message.received +=
+                self.mediator().run_result().read2_ack_message.received +=
                     1;
                 self.mediator()
                     .run_result()
-                    .read_ack_message
+                    .read2_ack_message
                     .nodes_received_from
                     .insert(read2_ack_message.sender);
             }
