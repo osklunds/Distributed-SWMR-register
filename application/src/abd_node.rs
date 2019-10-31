@@ -66,8 +66,8 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             timestamp: Mutex::new(0),
             value: Mutex::new(V::default()),
 
-            read1_sequence_number: Mutex::new(1),
-            read2_sequence_number: Mutex::new(1),
+            read1_sequence_number: Mutex::new(0),
+            read2_sequence_number: Mutex::new(0),
 
             write_quorum: Quorum::new(number_of_nodes),
             read1_quorum: Quorum::new(number_of_nodes),
@@ -201,14 +201,14 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             assert!(self.read1_quorum.is_idle());
             assert!(self.read2_quorum.is_idle());
         }
-
+        
         self.read_phase1();
 
         if cfg!(debug_assertions) {
             assert!(self.read1_quorum.is_idle());
             assert!(self.read2_quorum.is_idle());
         }
-
+        
         self.read_phase2();
 
         if cfg!(debug_assertions) {
@@ -263,7 +263,7 @@ impl<V: Value, M: Med> AbdNode<M, V> {
 
     fn receive_read1_message(&self, read1_message: &Read1Message) {
         let read1_ack_message =
-            self.construct_read1_ack_message(read1_message.sender);
+            self.construct_read1_ack_message(read1_message.sequence_number);
         self.send_message_to(&read1_ack_message, read1_message.sender);
     }
 
@@ -302,7 +302,7 @@ impl<V: Value, M: Med> AbdNode<M, V> {
     fn receive_read2_message(&self, read2_message: &Read2Message<V>) {
         self.update_local_timestamp_and_value_from_message(read2_message);
         let read2_ack_message =
-            self.construct_read2_ack_message(read2_message.sender);
+            self.construct_read2_ack_message(read2_message.sequence_number);
         self.send_message_to(&read2_ack_message, read2_message.sender);
     }
 

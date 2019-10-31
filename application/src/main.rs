@@ -105,7 +105,7 @@ fn client_reads<M: Med>(read_rx: Receiver<()>, mediator: Arc<M>) {
         let res = mediator.read();
 
         if SETTINGS.print_client_operations() {
-            printlnu(format!("Stop read {}\n{}", read_number, res));
+            printlnu(format!("Stop read {}. Result: {}", read_number, res));
         }
 
         match read_rx.try_recv() {
@@ -124,7 +124,7 @@ fn client_writes<M: Med>(write_rx: Receiver<()>, mediator: Arc<M>) {
             printlnu(format!("Start write {}", write_number));
         }
 
-        mediator.write("".to_string());
+        mediator.write(format!("Val: {}", write_number));
 
         if SETTINGS.print_client_operations() {
             printlnu(format!("End write {}", write_number));
