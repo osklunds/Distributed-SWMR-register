@@ -57,10 +57,7 @@ fn get_matches() -> ArgMatches<'static> {
 
 pub fn number_of_nodes_argument() -> Arg<'static, 'static> {
     Arg::with_name("number-of-nodes")
-        .required(true)
-        .takes_value(true)
-        .short("n")
-        .long("number-of-nodes")
+        .required(true)        
         .help("The number of local nodes to run.")
 }
 

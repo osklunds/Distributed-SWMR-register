@@ -158,23 +158,3 @@ pub fn color_from_node_id(node_id: NodeId) -> Color {
 pub fn run_result_file_name_from_node_id(node_id: NodeId) -> String {
     format!("node{:0>6}.eval", node_id)
 }
-
-pub fn write_string_from_node_id_and_number_of_writers(
-    node_id: NodeId,
-    number_of_writers: Int,
-) -> &'static str {
-    match node_id <= number_of_writers {
-        true => "--write",
-        false => "",
-    }
-}
-
-pub fn snapshot_string_from_node_id_and_number_of_snapshotters(
-    node_id: NodeId,
-    number_of_snapshotters: Int,
-) -> &'static str {
-    match node_id <= number_of_snapshotters {
-        true => "--snapshot",
-        false => "",
-    }
-}
