@@ -127,7 +127,7 @@ impl<V: Value, M: Med> AbdNode<M, V> {
 
         let json = self.jsonify_message(message);
         self.broadcast_json(&json);
-
+        
         while *accessing {
             let result = quorum
                 .majority_reached()
