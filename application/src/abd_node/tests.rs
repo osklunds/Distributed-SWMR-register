@@ -72,6 +72,7 @@ impl Mediator for MockMediator {
                 .unwrap()
                 .insert(receiver);
         } else if messages::json_is_write_ack_message(json) {
+            println!("Hej");
             self.sent_write_ack_messages
                 .lock()
                 .unwrap()
