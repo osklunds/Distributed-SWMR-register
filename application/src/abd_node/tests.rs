@@ -1,6 +1,4 @@
-use std::borrow::Cow;
 use std::collections::HashSet;
-use std::iter::FromIterator;
 use std::str;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread::{self, JoinHandle};
@@ -10,7 +8,7 @@ use commons::types::{Int, NodeId};
 
 use crate::abd_node::AbdNode;
 use crate::mediator::Mediator;
-use crate::messages::{self, Message, WriteAckMessage, WriteMessage};
+use crate::messages::{self, WriteAckMessage, WriteMessage};
 use crate::responsible_cell::ResponsibleCell;
 
 mod start_values;

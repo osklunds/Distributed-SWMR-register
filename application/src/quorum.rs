@@ -1,18 +1,10 @@
-use std::borrow::Cow;
+
 use std::collections::HashSet;
-use std::fmt::Debug;
-use std::str;
-use std::sync::{Arc, Condvar, Mutex, MutexGuard, Weak};
-use std::time::Duration;
+use std::sync::{Condvar, Mutex};
 
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+use commons::types::{Int, NodeId};
 
-use commons::types::{Int, NodeId, Timestamp};
-
-use crate::mediator::Med;
-use crate::messages::*;
-use crate::terminal_output::printlnu;
+//use crate::terminal_output::printlnu;
 
 pub struct Quorum {
     acking_nodes: Mutex<HashSet<NodeId>>,

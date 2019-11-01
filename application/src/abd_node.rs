@@ -1,14 +1,12 @@
-use std::borrow::Cow;
-use std::collections::HashSet;
 use std::fmt::Debug;
 use std::str;
-use std::sync::{Arc, Condvar, Mutex, MutexGuard, Weak};
+use std::sync::{Arc, Mutex, Weak};
 use std::time::Duration;
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use commons::types::{Int, NodeId, Timestamp};
+use commons::types::{NodeId, Timestamp};
 
 use crate::mediator::Med;
 use crate::messages::{
@@ -16,7 +14,7 @@ use crate::messages::{
     Read2Message, TimestampValueMessage, WriteAckMessage, WriteMessage,
 };
 use crate::quorum::Quorum;
-use crate::terminal_output::printlnu;
+//use crate::terminal_output::printlnu;
 
 #[cfg(test)]
 pub mod tests;
@@ -54,7 +52,6 @@ impl<V: Value, M: Med> AbdNode<M, V> {
         let mediator_upgraded = mediator
             .upgrade()
             .expect("Error upgrading mediator in AbdNode constructor");
-        let node_ids = mediator_upgraded.node_ids();
         let number_of_nodes = mediator_upgraded.number_of_nodes();
 
         AbdNode {
@@ -111,8 +108,8 @@ impl<V: Value, M: Med> AbdNode<M, V> {
     }
 
     fn construct_write_message(&self) -> WriteMessage<V> {
-        let mut timestamp = self.timestamp.lock().unwrap();
-        let mut value = self.value.lock().unwrap();
+        let timestamp = self.timestamp.lock().unwrap();
+        let value = self.value.lock().unwrap();
 
         WriteMessage {
             sender: self.mediator().node_id(),
