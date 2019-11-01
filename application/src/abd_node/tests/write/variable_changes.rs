@@ -125,7 +125,8 @@ fn test_that_a_write_ack_with_wrong_timestamp_does_not_count_as_an_ack() {
 fn test_that_write_causes_quorum_to_become_non_idle() {
     let mediator = create_mediator();
     perform_single_write_on_background_thread(&mediator);
-    wait_until_local_timestamp_is_updated(&mediator);
+
+    while !*mediator.abd_node().write_quorum.accessing().lock().unwrap() {}
 
     assert!(!mediator.abd_node().write_quorum.is_idle());
 }
