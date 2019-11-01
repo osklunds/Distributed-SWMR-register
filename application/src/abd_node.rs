@@ -75,6 +75,7 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             .expect("Error upgrading mediator in AbdNode")
     }
 
+
     //
     // Write client-side
     //
@@ -137,6 +138,7 @@ impl<V: Value, M: Med> AbdNode<M, V> {
         }
     }
 
+
     //
     // Write server-side
     //
@@ -186,6 +188,7 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             self.write_quorum.notify_if_has_ack_from_majority();
         }
     }
+
 
     //
     // Read client-side
@@ -251,6 +254,7 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             sequence_number: *sequence_number,
         }
     }
+
 
     //
     // Read server-side
@@ -325,6 +329,7 @@ impl<V: Value, M: Med> AbdNode<M, V> {
         }
     }
 
+
     //
     // Message sending
     //
@@ -366,6 +371,7 @@ impl<V: Value, M: Med> AbdNode<M, V> {
             self.mediator().run_result().read2_ack_message.sent += 1;
         }
     }
+
 
     //
     // json message reception

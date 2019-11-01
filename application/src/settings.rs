@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use clap::{App, AppSettings, Arg, ArgMatches};
 use colored::*;
+use lazy_static::lazy_static;
 
 use commons::arguments;
 use commons::types::{Int, NodeId};

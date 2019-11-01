@@ -5,12 +5,12 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use commons::run_result::RunResult;
 use commons::types::{Int, NodeId};
 
-//use crate::terminal_output::printlnu;
 use crate::abd_node::AbdNode;
 use crate::communicator::Communicator;
 use crate::configuration_manager::ConfigurationManager;
 use crate::responsible_cell::ResponsibleCell;
 use crate::settings::SETTINGS;
+//use crate::terminal_output::printlnu;
 
 pub trait Mediator {
     // Communicator
@@ -50,7 +50,7 @@ impl MediatorImpl {
         let node_id = SETTINGS.node_id();
         let socket_addrs = SETTINGS.socket_addrs().clone();
         let node_ids =
-            socket_addrs.keys().map(|node_id| *node_id).collect();
+            socket_addrs.keys().map(|&node_id| node_id).collect();
 
         let mediator = MediatorImpl {
             communicator: ResponsibleCell::new(None),

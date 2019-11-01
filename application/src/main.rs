@@ -1,19 +1,5 @@
 //#![allow(dead_code, unused_variables, unused_imports, unused_mut)]
 
-#[macro_use]
-extern crate lazy_static;
-extern crate serde;
-
-mod abd_node;
-mod communicator;
-mod configuration_manager;
-mod mediator;
-mod messages;
-mod quorum;
-mod responsible_cell;
-mod settings;
-mod terminal_output;
-
 use std::fs;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 use std::sync::Arc;
@@ -27,6 +13,15 @@ use crate::mediator::{Med, Mediator, MediatorImpl};
 use crate::settings::SETTINGS;
 use crate::terminal_output::printlnu;
 
+mod abd_node;
+mod communicator;
+mod configuration_manager;
+mod mediator;
+mod messages;
+mod quorum;
+mod responsible_cell;
+mod settings;
+mod terminal_output;
 
 fn main() {
     SETTINGS.node_id();
@@ -36,8 +31,8 @@ fn main() {
     // This is important when running locally. If some application
     // processes start before all have been built, they will
     // consume so much CPU time that the build processes
-    // are very slow, and hence some nodes will be run for
-    // a longer time than others.
+    // are very slow, and hence some nodes might have run all
+    // their specified time before some even have started.
     thread::sleep(Duration::from_millis(
         100 * SETTINGS.number_of_nodes() as u64,
     ));
@@ -47,8 +42,8 @@ fn main() {
 
     sleep_time_specified_by_arguments();
 
-    let _ = read_tx.send(());
-    let _ = write_tx.send(());
+    read_tx.send(()).expect("Error when sending on read_tx.");
+    write_tx.send(()).expect("Error when sending on write_tx.");
 
     let mut run_result = mediator.run_result();
 
