@@ -37,7 +37,7 @@ fn stop_all_remote_processes() {
 }
 
 fn run_function_on_each_unique_host_in_parallell(
-    function_to_run: &Fn(&NodeInfo) -> Child,
+    function_to_run: &dyn Fn(&NodeInfo) -> Child,
 ) {
     run_function_on_hosts_in_parallell(
         function_to_run,
@@ -46,7 +46,7 @@ fn run_function_on_each_unique_host_in_parallell(
 }
 
 fn run_function_on_hosts_in_parallell(
-    function_to_run: &Fn(&NodeInfo) -> Child,
+    function_to_run: &dyn Fn(&NodeInfo) -> Child,
     hosts: &HashSet<NodeInfo>,
 ) {
     let mut processes = Vec::new();
@@ -226,7 +226,7 @@ fn run_application_on_remote_computers() {
 }
 
 fn run_function_on_all_hosts_in_parallell(
-    function_to_run: &Fn(&NodeInfo) -> Child,
+    function_to_run: &dyn Fn(&NodeInfo) -> Child,
 ) {
     run_function_on_hosts_in_parallell(
         function_to_run,
