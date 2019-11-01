@@ -8,11 +8,8 @@ use std::time::Duration;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use commons::types::{Int, NodeId};
+use commons::types::{Int, NodeId, Timestamp};
 
-use crate::data_types::register::Register;
-use crate::data_types::register_array::*;
-use crate::data_types::timestamp::Timestamp;
 use crate::mediator::Med;
 use crate::messages::{
     self, Message, Read1AckMessage, Read1Message, Read2AckMessage,

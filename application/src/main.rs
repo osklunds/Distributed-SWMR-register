@@ -7,7 +7,6 @@ extern crate serde;
 mod abd_node;
 mod communicator;
 mod configuration_manager;
-mod data_types;
 mod mediator;
 mod messages;
 mod quorum;

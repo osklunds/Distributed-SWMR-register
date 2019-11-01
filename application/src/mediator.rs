@@ -9,7 +9,6 @@ use commons::types::{Int, NodeId};
 use crate::abd_node::AbdNode;
 use crate::communicator::Communicator;
 use crate::configuration_manager::ConfigurationManager;
-use crate::data_types::register_array::RegisterArray;
 use crate::responsible_cell::ResponsibleCell;
 use crate::settings::SETTINGS;
 
