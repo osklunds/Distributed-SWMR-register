@@ -19,6 +19,8 @@ This will create three nodes on your local computer. One of them will continuous
 
 Node 3 starts and ends write number 12 (which also happens to writes the value `12` to the register). Node 2 stops read 59 and gets `12`. Node 3 then starts write 13. Node 1 later reads `12`, which just means that the write hadn't been completed yet. However, at the end, Node 2 manages to read `13`.
 
+Check the overview below for more info about running the code.
+
 ## Repository overview
 
 The `application` directory contains the code for an instance of an ABD node. On each computer you want to be part of this distributed system, you run the code in this directory. More details are in `application/README.md`. This is the most important and interesting part of this repository.
@@ -28,6 +30,8 @@ The `local_starter` directory contains the code for a helper tool. `local_starte
 The `remote_starter` directory contains the code for another helper tool. `remote_starter` automatically starts ABD nodes on remote machines via SSH. More details are in `remote_starter/README.md`.
 
 The `commons` directory contains code that is shared between the above programs.
+
+To run the unit tests, navigate to the directory of interest and type `cargo test` as usual.
 
 ## Compatibility
 
