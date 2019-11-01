@@ -60,6 +60,10 @@ impl Arguments {
 
         node_ids_for_unique_hosts
     }
+
+    pub fn number_of_nodes(&self) -> Int {
+        self.node_infos.len() as Int
+    }
 }
 
 fn get_matches() -> ArgMatches<'static> {

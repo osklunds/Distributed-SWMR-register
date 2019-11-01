@@ -14,9 +14,16 @@ use commons::types::NodeId;
 use crate::arguments::ARGUMENTS;
 
 fn main() {
+    check_write_read_soundness();
     create_hosts_file();
     build_application();
     run_application();
+}
+
+fn check_write_read_soundness() {
+    if ARGUMENTS.should_write && ARGUMENTS.number_of_readers >= ARGUMENTS.number_of_nodes {
+        panic!("If the writer node shall write, the number of readers must be less than the number of nodes in total. The writer cannot read and write at the same time.");
+    }
 }
 
 fn create_hosts_file() {

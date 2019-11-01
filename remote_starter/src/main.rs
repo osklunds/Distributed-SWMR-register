@@ -6,7 +6,7 @@ extern crate lazy_static;
 mod arguments;
 
 use std::collections::HashSet;
-use std::process::Child;
+use std::process::{self, Child};
 use std::thread;
 use std::vec::Vec;
 
@@ -20,6 +20,7 @@ use commons::types::Int;
 use crate::arguments::ARGUMENTS;
 
 fn main() {
+    check_write_read_soundness();
     stop_all_remote_processes();
     set_ctrl_c_handler();
 
@@ -29,6 +30,12 @@ fn main() {
         build_source_code();
     } else {
         run_application_on_remote_computers();
+    }
+}
+
+fn check_write_read_soundness() {
+    if ARGUMENTS.should_write && ARGUMENTS.number_of_readers >= ARGUMENTS.number_of_nodes() {
+        panic!("If the writer node shall write, the number of readers must be less than the number of nodes in total. The writer cannot read and write at the same time.");
     }
 }
 
@@ -70,6 +77,7 @@ fn set_ctrl_c_handler() {
     ctrlc::set_handler(move || {
         println!("I will now exit. But first I will stop all processes I have started on the remote computers.");
         stop_all_remote_processes();
+        process::exit(0);
 
     }).expect("Could not set the CTRL+C handler.");
 }
@@ -235,7 +243,7 @@ fn run_function_on_all_hosts_in_parallell(
 }
 
 fn run_application_on_remote_computer(node_info: &NodeInfo) -> Child {
-    let write_string = if node_info.node_id == ARGUMENTS.node_infos.len() as Int && ARGUMENTS.should_write {
+    let write_string = if node_info.node_id == ARGUMENTS.number_of_nodes() as Int && ARGUMENTS.should_write {
         "--write"
     } else {
         ""
