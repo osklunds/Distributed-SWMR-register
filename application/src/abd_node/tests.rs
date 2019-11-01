@@ -13,6 +13,7 @@ use crate::mediator::Mediator;
 use crate::messages::{self, WriteAckMessage, WriteMessage};
 use crate::responsible_cell::ResponsibleCell;
 
+mod start_values;
 mod write;
 
 
@@ -131,64 +132,6 @@ fn create_mediator() -> Arc<MockMediator> {
 }
 
 /*
-
-mod start_values {
-    use super::*;
-
-    #[test]
-    fn test_that_register_array_is_empty_at_start() {
-        let mediator = create_mediator();
-        let register = Register::new(
-            timestamp::default_timestamp(),
-            String::default(),
-        );
-
-        for &node_id in mediator.node_ids.iter() {
-            assert_eq!(
-                mediator
-                    .abd_node()
-                    .reg
-                    .lock()
-                    .expect("Could not lock register array")
-                    .get(node_id),
-                &register
-            );
-        }
-    }
-
-    #[test]
-    fn test_that_ts_is_0_at_start() {
-        let mediator = create_mediator();
-        assert_eq!(
-            *mediator.abd_node().ts.lock().expect("Could not lock ts."),
-            0
-        );
-    }
-
-    #[test]
-    fn test_that_register_array_being_written_is_none_at_start() {
-        let mediator = create_mediator();
-        assert_eq!(
-            *mediator
-                .abd_node()
-                .register_array_being_written
-                .lock()
-                .expect("Could not lock register array."),
-            None
-        );
-    }
-
-    #[test]
-    fn test_that_acking_processors_for_write_is_empty_at_start() {
-        let mediator = create_mediator();
-        assert!(mediator
-            .abd_node()
-            .acking_processors_for_write
-            .lock()
-            .expect("Could not lock register array.")
-            .is_empty());
-    }
-}
 
 mod variable_changes {
     use super::*;
