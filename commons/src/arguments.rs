@@ -84,7 +84,7 @@ pub fn number_of_readers() -> Arg<'static, 'static> {
         .default_value("0")
         .short("r")
         .long("number-of-readers")
-        .help("The number of nodes that should read.")
+        .help("The number of nodes that should read. If the writer node is instructed to write, the number of readers must be at most one less than the total number of nodes.")
 }
 
 pub fn number_of_readers_from_matches(

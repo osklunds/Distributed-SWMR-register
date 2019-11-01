@@ -15,6 +15,7 @@ use ctrlc;
 use commons::execution;
 use commons::node_info::NodeInfo;
 use commons::remote_machine::*;
+use commons::types::Int;
 
 use crate::arguments::ARGUMENTS;
 
@@ -234,11 +235,11 @@ fn run_function_on_all_hosts_in_parallell(
 }
 
 fn run_application_on_remote_computer(node_info: &NodeInfo) -> Child {
-    let write_string =
-        match node_info.node_id <= ARGUMENTS.number_of_writers {
-            true => "--write",
-            false => "",
-        };
+    let write_string = if node_info.node_id == ARGUMENTS.node_infos.len() as Int && ARGUMENTS.should_write {
+        "--write"
+    } else {
+        ""
+    };
     let read_string =
         match node_info.node_id <= ARGUMENTS.number_of_readers {
             true => "--read",
@@ -246,14 +247,13 @@ fn run_application_on_remote_computer(node_info: &NodeInfo) -> Child {
         };
 
     let command_string = format!(
-        "\"cd {}/application/;cargo run {} -- {} {} -l {} -c {:?} {} {} {} {};cd ../../\"",
+        "\"cd {}/application/;cargo run {} -- {} {} -l {} -c {:?} {} {} {};cd ../../\"",
         REMOTE_DIRECTORY_NAME,
         ARGUMENTS.release_mode_string,
         node_info.node_id,
         REMOTE_HOSTS_FILE_NAME,
         ARGUMENTS.run_length_string,
         commons::arguments::color_from_node_id(node_info.node_id),
-        ARGUMENTS.record_evaluation_info_string,
         ARGUMENTS.print_client_operations_string,
         write_string,
         read_string
