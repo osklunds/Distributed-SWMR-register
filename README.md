@@ -13,7 +13,11 @@ The goal of this project is for me to become a better Rust programmer. For anoth
 2. Clone this repository.
 3. Change directory to `local_starter` and type `cargo run -- 3 -w -r 2 -p`.
 
-This will create three nodes on your local computer. One of them will continuously write to the register while the other two will continuously read from the register. Each node will print to the terminal in its own color when it starts/ends a write/read operation. When a read operation ends, the value of the register will be printed. So you see a sequence of write and read operations and what the value of the register was in the different places of that execution.
+This will create three nodes on your local computer. One of them will continuously write to the register while the other two will continuously read from the register. Each node will print to the terminal in its own color when it starts/ends a write/read operation. When a read operation ends, the value of the register will be printed. So you see a sequence of write and read operations and what the value of the register was in the different places of that execution. An example is shown below:
+
+![](doc/example_run.PNG)
+
+Node 3 starts and ends write number 12 (which also happens to writes the value `12` to the register). Node 2 stops read 59 and gets `12`. Node 3 then starts write 13. Node 1 later reads `12`, which just means that the write hadn't been completed yet. However, at the end, Node 2 manages to read `13`.
 
 ## Repository overview
 
