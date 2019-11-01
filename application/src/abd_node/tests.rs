@@ -9,21 +9,21 @@ use commons::run_result::RunResult;
 use commons::types::{Int, NodeId};
 
 use crate::abd_node::AbdNode;
-use crate::data_types::register::Register;
-use crate::data_types::register_array::*;
-use crate::data_types::timestamp;
 use crate::mediator::Mediator;
 use crate::messages::{self, WriteAckMessage, WriteMessage};
 use crate::responsible_cell::ResponsibleCell;
 
+
 struct MockMediator {
     node_id: NodeId,
     node_ids: HashSet<NodeId>,
+
     run_result: Mutex<RunResult>,
     abd_node: ResponsibleCell<Option<AbdNode<MockMediator, String>>>,
-    sent_write_messages: Mutex<Vec<WriteMessage<'static, String>>>,
+    
+    sent_write_messages: Mutex<Vec<WriteMessage<String>>>,
     write_message_receivers: Mutex<HashSet<NodeId>>,
-    sent_write_ack_messages: Mutex<Vec<WriteAckMessage<'static, String>>>,
+    sent_write_ack_messages: Mutex<Vec<WriteAckMessage>>,
     write_ack_message_receivers: Mutex<HashSet<NodeId>>,
 }
 
@@ -60,32 +60,26 @@ impl Mediator for MockMediator {
         if messages::json_is_write_message(json) {
             self.sent_write_messages
                 .lock()
-                .expect("Could not lock sent write messages.")
+                .unwrap()
                 .push(
                     serde_json::from_str(json)
                         .expect("Could not derserialize a write message."),
                 );
             self.write_message_receivers
                 .lock()
-                .expect("Could not lock write message receivers.")
+                .unwrap()
                 .insert(receiver);
         } else if messages::json_is_write_ack_message(json) {
             self.sent_write_ack_messages
                 .lock()
-                .expect("Could not lock sent write ack messages.")
+                .unwrap()
                 .push(serde_json::from_str(json).expect(
                     "Could not derserialize a write ack message.",
                 ));
             self.write_ack_message_receivers
                 .lock()
-                .expect("Could not lock write ack message receivers.")
+                .unwrap()
                 .insert(receiver);
-        }
-    }
-
-    fn broadcast_json(&self, json: &str) {
-        for &node_id in &self.node_ids {
-            self.send_json_to(json, node_id);
         }
     }
 
@@ -113,18 +107,12 @@ impl Mediator for MockMediator {
         self.abd_node().write(message);
     }
 
-    fn read(&self, _node_id: NodeId) -> String {
+    fn read(&self) -> String {
         panic!("Unused");
-    }
-
-    fn read_all(&self) -> RegisterArray<String> {
-        panic!("Unused");
-    }
-
-    fn record_evaluation_info(&self) -> bool {
-        true
     }
 }
+
+/*
 
 fn node_ids_for_tests() -> HashSet<NodeId> {
     let mut node_ids = HashSet::new();
@@ -563,3 +551,4 @@ mod variable_changes {
         assert!(acking_processors_for_write.is_empty());
     }
 }
+*/

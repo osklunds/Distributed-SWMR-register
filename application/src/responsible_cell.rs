@@ -31,32 +31,3 @@ impl<T> ResponsibleCell<T> {
         unsafe { &mut *self.unsafe_cell.get() }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    struct TestStruct {
-        pub inner: String,
-    }
-
-    #[test]
-    fn test_double_mutation() {
-        let test_value = TestStruct {
-            inner: String::from("hej"),
-        };
-        let cell = ResponsibleCell::new(test_value);
-
-        let mut1 = cell.get_mut();
-        let mut2 = cell.get_mut();
-
-        mut1.inner = String::from("hi");
-        mut2.inner = String::from("hello");
-
-        let imut = cell.get();
-
-        assert_eq!(mut1.inner, String::from("hello"));
-        assert_eq!(mut2.inner, String::from("hello"));
-        assert_eq!(imut.inner, String::from("hello"));
-    }
-}
