@@ -70,6 +70,11 @@ impl Quorum {
     fn number_of_nodes_in_a_majority(&self) -> Int {
         self.number_of_nodes / 2 + 1
     }
+
+    #[cfg(test)]
+    pub fn acking_nodes(&self) -> &Mutex<HashSet<NodeId>> {
+        &self.acking_nodes
+    }
 }
 
 #[cfg(test)]

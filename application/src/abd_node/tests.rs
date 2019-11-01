@@ -10,7 +10,7 @@ use commons::types::{Int, NodeId};
 
 use crate::abd_node::AbdNode;
 use crate::mediator::Mediator;
-use crate::messages::{self, WriteAckMessage, WriteMessage};
+use crate::messages::{self, Message, WriteAckMessage, WriteMessage};
 use crate::responsible_cell::ResponsibleCell;
 
 mod start_values;
