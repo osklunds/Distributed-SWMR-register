@@ -4,28 +4,28 @@
 This directory contains the code for an instance of an ABD node. Make sure to change your current directory to the `application` directory. If you type `cargo run -- --help` you will see the following:
 
 ```
-Distributed-SWMR-registers: Application 
+Distributed-SWMR-register: Application 
 The application code, that is an instance of an ABD node.
 
 USAGE:
-    distributed_swmr_registers [FLAGS] <node-id> <hosts-file> <run-length> [color]
+    distributed_swmr_registers [FLAGS] [OPTIONS] <node-id> <hosts-file>
 
 FLAGS:
     -h, --help                       Prints help information
     -p, --print-client-operations    Print when a read/write operation starts/ends. If not included, the performance
                                      might be slightly higher.
     -r, --read                       Makes this node perform read operations.
-    -e, --record-evaluation-info     Record information used for the evaluation, such as latency and number of messages
-                                     sent. If not included, the performance might be slightly higher.
     -w, --write                      Makes this node perform write operations.
+
+OPTIONS:
+    -c, --color <color>              The color of the terminal output [default: Black]  [possible values: Black, Red,
+                                     Green, Yellow, Blue, Magenta, Cyan]
+    -l, --run-length <run-length>    The number of seconds the program should run for. If 0 is given, the program will
+                                     run until aborted with Ctrl-C. [default: 0]
 
 ARGS:
     <node-id>       The integer id of this node instance.
     <hosts-file>    The file with host ids, addresses and ports.
-    <run-length>    The number of seconds the program should run for. If 0 is given, the program will run until
-                    aborted with Ctrl+C.
-    <color>         The color of the terminal output [default: Black]  [possible values: Black, Red, Green, Yellow,
-                    Blue, Magenta, Cyan]
 ```
 
 The idea is that you create a hosts file with all the hosts you want to be part of the system. Then you copy this source code to all the hosts and specify the the above arguments to your liking. Doing it like this manually for each node is certainly possible, but it's not very convenient. Therefore I have the tools `local_starter` (for running multiple nodes on your own computer) and `remote_starter` (for running multiple nodes on different computers). Check out the readmes of those two for more information about them.

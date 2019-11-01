@@ -1,5 +1,5 @@
 [package]
-name = "distributed_swmr_registers"
+name = "distributed_swmr_register"
 version = "0.1.0"
 authors = ["Oskar Lundström <21679735+osklunds@users.noreply.github.com>"]
 edition = "2018"

@@ -63,7 +63,7 @@ impl Arguments {
 }
 
 fn get_matches() -> ArgMatches<'static> {
-    App::new("Distributed SWMR registers: Remote starter")
+    App::new("Distributed SWMR register: Remote starter")
         .setting(AppSettings::DisableVersion)
         .setting(AppSettings::VersionlessSubcommands)
         .about("A helper utility that starts multiple nodes on remote machines via SSH.")

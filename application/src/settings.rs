@@ -81,7 +81,7 @@ impl Settings {
 }
 
 fn get_matches() -> ArgMatches<'static> {
-    App::new("Distributed-SWMR-registers: Application")
+    App::new("Distributed-SWMR-register: Application")
         .setting(AppSettings::DisableVersion)
         .setting(AppSettings::VersionlessSubcommands)
         .about("The application code, that is an instance of an ABD node.")
