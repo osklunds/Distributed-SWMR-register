@@ -71,3 +71,20 @@ impl Quorum {
         self.number_of_nodes / 2 + 1
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_number_of_nodes_in_a_majority() {
+        let number_of_nodes_in_a_majority = vec![1, 2, 2, 3, 3, 4, 4];
+
+        for i in 0..7 {
+            let number_of_nodes = i+1;
+            let quorum = Quorum::new(number_of_nodes);
+
+            assert_eq!(quorum.number_of_nodes_in_a_majority(), number_of_nodes_in_a_majority[i as usize]);
+        }
+    }
+}

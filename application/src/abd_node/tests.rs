@@ -112,8 +112,6 @@ impl Mediator for MockMediator {
     }
 }
 
-/*
-
 fn node_ids_for_tests() -> HashSet<NodeId> {
     let mut node_ids = HashSet::new();
     node_ids.insert(1);
@@ -123,32 +121,9 @@ fn node_ids_for_tests() -> HashSet<NodeId> {
     node_ids
 }
 
-#[test]
-fn test_number_of_nodes_in_a_majority() {
-    let node_ids = vec![
-        vec![1],
-        vec![1, 2],
-        vec![1, 2, 3],
-        vec![1, 2, 3, 4],
-        vec![1, 2, 3, 4, 5],
-        vec![1, 2, 3, 4, 5, 6],
-        vec![1, 2, 3, 4, 5, 6, 7],
-    ];
-    let number_of_nodes_in_a_majority = vec![1, 2, 2, 3, 3, 4, 4];
 
-    for i in 0..node_ids.len() {
-        let node_ids = node_ids[i].clone();
-        let node_ids = HashSet::from_iter(node_ids);
-        let mediator = Arc::new(MockMediator::new(1, node_ids));
-        let abd_node: AbdNode<MockMediator, String> =
-            AbdNode::new(Arc::downgrade(&mediator));
 
-        assert_eq!(
-            abd_node.number_of_nodes_in_a_majority(),
-            number_of_nodes_in_a_majority[i]
-        );
-    }
-}
+/*
 
 fn create_mediator_perform_write_and_ack() -> Arc<MockMediator> {
     let mediator = create_mediator();
